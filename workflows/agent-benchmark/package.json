@@ -1,0 +1,20 @@
+{
+  "name": "@petriflow/workflow-agent-benchmark",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./index.ts",
+    "./call-analysis": "./call-analysis.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "start": "bun run index.ts"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1"
+  }
+}

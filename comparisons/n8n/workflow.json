@@ -1,0 +1,196 @@
+{
+  "name": "Agent Benchmark (n8n)",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "User Query",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [0, 300],
+      "parameters": {}
+    },
+    {
+      "id": "plan",
+      "name": "Plan Tools (LLM)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [200, 300],
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "Given the user query, decide which tools to call: search, db, code. Return JSON."
+      },
+      "note": "LLM call #1: decide which tools to use"
+    },
+    {
+      "id": "parse",
+      "name": "Parse Plan",
+      "type": "n8n-nodes-base.code",
+      "position": [400, 300],
+      "parameters": {
+        "jsCode": "const plan = $input.first().json;\nreturn [{ json: { ...plan, iteration: (plan.iteration || 0) } }];"
+      }
+    },
+    {
+      "id": "if-search",
+      "name": "Use Search?",
+      "type": "n8n-nodes-base.if",
+      "position": [600, 100],
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.useSearch }}" }] } }
+    },
+    {
+      "id": "search",
+      "name": "Web Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [800, 50],
+      "parameters": { "url": "https://api.search.example/query" }
+    },
+    {
+      "id": "search-noop",
+      "name": "Skip Search",
+      "type": "n8n-nodes-base.noOp",
+      "position": [800, 150]
+    },
+    {
+      "id": "if-db",
+      "name": "Use DB?",
+      "type": "n8n-nodes-base.if",
+      "position": [600, 300],
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.useDB }}" }] } }
+    },
+    {
+      "id": "db",
+      "name": "Database Lookup",
+      "type": "n8n-nodes-base.postgres",
+      "position": [800, 250],
+      "parameters": { "query": "SELECT * FROM data WHERE ..." }
+    },
+    {
+      "id": "db-noop",
+      "name": "Skip DB",
+      "type": "n8n-nodes-base.noOp",
+      "position": [800, 350]
+    },
+    {
+      "id": "if-code",
+      "name": "Use Code?",
+      "type": "n8n-nodes-base.if",
+      "position": [600, 500],
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.useCode }}" }] } }
+    },
+    {
+      "id": "code-noop",
+      "name": "Skip Code",
+      "type": "n8n-nodes-base.noOp",
+      "position": [800, 550]
+    },
+    {
+      "id": "approval",
+      "name": "Wait for Approval",
+      "type": "n8n-nodes-base.wait",
+      "position": [800, 450],
+      "parameters": { "resume": "webhook" },
+      "note": "Human approval — but nothing in the graph ENFORCES this node is reached before code runs"
+    },
+    {
+      "id": "if-approved",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "position": [1000, 450],
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.approved }}" }] } }
+    },
+    {
+      "id": "code-exec",
+      "name": "Execute Code",
+      "type": "n8n-nodes-base.code",
+      "position": [1200, 420],
+      "parameters": { "jsCode": "// execute user code\nreturn [{ json: { result: 'executed' } }];" }
+    },
+    {
+      "id": "code-rejected",
+      "name": "Code Rejected",
+      "type": "n8n-nodes-base.noOp",
+      "position": [1200, 520]
+    },
+    {
+      "id": "merge",
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "position": [1400, 300],
+      "parameters": { "mode": "append" },
+      "note": "n8n Merge waits for inputs it receives, but has no concept of 'all 3 branches MUST complete'. If a branch silently fails, Merge proceeds with partial results."
+    },
+    {
+      "id": "evaluate",
+      "name": "Evaluate Results (LLM)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [1600, 300],
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "Given these tool results, is the answer sufficient? Return { done: boolean }"
+      },
+      "note": "LLM call #2: decide if answer is good enough"
+    },
+    {
+      "id": "check-iteration",
+      "name": "Check Iteration",
+      "type": "n8n-nodes-base.code",
+      "position": [1800, 300],
+      "parameters": {
+        "jsCode": "const iteration = ($json.iteration || 0) + 1;\nconst maxIterations = 3;\nreturn [{ json: { ...($json), iteration, shouldIterate: !$json.done && iteration < maxIterations } }];"
+      },
+      "note": "Iteration budget is a RUNTIME CHECK in a code node. Nothing prevents someone from changing maxIterations or removing this check."
+    },
+    {
+      "id": "if-iterate",
+      "name": "Iterate?",
+      "type": "n8n-nodes-base.if",
+      "position": [2000, 300],
+      "parameters": { "conditions": { "boolean": [{ "value1": "={{ $json.shouldIterate }}" }] } }
+    },
+    {
+      "id": "response",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [2200, 350],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "User Query":        { "main": [[{ "node": "Plan Tools (LLM)", "type": "main", "index": 0 }]] },
+    "Plan Tools (LLM)":  { "main": [[{ "node": "Parse Plan", "type": "main", "index": 0 }]] },
+    "Parse Plan":        { "main": [[
+      { "node": "Use Search?", "type": "main", "index": 0 },
+      { "node": "Use DB?", "type": "main", "index": 0 },
+      { "node": "Use Code?", "type": "main", "index": 0 }
+    ]] },
+    "Use Search?":       { "main": [
+      [{ "node": "Web Search", "type": "main", "index": 0 }],
+      [{ "node": "Skip Search", "type": "main", "index": 0 }]
+    ] },
+    "Web Search":        { "main": [[{ "node": "Merge Results", "type": "main", "index": 0 }]] },
+    "Skip Search":       { "main": [[{ "node": "Merge Results", "type": "main", "index": 0 }]] },
+    "Use DB?":           { "main": [
+      [{ "node": "Database Lookup", "type": "main", "index": 0 }],
+      [{ "node": "Skip DB", "type": "main", "index": 0 }]
+    ] },
+    "Database Lookup":   { "main": [[{ "node": "Merge Results", "type": "main", "index": 1 }]] },
+    "Skip DB":           { "main": [[{ "node": "Merge Results", "type": "main", "index": 1 }]] },
+    "Use Code?":         { "main": [
+      [{ "node": "Wait for Approval", "type": "main", "index": 0 }],
+      [{ "node": "Skip Code", "type": "main", "index": 0 }]
+    ] },
+    "Wait for Approval": { "main": [[{ "node": "Approved?", "type": "main", "index": 0 }]] },
+    "Approved?":         { "main": [
+      [{ "node": "Execute Code", "type": "main", "index": 0 }],
+      [{ "node": "Code Rejected", "type": "main", "index": 0 }]
+    ] },
+    "Execute Code":      { "main": [[{ "node": "Merge Results", "type": "main", "index": 2 }]] },
+    "Code Rejected":     { "main": [[{ "node": "Merge Results", "type": "main", "index": 2 }]] },
+    "Skip Code":         { "main": [[{ "node": "Merge Results", "type": "main", "index": 2 }]] },
+    "Merge Results":     { "main": [[{ "node": "Evaluate Results (LLM)", "type": "main", "index": 0 }]] },
+    "Evaluate Results (LLM)": { "main": [[{ "node": "Check Iteration", "type": "main", "index": 0 }]] },
+    "Check Iteration":   { "main": [[{ "node": "Iterate?", "type": "main", "index": 0 }]] },
+    "Iterate?":          { "main": [
+      [{ "node": "Plan Tools (LLM)", "type": "main", "index": 0 }],
+      [{ "node": "Send Response", "type": "main", "index": 0 }]
+    ] }
+  }
+}

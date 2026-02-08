@@ -1,0 +1,16 @@
+{
+  "name": "@petriflow/comparison-n8n",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*",
+    "@petriflow/workflow-agent-benchmark": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1"
+  }
+}

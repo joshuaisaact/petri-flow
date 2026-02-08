@@ -1,0 +1,17 @@
+{
+  "name": "petriflow",
+  "private": true,
+  "workspaces": ["packages/*", "workflows/*", "comparisons/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "fmt": "turbo run fmt",
+    "check": "turbo run check"
+  },
+  "devDependencies": {
+    "turbo": "^2",
+    "typescript": "^5.7",
+    "@types/bun": "^1"
+  }
+}

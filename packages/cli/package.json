@@ -1,0 +1,19 @@
+{
+  "name": "@petriflow/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "petriflow": "src/cli.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7",
+    "@types/bun": "^1"
+  }
+}

@@ -1,0 +1,167 @@
+import { describe, it, expect } from "bun:test";
+import { Database } from "bun:sqlite";
+import { Scheduler } from "../src/scheduler.js";
+import { defineWorkflow } from "../src/workflow.js";
+
+type Place = "start" | "step1" | "step2" | "end";
+type Ctx = { log: string[] };
+
+const definition = defineWorkflow<Place, Ctx>({
+  name: "test-pipeline",
+  places: ["start", "step1", "step2", "end"],
+  transitions: [
+    {
+      name: "begin",
+      inputs: ["start"],
+      outputs: ["step1"],
+      execute: async (ctx) => ({ log: [...ctx.log, "began"] }),
+    },
+    {
+      name: "process",
+      inputs: ["step1"],
+      outputs: ["step2"],
+      execute: async (ctx) => ({ log: [...ctx.log, "processed"] }),
+    },
+    {
+      name: "complete",
+      inputs: ["step2"],
+      outputs: ["end"],
+      execute: async (ctx) => ({ log: [...ctx.log, "completed"] }),
+    },
+  ],
+  initialMarking: { start: 1, step1: 0, step2: 0, end: 0 },
+  initialContext: { log: [] },
+});
+
+describe("Scheduler", () => {
+  it("drives a workflow to completion via tick()", async () => {
+    const db = new Database(":memory:");
+    const fired: string[] = [];
+    const completed: string[] = [];
+
+    const scheduler = new Scheduler(definition, { db }, {
+      onFire: (_id, name) => fired.push(name),
+      onComplete: (id) => completed.push(id),
+    });
+
+    await scheduler.createInstance("inst-1");
+
+    // Tick through each step
+    let totalFired = 0;
+    for (let i = 0; i < 5; i++) {
+      totalFired += await scheduler.tick();
+    }
+
+    expect(totalFired).toBe(3);
+    expect(fired).toEqual(["begin", "process", "complete"]);
+    expect(completed).toEqual(["inst-1"]);
+
+    const state = await scheduler.inspect("inst-1");
+    expect(state.status).toBe("completed");
+    expect(state.marking).toEqual({ start: 0, step1: 0, step2: 0, end: 1 });
+    expect(state.context.log).toEqual(["began", "processed", "completed"]);
+  });
+
+  it("handles multiple instances", async () => {
+    const db = new Database(":memory:");
+    const completed: string[] = [];
+
+    const scheduler = new Scheduler(definition, { db }, {
+      onComplete: (id) => completed.push(id),
+    });
+
+    await scheduler.createInstance("a");
+    await scheduler.createInstance("b");
+
+    for (let i = 0; i < 10; i++) {
+      await scheduler.tick();
+    }
+
+    expect(completed).toContain("a");
+    expect(completed).toContain("b");
+
+    const stateA = await scheduler.inspect("a");
+    const stateB = await scheduler.inspect("b");
+    expect(stateA.status).toBe("completed");
+    expect(stateB.status).toBe("completed");
+  });
+
+  it("guards block transitions correctly", async () => {
+    type GPlace = "pending" | "approved" | "denied";
+    type GCtx = { score: number };
+
+    const gatedDef = defineWorkflow<GPlace, GCtx>({
+      name: "gated",
+      places: ["pending", "approved", "denied"],
+      transitions: [
+        {
+          name: "approve",
+          inputs: ["pending"],
+          outputs: ["approved"],
+          guard: (ctx) => ctx.score >= 80,
+        },
+        {
+          name: "deny",
+          inputs: ["pending"],
+          outputs: ["denied"],
+          guard: (ctx) => ctx.score < 80,
+        },
+      ],
+      initialMarking: { pending: 1, approved: 0, denied: 0 },
+      initialContext: { score: 50 },
+    });
+
+    const db = new Database(":memory:");
+    const fired: string[] = [];
+
+    const scheduler = new Scheduler(gatedDef, { db }, {
+      onFire: (_id, name) => fired.push(name),
+    });
+
+    await scheduler.createInstance("low-score");
+    await scheduler.tick();
+
+    expect(fired).toEqual(["deny"]);
+
+    const state = await scheduler.inspect("low-score");
+    expect(state.marking).toEqual({ pending: 0, approved: 0, denied: 1 });
+  });
+
+  it("handles execution errors gracefully", async () => {
+    type EPlace = "start" | "end";
+    type ECtx = Record<string, unknown>;
+
+    const errorDef = defineWorkflow<EPlace, ECtx>({
+      name: "error-wf",
+      places: ["start", "end"],
+      transitions: [
+        {
+          name: "explode",
+          inputs: ["start"],
+          outputs: ["end"],
+          execute: async () => {
+            throw new Error("boom");
+          },
+        },
+      ],
+      initialMarking: { start: 1, end: 0 },
+      initialContext: {},
+    });
+
+    const db = new Database(":memory:");
+    const errors: unknown[] = [];
+
+    const scheduler = new Scheduler(errorDef, { db }, {
+      onError: (_id, err) => errors.push(err),
+    });
+
+    await scheduler.createInstance("err-1");
+    await scheduler.tick();
+
+    expect(errors).toHaveLength(1);
+    expect((errors[0] as Error).message).toBe("boom");
+
+    const state = await scheduler.inspect("err-1");
+    expect(state.status).toBe("failed");
+  });
+});
