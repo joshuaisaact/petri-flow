@@ -4,6 +4,12 @@ An LLM agent with 3 tools (web search, database lookup, code execution) modeled 
 
 The same agent is modeled in PetriFlow (16 places, 17 transitions), n8n (20 nodes), and compared against a ReAct baseline.
 
+<p align="center">
+  <img src="docs/agent-benchmark.svg" alt="Agent benchmark Petri net" width="600">
+</p>
+
+> Circles are places (tokens live here). Boxes are transitions (they fire). Yellow is the human gate. Green is the terminal state. The iterate loop at the bottom consumes budget tokens.
+
 ## Results
 
 ```
@@ -45,7 +51,7 @@ This is not a special case — the analysis finds concurrent groups automaticall
 
 ## What this doesn't prove
 
-These proofs are about orchestration, not intelligence. PetriFlow proves the agent terminates, hits the human gate, and waits for all tools. It cannot prove the agent gives good answers, calls the right tools, or uses the budget wisely. The net is the safety rails. The LLM is the driver. We're proving the rails are sound, not that the driver is competent.
+These proofs are about orchestration, not intelligence. PetriFlow proves the agent terminates, hits the human gate, and waits for all tools. It cannot prove the agent gives good answers, calls the right tools, or uses the budget wisely. The net is the safety rails. The LLM is the driver. I'm proving the rails are sound, not that the driver is competent.
 
 The proofs are also only as good as the net definition. If someone adds a transition that bypasses the human gate, the analyser will happily report the (now different) net's properties. The net *is* the specification — if the spec is wrong, the proofs are correct but useless. This is true of all formal methods.
 

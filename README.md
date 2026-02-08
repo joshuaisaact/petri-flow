@@ -25,6 +25,18 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | `order-checkout` | Cannot oversell inventory. `reserve_stock` consumes from a shared `inventory` place. Every order terminates. |
 | `agent-benchmark` | Termination, human approval gate, no orphaned work, bounded iterations. See [BENCHMARK.md](./BENCHMARK.md). |
 
+### Order Checkout
+
+<p align="center">
+  <img src="docs/order-checkout.svg" alt="Order checkout Petri net" width="500">
+</p>
+
+### Agent Benchmark
+
+<p align="center">
+  <img src="docs/agent-benchmark.svg" alt="Agent benchmark Petri net" width="600">
+</p>
+
 ## Quick start
 
 ```bash
