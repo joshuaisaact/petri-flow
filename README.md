@@ -17,6 +17,7 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 |---|---|
 | `@petriflow/engine` | Core types, engine, scheduler, SQLite persistence, analysis |
 | `@petriflow/cli` | `petriflow analyse <workflow.ts>` CLI tool |
+| `@petriflow/viewer` | Interactive Petri net viewer — click to fire transitions, live analysis |
 
 ## Workflows
 
@@ -36,6 +37,33 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 <p align="center">
   <img src="docs/agent-benchmark.svg" alt="Agent benchmark Petri net" width="600">
 </p>
+
+## Viewer
+
+An interactive React app for exploring Petri nets. Click enabled transitions to fire them, watch tokens flow, and see live reachability analysis.
+
+```bash
+bun run --filter=@petriflow/viewer dev
+```
+
+Four nets tell a progressive story:
+
+| Net | Places | Transitions | What it teaches |
+|---|---|---|---|
+| **coffee** | 6 | 3 | Concurrency and synchronisation — `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
+| **order-checkout** | 6 | 3 | Resource contention — `reserve_stock` consumes from a shared `inventory` place with token count > 1 |
+| **simple-agent** | 6 | 5 | Iteration loop with budget — watch the budget deplete, agent forced to respond when spent |
+| **agent-benchmark** | 16 | 17 | Everything together — concurrent tool fan-out, human approval gate, join semantics, four safety proofs |
+
+Features:
+
+- **Click to fire** — click any enabled transition, watch marking update in real-time
+- **Auto-play** — random firing with adjustable speed, stops at terminal state
+- **Live analysis** — reachable states, terminal states, deadlock-free status, safety properties and invariants
+- **Token display** — toggle between numbers and traditional Petri net dot notation
+- **Light/dark theme** — toggle in the header
+
+Built with React 19, React Flow, dagre layout, framer-motion, and Tailwind CSS v4. Uses `@petriflow/engine/analyse` for workflow-aware analysis (distinguishes valid terminal states from true deadlocks).
 
 ## Quick start
 
@@ -108,3 +136,5 @@ await scheduler.tick();
 - [petri-ts](https://www.npmjs.com/package/petri-ts) — Petri net engine and analysis
 - [Bun](https://bun.sh) — runtime, test runner, bundler
 - [Turborepo](https://turbo.build) — monorepo orchestration
+- [React Flow](https://reactflow.dev) — graph rendering for the viewer
+- [dagre](https://github.com/dagrejs/dagre) — automatic graph layout
