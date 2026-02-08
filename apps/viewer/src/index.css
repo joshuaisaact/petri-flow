@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  font-family:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  background: #020617;
+  color: #e2e8f0;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Dark theme for ReactFlow Controls */
+.react-flow__controls {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  background: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  fill: #94a3b8;
+  width: 28px;
+  height: 28px;
+}
+
+.react-flow__controls-button:hover {
+  background: #1e293b;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none;
+}
+
+/* Dark theme for MiniMap */
+.react-flow__minimap {
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+/* Light theme for ReactFlow Controls */
+.light-controls.react-flow__controls {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.light-controls .react-flow__controls-button {
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  fill: #64748b;
+}
+
+.light-controls .react-flow__controls-button:hover {
+  background: #f1f5f9;
+}
+
+/* Light theme for MiniMap */
+.light-minimap.react-flow__minimap {
+  border: 1px solid #e2e8f0;
+}

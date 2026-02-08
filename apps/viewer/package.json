@@ -1,0 +1,32 @@
+{
+  "name": "@petriflow/viewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "oxlint src/",
+    "fmt": "oxfmt src/"
+  },
+  "dependencies": {
+    "@dagrejs/dagre": "^1",
+    "@xyflow/react": "^12",
+    "framer-motion": "^12",
+    "@petriflow/engine": "workspace:*",
+    "petri-ts": "^0.1.5",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "babel-plugin-react-compiler": "latest",
+    "tailwindcss": "^4",
+    "typescript": "^5.7",
+    "vite": "^6"
+  }
+}
