@@ -45,7 +45,11 @@ export {
   CREATE_WORKFLOW_INSTANCES,
   CREATE_TRANSITION_HISTORY,
   CREATE_TIMEOUT_ENTRIES,
+  CREATE_WORKFLOW_DEFINITIONS,
+  createDefinitionStore,
+  serializeDefinition,
 } from "./persistence/index.js";
+export type { SerializedDefinition, DefinitionStore } from "./persistence/index.js";
 
 // Engine
 export {
