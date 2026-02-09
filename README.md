@@ -1,6 +1,6 @@
 # PetriFlow
 
-A workflow orchestration engine built on [petri-ts](https://github.com/joshuaisaact/petri-net). Extends Petri net semantics with guard functions, side-effect execution, pluggable persistence, a polling scheduler, and a CLI analyser.
+A workflow orchestration engine built on [petri-ts](https://github.com/joshuaisaact/petri-net). Extends Petri net semantics with guard functions, side-effect execution, timeouts, pluggable persistence, a polling scheduler, and a CLI analyser.
 
 ## Why
 
@@ -176,9 +176,48 @@ Injecting a token also reactivates completed instances, so a workflow can pause 
 
 See `workflows/simple-agent/llm-provider.ts` for a reference implementation using the Vercel AI SDK with Claude.
 
+## Timeouts
+
+A transition with a `timeout` field gets deadline-on-waiting semantics. When the transition is structurally enabled (tokens in all input places) but doesn't fire within the deadline — because a guard blocks it, or it's waiting for an external event — a token is injected into the timeout place as a fallback path.
+
+```ts
+const definition = defineWorkflow({
+  name: "approval-with-timeout",
+  places: ["waiting", "timed_out", "approved", "escalated"],
+  transitions: [
+    {
+      name: "approve",
+      inputs: ["waiting"],
+      outputs: ["approved"],
+      guard: (ctx) => ctx.approved,
+      timeout: { place: "timed_out", ms: 30_000 }, // 30s deadline
+    },
+    {
+      name: "escalate",
+      inputs: ["waiting", "timed_out"],
+      outputs: ["escalated"],
+    },
+  ],
+  initialMarking: { waiting: 1, timed_out: 0, approved: 0, escalated: 0 },
+  initialContext: { approved: false },
+});
+```
+
+If `approve` doesn't fire within 30 seconds, the scheduler injects a token into `timed_out`. On the next tick, `escalate` becomes enabled (it needs both `waiting` and `timed_out`) and fires.
+
+Timeouts are cancelled when the transition fires normally or loses structural enablement (another transition consumed its input tokens). The `onTimeout` scheduler event fires when a timeout injects a token:
+
+```ts
+const scheduler = new Scheduler(executor, { adapter }, {
+  onTimeout: (id, transitionName, place) => {
+    console.log(`[${id}] ${transitionName} timed out → injected token into ${place}`);
+  },
+});
+```
+
 ## Persistence
 
-The scheduler takes a `WorkflowPersistence` adapter — any object with `loadExtended`, `saveExtended`, and `listActive`. A SQLite adapter is included:
+The scheduler takes a `WorkflowPersistence` adapter. A SQLite adapter is included:
 
 ```ts
 import { sqliteAdapter } from "@petriflow/engine";
@@ -193,13 +232,18 @@ To use a different backend (Postgres, Redis, in-memory for tests), implement the
 ```ts
 import type { WorkflowPersistence } from "@petriflow/engine";
 
-const memoryAdapter: WorkflowPersistence<MyPlace, MyCtx> = {
+const customAdapter: WorkflowPersistence<MyPlace, MyCtx> = {
   async loadExtended(id) { /* ... */ },
   async saveExtended(id, state) { /* ... */ },
   async listActive() { /* ... */ },
+  async scheduleTimeout(entry) { /* ... */ },
+  async getExpiredTimeouts(instanceId, now) { /* ... */ },
+  async markTimeoutFired(id) { /* ... */ },
+  async clearTimeouts(instanceId, transitionName?) { /* ... */ },
+  async hasPendingTimeouts(instanceId) { /* ... */ },
 };
 
-const scheduler = new Scheduler(executor, { adapter: memoryAdapter });
+const scheduler = new Scheduler(executor, { adapter: customAdapter });
 ```
 
 ## Built with
