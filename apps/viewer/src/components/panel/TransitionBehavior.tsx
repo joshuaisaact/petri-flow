@@ -14,7 +14,7 @@ export function TransitionBehavior({ definition }: Props) {
   for (const tr of definition.net.transitions) {
     const badges: Badge[] = [];
     if (tr.guard) badges.push({ label: "guard", color: "text-amber-400 bg-amber-500/20" });
-    if (tr.execute) badges.push({ label: "execute", color: "text-blue-400 bg-blue-500/20" });
+    if (definition.executors.has(tr.name)) badges.push({ label: "execute", color: "text-blue-400 bg-blue-500/20" });
     if (tr.timeout) badges.push({ label: `timeout ${tr.timeout.ms}ms`, color: "text-red-400 bg-red-500/20" });
     if (badges.length > 0) entries.push({ name: tr.name, badges });
   }

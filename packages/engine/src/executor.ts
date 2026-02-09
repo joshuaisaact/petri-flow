@@ -103,7 +103,7 @@ export function createExecutor<
         };
       }
 
-      const result = await fireWorkflow(marking, transition, ctx, definition.guards);
+      const result = await fireWorkflow(marking, transition, ctx, definition.guards, definition.executors);
 
       const nextEnabled = enabledWorkflowTransitions(
         definition.net,

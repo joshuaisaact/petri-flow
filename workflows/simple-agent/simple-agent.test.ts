@@ -77,17 +77,8 @@ describe("simple-agent workflow", () => {
   });
 
   it("completeTool and generate have execute handlers", () => {
-    const completeTool = definition.net.transitions.find(
-      (t) => t.name === "completeTool",
-    )!;
-    const generate = definition.net.transitions.find(
-      (t) => t.name === "generate",
-    )!;
-    const iterate = definition.net.transitions.find(
-      (t) => t.name === "iterate",
-    )!;
-    expect(completeTool.execute).toBeDefined();
-    expect(generate.execute).toBeDefined();
-    expect(iterate.execute).toBeDefined();
+    expect(definition.executors.has("completeTool")).toBe(true);
+    expect(definition.executors.has("generate")).toBe(true);
+    expect(definition.executors.has("iterate")).toBe(true);
   });
 });

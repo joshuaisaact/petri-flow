@@ -32,6 +32,7 @@ export function Viewer({ viewerNet }: Props) {
       viewerNet.net.initialMarking,
       viewerNet.placeMetadata,
       viewerNet.definition?.net.transitions,
+      viewerNet.definition?.executors,
     ),
     [viewerNet],
   );

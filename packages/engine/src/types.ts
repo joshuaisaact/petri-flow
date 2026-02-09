@@ -5,17 +5,23 @@ export type GuardFn<
   Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = (ctx: Ctx, marking: Marking<Place>) => boolean;
 
+export type ExecuteFn<
+  Place extends string,
+  Ctx extends Record<string, unknown> = Record<string, unknown>,
+> = (ctx: Ctx, marking: Marking<Place>) => Promise<Partial<Ctx>>;
+
 /**
- * Extends petri-ts Transition with optional guard, execute, and timeout.
- * Because this is an intersection, a WorkflowTransition IS a Transition
- * and passes directly to all petri-ts analysis functions.
+ * Extends petri-ts Transition with guard expression and timeout.
+ * Pure data — all runtime functions (guards, executors) live on
+ * WorkflowDefinition. Because this is an intersection, a
+ * WorkflowTransition IS a Transition and passes directly to all
+ * petri-ts analysis functions.
  */
 export type WorkflowTransition<
   Place extends string,
   Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = Transition<Place> & {
   guard: string | null;
-  execute?: (ctx: Ctx, marking: Marking<Place>) => Promise<Partial<Ctx>>;
   timeout?: { place: Place; ms: number };
 };
 
@@ -40,6 +46,7 @@ export type WorkflowDefinition<
   name: string;
   net: WorkflowNet<Place, Ctx>;
   guards: Map<string, GuardFn<Place, Ctx>>;
+  executors: Map<string, ExecuteFn<Place, Ctx>>;
   initialContext: Ctx;
   terminalPlaces: Place[];
   invariants?: { weights: Partial<Record<Place, number>> }[];

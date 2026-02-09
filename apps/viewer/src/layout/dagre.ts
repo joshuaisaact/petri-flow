@@ -35,7 +35,6 @@ const TRANS_H = 36;
 export type WorkflowTransitionMeta = {
   name: string;
   guard?: string;
-  execute?: Function;
   timeout?: { place: string; ms: number };
 };
 
@@ -44,6 +43,7 @@ export function layoutNet(
   marking: Marking<string>,
   placeMetadata?: Record<string, PlaceMetadata>,
   workflowTransitions?: WorkflowTransitionMeta[],
+  executors?: Map<string, Function>,
 ): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
@@ -219,9 +219,9 @@ export function layoutNet(
         inputs: t.inputs.map(placeLabel),
         outputs: t.outputs.map(placeLabel),
         hasGuard: !!wt?.guard,
-        hasExecute: !!wt?.execute,
+        hasExecute: executors?.has(t.name) ?? false,
         guardCode: wt?.guard?.toString(),
-        executeCode: wt?.execute?.toString(),
+        executeCode: executors?.get(t.name)?.toString(),
         timeout: wt?.timeout,
       } satisfies TransitionNodeData,
     });

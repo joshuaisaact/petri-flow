@@ -3,8 +3,20 @@ import type {
   WorkflowTransition,
   WorkflowNet,
   WorkflowDefinition,
+  ExecuteFn,
 } from "./types.js";
 import { compileGuard } from "./guard.js";
+
+/**
+ * Input transition type for defineWorkflow — includes execute function
+ * which gets extracted into the executors map on the definition.
+ */
+type TransitionInput<
+  Place extends string,
+  Ctx extends Record<string, unknown>,
+> = WorkflowTransition<Place, Ctx> & {
+  execute?: ExecuteFn<Place, Ctx>;
+};
 
 /**
  * Defines a workflow, validating that all transition inputs/outputs
@@ -16,7 +28,7 @@ export function defineWorkflow<
 >(def: {
   name: string;
   places: Place[];
-  transitions: WorkflowTransition<Place, Ctx>[];
+  transitions: TransitionInput<Place, Ctx>[];
   initialMarking: Marking<Place>;
   initialContext: Ctx;
   terminalPlaces: Place[];
@@ -72,13 +84,25 @@ export function defineWorkflow<
     }
   }
 
+  // Extract execute functions into a separate map
+  const executors = new Map<string, ExecuteFn<Place, Ctx>>();
+  const transitions: WorkflowTransition<Place, Ctx>[] = [];
+  for (const t of def.transitions) {
+    if (t.execute) {
+      executors.set(t.name, t.execute);
+    }
+    const { execute: _, ...rest } = t;
+    transitions.push(rest);
+  }
+
   return {
     name: def.name,
     net: {
-      transitions: def.transitions,
+      transitions,
       initialMarking: def.initialMarking,
     },
     guards,
+    executors,
     initialContext: def.initialContext,
     terminalPlaces: def.terminalPlaces,
     invariants: def.invariants,

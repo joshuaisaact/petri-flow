@@ -42,6 +42,7 @@ const def = defineWorkflow<Place, Ctx>({
 
 const transitions = def.net.transitions;
 const guards = def.guards;
+const executors = def.executors;
 const net = def.net;
 
 describe("canFireWorkflow", () => {
@@ -80,7 +81,7 @@ describe("enabledWorkflowTransitions", () => {
 describe("fireWorkflow", () => {
   it("fires and executes side effect, merging context", async () => {
     const marking: Marking<Place> = { idle: 0, review: 1, approved: 0, rejected: 0 };
-    const result = await fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards);
+    const result = await fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards, executors);
 
     expect(result.marking).toEqual({ idle: 0, review: 0, approved: 1, rejected: 0 });
     expect(result.context.approved).toBe(true);
@@ -90,7 +91,7 @@ describe("fireWorkflow", () => {
   it("fires without execute (no context change)", async () => {
     const marking: Marking<Place> = { idle: 1, review: 0, approved: 0, rejected: 0 };
     const ctx = { amount: 5000, approved: false };
-    const result = await fireWorkflow(marking, transitions[0]!, ctx, guards);
+    const result = await fireWorkflow(marking, transitions[0]!, ctx, guards, executors);
 
     expect(result.marking).toEqual({ idle: 0, review: 1, approved: 0, rejected: 0 });
     expect(result.context).toEqual(ctx);
@@ -100,7 +101,7 @@ describe("fireWorkflow", () => {
   it("throws when transition cannot fire", async () => {
     const marking: Marking<Place> = { idle: 1, review: 0, approved: 0, rejected: 0 };
     expect(
-      fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards),
+      fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards, executors),
     ).rejects.toThrow("Cannot fire workflow transition: approve");
   });
 });

@@ -4,6 +4,7 @@ import type {
   WorkflowTransition,
   WorkflowNet,
   GuardFn,
+  ExecuteFn,
   ExecutionResult,
 } from "./types.js";
 
@@ -61,6 +62,7 @@ export async function fireWorkflow<
   transition: WorkflowTransition<Place, Ctx>,
   ctx: Ctx,
   guards?: Map<string, GuardFn<Place, Ctx>>,
+  executors?: Map<string, ExecuteFn<Place, Ctx>>,
 ): Promise<ExecutionResult<Place, Ctx>> {
   if (!canFireWorkflow(marking, transition, ctx, guards)) {
     throw new Error(`Cannot fire workflow transition: ${transition.name}`);
@@ -69,8 +71,9 @@ export async function fireWorkflow<
   const newMarking = fire(marking, transition);
 
   let newCtx = ctx;
-  if (transition.execute) {
-    const patch = await transition.execute(ctx, marking);
+  const executeFn = executors?.get(transition.name);
+  if (executeFn) {
+    const patch = await executeFn(ctx, marking);
     newCtx = { ...ctx, ...patch };
   }
 
