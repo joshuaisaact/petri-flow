@@ -233,6 +233,7 @@ GET    /workflows                      List registered workflows
 POST   /workflows/:name/instances      Create instance         { "id": "order-001" }
 GET    /workflows/:name/instances      List instances for workflow
 GET    /instances/:id                  Inspect instance state
+GET    /instances/:id/history          Transition history (what fired and when)
 POST   /instances/:id/inject           Inject token            { "place": "payment", "count": 1 }
 POST   /workflows/register             Register from file      { "path": "./my-workflow.ts" }
 GET    /events                         SSE stream (all events)
