@@ -166,4 +166,58 @@ describe("Scheduler", () => {
     expect(state.status).toBe("failed");
   });
 
+  it("injectToken adds tokens and reactivates completed instances", async () => {
+    type IPlace = "waiting" | "approved" | "done";
+    type ICtx = { approvedBy: string };
+
+    const waitDef = defineWorkflow<IPlace, ICtx>({
+      name: "inject-test",
+      places: ["waiting", "approved", "done"],
+      transitions: [
+        {
+          name: "process",
+          inputs: ["waiting", "approved"],
+          outputs: ["done"],
+          execute: async (ctx) => ({ approvedBy: "external" }),
+        },
+      ],
+      initialMarking: { waiting: 1, approved: 0, done: 0 },
+      initialContext: { approvedBy: "" },
+    });
+
+    const db = new Database(":memory:");
+    const fired: string[] = [];
+    const completed: string[] = [];
+
+    const scheduler = new Scheduler(createExecutor(waitDef), { db }, {
+      onFire: (_id, name) => fired.push(name),
+      onComplete: (id) => completed.push(id),
+    });
+
+    await scheduler.createInstance("wait-1");
+
+    // First tick: no transition enabled (need token in "approved")
+    await scheduler.tick();
+    expect(fired).toHaveLength(0);
+
+    const stateAfterIdle = await scheduler.inspect("wait-1");
+    expect(stateAfterIdle.status).toBe("completed");
+
+    // Inject a token into "approved" — reactivates the instance
+    await scheduler.injectToken("wait-1", "approved");
+
+    const stateAfterInject = await scheduler.inspect("wait-1");
+    expect(stateAfterInject.status).toBe("active");
+    expect(stateAfterInject.marking.approved).toBe(1);
+
+    // Now tick — "process" should fire
+    await scheduler.tick();
+    expect(fired).toEqual(["process"]);
+    expect(completed).toContain("wait-1");
+
+    const finalState = await scheduler.inspect("wait-1");
+    expect(finalState.status).toBe("completed");
+    expect(finalState.marking.done).toBe(1);
+    expect(finalState.context.approvedBy).toBe("external");
+  });
 });

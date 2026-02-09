@@ -132,6 +132,17 @@ export class Scheduler<
     return totalFired;
   }
 
+  async injectToken(id: string, place: Place, count: number = 1): Promise<void> {
+    const state = await this.adapter.loadExtended(id);
+    const marking = { ...state.marking };
+    marking[place] = ((marking[place] ?? 0) + count) as Marking<Place>[Place];
+    await this.adapter.saveExtended(id, {
+      ...state,
+      marking,
+      status: "active",
+    });
+  }
+
   start(): void {
     if (this.timer) return;
     this.timer = setInterval(() => this.tick(), this.pollIntervalMs);
