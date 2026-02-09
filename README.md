@@ -1,6 +1,6 @@
 # PetriFlow
 
-A workflow orchestration engine built on [petri-ts](https://github.com/joshuaisaact/petri-net). Extends Petri net semantics with guard functions, side-effect execution, SQLite persistence, a polling scheduler, and a CLI analyser.
+A workflow orchestration engine built on [petri-ts](https://github.com/joshuaisaact/petri-net). Extends Petri net semantics with guard functions, side-effect execution, pluggable persistence, a polling scheduler, and a CLI analyser.
 
 ## Why
 
@@ -8,14 +8,14 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 
 - **Guards** route workflows based on runtime context (contract value, confidence score, inventory level)
 - **Execute functions** run side effects and merge context between steps
-- **The scheduler** polls active instances, fires enabled transitions, and persists state to SQLite
+- **The scheduler** polls active instances, fires enabled transitions, and persists state via a pluggable adapter (SQLite included)
 - **The analyser** proves properties about your workflow before it runs — deadlock freedom, token conservation, reachable states
 
 ## Packages
 
 | Package | Description |
 |---|---|
-| `@petriflow/engine` | Core types, engine, scheduler, SQLite persistence, analysis |
+| `@petriflow/engine` | Core types, engine, scheduler, pluggable persistence (SQLite adapter included), analysis |
 | `@petriflow/cli` | `petriflow analyse <workflow.ts>` CLI tool |
 | `@petriflow/viewer` | Interactive Petri net viewer — click to fire transitions, live analysis |
 
@@ -101,7 +101,8 @@ bun test
 When you need a clean `PetriNet` (for serialization or analysis), `toNet()` strips the extensions. The analyser calls `petri-ts`'s `analyse()` under the hood and adds the workflow name.
 
 ```ts
-import { defineWorkflow, createExecutor, analyse, Scheduler } from "@petriflow/engine";
+import { defineWorkflow, createExecutor, analyse, Scheduler, sqliteAdapter } from "@petriflow/engine";
+import { Database } from "bun:sqlite";
 
 const definition = defineWorkflow({
   name: "my-workflow",
@@ -124,8 +125,9 @@ const result = analyse(definition);
 // result.isDeadlockFree, result.terminalStates, result.invariants
 
 // Run it
+const db = new Database(":memory:");
 const executor = createExecutor(definition);
-const scheduler = new Scheduler(executor, { db });
+const scheduler = new Scheduler(executor, { adapter: sqliteAdapter(db, definition.name) });
 await scheduler.createInstance("instance-1");
 await scheduler.tick();
 ```
@@ -150,7 +152,7 @@ Wire it into the executor, then pass to the Scheduler:
 
 ```ts
 const executor = createExecutor(definition, { decisionProvider: provider });
-const scheduler = new Scheduler(executor, { db }, {
+const scheduler = new Scheduler(executor, { adapter: sqliteAdapter(db, definition.name) }, {
   onDecision: (id, name, reasoning, candidates) => {
     console.log(`[${id}] LLM chose: ${name} (from ${candidates.join(", ")})`);
     console.log(`  reasoning: ${reasoning}`);
@@ -173,6 +175,32 @@ await scheduler.injectToken("order-123", "approved");
 Injecting a token also reactivates completed instances, so a workflow can pause at a "waiting" state and resume when the external event arrives.
 
 See `workflows/simple-agent/llm-provider.ts` for a reference implementation using the Vercel AI SDK with Claude.
+
+## Persistence
+
+The scheduler takes a `WorkflowPersistence` adapter — any object with `loadExtended`, `saveExtended`, and `listActive`. A SQLite adapter is included:
+
+```ts
+import { sqliteAdapter } from "@petriflow/engine";
+import { Database } from "bun:sqlite";
+
+const db = new Database("workflows.sqlite");
+const adapter = sqliteAdapter(db, "my-workflow");
+```
+
+To use a different backend (Postgres, Redis, in-memory for tests), implement the interface:
+
+```ts
+import type { WorkflowPersistence } from "@petriflow/engine";
+
+const memoryAdapter: WorkflowPersistence<MyPlace, MyCtx> = {
+  async loadExtended(id) { /* ... */ },
+  async saveExtended(id, state) { /* ... */ },
+  async listActive() { /* ... */ },
+};
+
+const scheduler = new Scheduler(executor, { adapter: memoryAdapter });
+```
 
 ## Built with
 
