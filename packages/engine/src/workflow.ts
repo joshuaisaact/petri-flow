@@ -4,6 +4,7 @@ import type {
   WorkflowNet,
   WorkflowDefinition,
 } from "./types.js";
+import { compileGuard } from "./guard.js";
 
 /**
  * Defines a workflow, validating that all transition inputs/outputs
@@ -62,6 +63,13 @@ export function defineWorkflow<
           `Terminal place "${p}" is not a known place`,
         );
       }
+    }
+  }
+
+  // Compile guard expressions into compiledGuard functions
+  for (const t of def.transitions) {
+    if (t.guard) {
+      t.compiledGuard = compileGuard(t.guard);
     }
   }
 

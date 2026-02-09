@@ -19,7 +19,7 @@ export function canFireWorkflow<
   ctx: Ctx,
 ): boolean {
   if (!canFire(marking, transition)) return false;
-  if (transition.guard && !transition.guard(ctx, marking)) return false;
+  if (transition.compiledGuard && !transition.compiledGuard(ctx, marking)) return false;
   return true;
 }
 

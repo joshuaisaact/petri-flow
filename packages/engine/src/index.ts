@@ -33,6 +33,9 @@ export type {
 // Workflow definition helpers
 export { defineWorkflow, toNet } from "./workflow.js";
 
+// Guard compilation
+export { compileGuard } from "./guard.js";
+
 // Persistence
 export { sqliteAdapter } from "./persistence/index.js";
 export type { ExtendedInstanceState } from "./persistence/index.js";
