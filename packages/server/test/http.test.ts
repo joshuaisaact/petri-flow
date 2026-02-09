@@ -164,6 +164,31 @@ describe("HTTP API", () => {
     });
   });
 
+  describe("GET /instances/:id/history", () => {
+    it("returns transition history", async () => {
+      await fetch(`${baseUrl}/workflows/simple/instances`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: "s-1" }),
+      });
+
+      await runtime.tick();
+
+      const res = await fetch(`${baseUrl}/instances/s-1/history`);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toHaveLength(1);
+      expect(data[0].transitionName).toBe("go");
+      expect(data[0].markingBefore.start).toBe(1);
+      expect(data[0].markingAfter.end).toBe(1);
+    });
+
+    it("returns 404 for unknown instance", async () => {
+      const res = await fetch(`${baseUrl}/instances/nonexistent/history`);
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("POST /instances/:id/inject", () => {
     it("injects a token", async () => {
       await fetch(`${baseUrl}/workflows/simple/instances`, {

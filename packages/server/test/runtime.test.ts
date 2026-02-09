@@ -224,6 +224,37 @@ describe("WorkflowRuntime", () => {
     });
   });
 
+  describe("createInstance duplicate rejection", () => {
+    it("rejects duplicate instance IDs", async () => {
+      runtime.register(simpleDefinition);
+      await runtime.createInstance("simple", "s-1");
+      await expect(runtime.createInstance("simple", "s-1")).rejects.toThrow(
+        "Instance already exists",
+      );
+    });
+  });
+
+  describe("getHistory", () => {
+    it("returns transition history for an instance", async () => {
+      runtime.register(simpleDefinition);
+      await runtime.createInstance("simple", "s-1");
+      await runtime.tick();
+
+      const history = await runtime.getHistory("s-1");
+      expect(history).toHaveLength(1);
+      expect(history[0]!.transitionName).toBe("go");
+      expect(history[0]!.markingBefore.start).toBe(1);
+      expect(history[0]!.markingAfter.end).toBe(1);
+    });
+
+    it("rejects unknown instance", async () => {
+      runtime.register(simpleDefinition);
+      await expect(runtime.getHistory("nonexistent")).rejects.toThrow(
+        "Instance not found",
+      );
+    });
+  });
+
   describe("subscribe", () => {
     it("receives fire events", async () => {
       runtime.register(simpleDefinition);

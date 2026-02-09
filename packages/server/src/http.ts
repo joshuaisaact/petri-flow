@@ -62,6 +62,16 @@ export function createApp(runtime: WorkflowRuntime): Hono {
     }
   });
 
+  app.get("/instances/:id/history", async (c) => {
+    const id = c.req.param("id");
+    try {
+      const history = await runtime.getHistory(id);
+      return c.json(history);
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 404);
+    }
+  });
+
   app.post("/instances/:id/inject", async (c) => {
     const id = c.req.param("id");
     const body = await c.req.json<{ place?: string; count?: number }>();

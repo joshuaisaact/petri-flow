@@ -189,6 +189,16 @@ export class WorkflowRuntime {
     return wf.scheduler.inspect(instanceId);
   }
 
+  async getHistory(instanceId: string) {
+    const row = this.selectInstanceById.get(instanceId);
+    if (!row) throw new Error(`Instance not found: ${instanceId}`);
+
+    const wf = this.workflows.get(row.workflow_name);
+    if (!wf) throw new Error(`Workflow not registered: ${row.workflow_name}`);
+
+    return wf.scheduler.getHistory(instanceId);
+  }
+
   async injectToken(instanceId: string, place: string, count: number = 1): Promise<void> {
     const row = this.selectInstanceById.get(instanceId);
     if (!row) throw new Error(`Instance not found: ${instanceId}`);
