@@ -1,0 +1,106 @@
+import type { Marking } from "petri-ts";
+import type { WorkflowDefinition, WorkflowTransition } from "./types.js";
+import type { DecisionProvider } from "./decision.js";
+import { enabledWorkflowTransitions, fireWorkflow } from "./engine.js";
+
+export type StepResult<
+  Place extends string,
+  Ctx extends Record<string, unknown>,
+> =
+  | {
+      kind: "fired";
+      marking: Marking<Place>;
+      context: Ctx;
+      transition: string;
+      terminal: boolean;
+      decision?: { reasoning: string; candidates: string[] };
+    }
+  | { kind: "idle" };
+
+export interface WorkflowExecutor<
+  Place extends string,
+  Ctx extends Record<string, unknown>,
+> {
+  readonly name: string;
+  readonly initialMarking: Marking<Place>;
+  readonly initialContext: Ctx;
+  step(
+    instanceId: string,
+    marking: Marking<Place>,
+    ctx: Ctx,
+  ): Promise<StepResult<Place, Ctx>>;
+}
+
+export function createExecutor<
+  Place extends string,
+  Ctx extends Record<string, unknown>,
+>(
+  definition: WorkflowDefinition<Place, Ctx>,
+  options?: { decisionProvider?: DecisionProvider<Place, Ctx> },
+): WorkflowExecutor<Place, Ctx> {
+  const decisionProvider = options?.decisionProvider;
+
+  return {
+    name: definition.name,
+    initialMarking: definition.net.initialMarking,
+    initialContext: definition.initialContext,
+
+    async step(
+      instanceId: string,
+      marking: Marking<Place>,
+      ctx: Ctx,
+    ): Promise<StepResult<Place, Ctx>> {
+      const enabled = enabledWorkflowTransitions(
+        definition.net,
+        marking,
+        ctx,
+      );
+
+      if (enabled.length === 0) {
+        return { kind: "idle" };
+      }
+
+      let transition: WorkflowTransition<Place, Ctx>;
+      let decision: { reasoning: string; candidates: string[] } | undefined;
+
+      if (enabled.length === 1 || !decisionProvider) {
+        transition = enabled[0]!;
+      } else {
+        const result = await decisionProvider.choose({
+          instanceId,
+          workflowName: definition.name,
+          enabled: enabled.map((t) => ({
+            name: t.name,
+            inputs: [...t.inputs],
+            outputs: [...t.outputs],
+          })),
+          marking,
+          context: ctx,
+        });
+        transition =
+          enabled.find((t) => t.name === result.transition) ?? enabled[0]!;
+        decision = {
+          reasoning: result.reasoning,
+          candidates: enabled.map((t) => t.name),
+        };
+      }
+
+      const result = await fireWorkflow(marking, transition, ctx);
+
+      const nextEnabled = enabledWorkflowTransitions(
+        definition.net,
+        result.marking,
+        result.context,
+      );
+
+      return {
+        kind: "fired",
+        marking: result.marking,
+        context: result.context,
+        transition: result.firedTransition,
+        terminal: nextEnabled.length === 0,
+        decision,
+      };
+    },
+  };
+}
