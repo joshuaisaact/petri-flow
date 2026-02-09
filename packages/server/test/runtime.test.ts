@@ -309,4 +309,118 @@ describe("WorkflowRuntime", () => {
       }
     });
   });
+
+  describe("saveDefinition", () => {
+    it("persists and registers a workflow from JSON", async () => {
+      const serialized = {
+        name: "dynamic",
+        places: ["a", "b"],
+        transitions: [{ name: "go", inputs: ["a"], outputs: ["b"], guard: null }],
+        initialMarking: { a: 1, b: 0 },
+        initialContext: {},
+        terminalPlaces: ["b"],
+      };
+
+      runtime.saveDefinition(serialized);
+
+      // Registered — can create instances
+      await runtime.createInstance("dynamic", "d-1");
+      await runtime.tick();
+      const state = await runtime.inspect("d-1");
+      expect(state.marking.b).toBe(1);
+      expect(state.status).toBe("completed");
+    });
+
+    it("validates the definition before saving", () => {
+      expect(() =>
+        runtime.saveDefinition({
+          name: "bad",
+          places: ["a"],
+          transitions: [{ name: "t", inputs: ["a"], outputs: ["z"], guard: null }],
+          initialMarking: { a: 1 },
+          initialContext: {},
+          terminalPlaces: [],
+        }),
+      ).toThrow("unknown output place");
+    });
+
+    it("re-registers on update", async () => {
+      const v1 = {
+        name: "evolving",
+        places: ["a", "b"],
+        transitions: [{ name: "go", inputs: ["a"], outputs: ["b"], guard: null }],
+        initialMarking: { a: 1, b: 0 },
+        initialContext: {},
+        terminalPlaces: ["b"],
+      };
+
+      runtime.saveDefinition(v1);
+
+      const v2 = {
+        ...v1,
+        places: ["a", "b", "c"],
+        transitions: [
+          { name: "go", inputs: ["a"], outputs: ["b"], guard: null },
+          { name: "continue", inputs: ["b"], outputs: ["c"], guard: null },
+        ],
+        initialMarking: { a: 1, b: 0, c: 0 },
+        terminalPlaces: ["c"],
+      };
+
+      runtime.saveDefinition(v2);
+
+      // New version is active
+      await runtime.createInstance("evolving", "e-1");
+      await runtime.tick();
+      await runtime.tick();
+      const state = await runtime.inspect("e-1");
+      expect(state.marking.c).toBe(1);
+    });
+  });
+
+  describe("loadDefinition", () => {
+    it("returns saved definition", () => {
+      runtime.saveDefinition({
+        name: "loadable",
+        places: ["x"],
+        transitions: [],
+        initialMarking: { x: 1 },
+        initialContext: { key: "value" },
+        terminalPlaces: [],
+      });
+
+      const loaded = runtime.loadDefinition("loadable");
+      expect(loaded).not.toBeNull();
+      expect(loaded!.name).toBe("loadable");
+      expect(loaded!.initialContext).toEqual({ key: "value" });
+    });
+
+    it("returns null for missing definition", () => {
+      expect(runtime.loadDefinition("nonexistent")).toBeNull();
+    });
+  });
+
+  describe("deleteDefinition", () => {
+    it("removes definition and unregisters workflow", () => {
+      runtime.saveDefinition({
+        name: "deletable",
+        places: ["a"],
+        transitions: [],
+        initialMarking: { a: 1 },
+        initialContext: {},
+        terminalPlaces: [],
+      });
+
+      expect(runtime.deleteDefinition("deletable")).toBe(true);
+      expect(runtime.loadDefinition("deletable")).toBeNull();
+
+      // Unregistered — not in workflow list
+      const names = runtime.listWorkflows().map((w) => w.name);
+      expect(names).not.toContain("deletable");
+    });
+
+    it("returns false for missing definition", () => {
+      expect(runtime.deleteDefinition("nonexistent")).toBe(false);
+    });
+  });
 });

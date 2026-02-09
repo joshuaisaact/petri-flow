@@ -2,11 +2,20 @@ import { Database } from "bun:sqlite";
 import {
   Scheduler,
   createExecutor,
+  defineWorkflow,
   sqliteAdapter,
+  createDefinitionStore,
+  serializeDefinition,
   CREATE_WORKFLOW_INSTANCES,
   CREATE_TIMEOUT_ENTRIES,
 } from "@petriflow/engine";
-import type { WorkflowDefinition, ExtendedInstanceState, SchedulerEvents } from "@petriflow/engine";
+import type {
+  WorkflowDefinition,
+  ExtendedInstanceState,
+  SchedulerEvents,
+  SerializedDefinition,
+  DefinitionStore,
+} from "@petriflow/engine";
 import type { Marking } from "petri-ts";
 
 export type RuntimeEvent =
@@ -59,6 +68,7 @@ export class WorkflowRuntime {
   private readonly pollIntervalMs: number;
   private readonly workflows = new Map<string, RegisteredWorkflow>();
   private readonly listeners = new Set<(event: RuntimeEvent) => void>();
+  private readonly definitionStore: DefinitionStore;
 
   private readonly selectInstanceById;
   private readonly selectInstances;
@@ -73,6 +83,7 @@ export class WorkflowRuntime {
     // Ensure tables exist for cross-workflow queries
     this.db.run(CREATE_WORKFLOW_INSTANCES);
     this.db.run(CREATE_TIMEOUT_ENTRIES);
+    this.definitionStore = createDefinitionStore(this.db);
 
     this.selectInstanceById = this.db.query<InstanceRow, [string]>(
       "SELECT id, workflow_name, status FROM workflow_instances WHERE id = ?",
@@ -248,6 +259,37 @@ export class WorkflowRuntime {
       total += await wf.scheduler.tick();
     }
     return total;
+  }
+
+  saveDefinition(serialized: SerializedDefinition): void {
+    // Validate by compiling — throws on bad places/guards
+    const definition = defineWorkflow(serialized);
+
+    // Persist to DB
+    this.definitionStore.save(serialized);
+
+    // Re-register (or register for the first time)
+    if (this.workflows.has(definition.name)) {
+      this.workflows.get(definition.name)!.scheduler.stop();
+      this.workflows.delete(definition.name);
+    }
+    this.register(definition);
+  }
+
+  loadDefinition(name: string): SerializedDefinition | null {
+    return this.definitionStore.load(name);
+  }
+
+  listDefinitions(): string[] {
+    return this.definitionStore.list();
+  }
+
+  deleteDefinition(name: string): boolean {
+    if (this.workflows.has(name)) {
+      this.workflows.get(name)!.scheduler.stop();
+      this.workflows.delete(name);
+    }
+    return this.definitionStore.delete(name);
   }
 
   subscribe(listener: (event: RuntimeEvent) => void): () => void {

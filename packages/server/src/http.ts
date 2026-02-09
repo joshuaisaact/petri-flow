@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import type { Server } from "bun";
 import type { WorkflowRuntime, RuntimeEvent } from "./runtime.js";
+import type { SerializedDefinition } from "@petriflow/engine";
 import { loadWorkflow } from "./loader.js";
 
 export type ServerOptions = {
@@ -30,6 +31,49 @@ export function createApp(runtime: WorkflowRuntime): Hono {
       return c.json({ error: (err as Error).message }, 400);
     }
   });
+
+  // --- Definition CRUD ---
+
+  app.get("/definitions", (c) => {
+    return c.json(runtime.listDefinitions());
+  });
+
+  app.get("/definitions/:name", (c) => {
+    const name = c.req.param("name");
+    const def = runtime.loadDefinition(name);
+    if (!def) {
+      return c.json({ error: `Definition not found: ${name}` }, 404);
+    }
+    return c.json(def);
+  });
+
+  app.put("/definitions/:name", async (c) => {
+    const name = c.req.param("name");
+    const body = await c.req.json<SerializedDefinition>();
+    if (!body.name || !body.places || !body.transitions || !body.initialMarking || !body.terminalPlaces) {
+      return c.json({ error: "Missing required fields: name, places, transitions, initialMarking, terminalPlaces" }, 400);
+    }
+    if (body.name !== name) {
+      return c.json({ error: `URL name "${name}" does not match body name "${body.name}"` }, 400);
+    }
+    try {
+      runtime.saveDefinition(body);
+      return c.json({ saved: name });
+    } catch (err) {
+      return c.json({ error: (err as Error).message }, 400);
+    }
+  });
+
+  app.delete("/definitions/:name", (c) => {
+    const name = c.req.param("name");
+    const deleted = runtime.deleteDefinition(name);
+    if (!deleted) {
+      return c.json({ error: `Definition not found: ${name}` }, 404);
+    }
+    return c.json({ deleted: name });
+  });
+
+  // --- Instance management ---
 
   app.get("/workflows/:name/instances", async (c) => {
     const name = c.req.param("name");

@@ -310,6 +310,161 @@ describe("HTTP API", () => {
     });
   });
 
+  describe("PUT /definitions/:name", () => {
+    it("saves and registers a definition", async () => {
+      const def = {
+        name: "dynamic",
+        places: ["a", "b"],
+        transitions: [{ name: "go", inputs: ["a"], outputs: ["b"], guard: null }],
+        initialMarking: { a: 1, b: 0 },
+        initialContext: {},
+        terminalPlaces: ["b"],
+      };
+
+      const res = await fetch(`${baseUrl}/definitions/dynamic`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(def),
+      });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.saved).toBe("dynamic");
+
+      // Workflow is now registered — can create instances
+      const createRes = await fetch(`${baseUrl}/workflows/dynamic/instances`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: "d-1" }),
+      });
+      expect(createRes.status).toBe(201);
+    });
+
+    it("returns 400 for name mismatch", async () => {
+      const res = await fetch(`${baseUrl}/definitions/foo`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "bar", places: [], transitions: [], initialMarking: {}, initialContext: {}, terminalPlaces: [] }),
+      });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain("does not match");
+    });
+
+    it("returns 400 for invalid definition", async () => {
+      const res = await fetch(`${baseUrl}/definitions/bad`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "bad",
+          places: ["a"],
+          transitions: [{ name: "t", inputs: ["a"], outputs: ["unknown"], guard: null }],
+          initialMarking: { a: 1 },
+          initialContext: {},
+          terminalPlaces: [],
+        }),
+      });
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain("unknown output place");
+    });
+  });
+
+  describe("GET /definitions/:name", () => {
+    it("returns a saved definition", async () => {
+      const def = {
+        name: "stored",
+        places: ["x", "y"],
+        transitions: [{ name: "move", inputs: ["x"], outputs: ["y"], guard: "ready" }],
+        initialMarking: { x: 1, y: 0 },
+        initialContext: { ready: true },
+        terminalPlaces: ["y"],
+      };
+
+      await fetch(`${baseUrl}/definitions/stored`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(def),
+      });
+
+      const res = await fetch(`${baseUrl}/definitions/stored`);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.name).toBe("stored");
+      expect(data.places).toEqual(["x", "y"]);
+      expect(data.transitions[0].guard).toBe("ready");
+    });
+
+    it("returns 404 for missing definition", async () => {
+      const res = await fetch(`${baseUrl}/definitions/nonexistent`);
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("GET /definitions", () => {
+    it("lists saved definitions", async () => {
+      const def = {
+        name: "listed",
+        places: ["a"],
+        transitions: [],
+        initialMarking: { a: 1 },
+        initialContext: {},
+        terminalPlaces: [],
+      };
+
+      await fetch(`${baseUrl}/definitions/listed`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(def),
+      });
+
+      const res = await fetch(`${baseUrl}/definitions`);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data).toContain("listed");
+    });
+  });
+
+  describe("DELETE /definitions/:name", () => {
+    it("deletes a saved definition", async () => {
+      const def = {
+        name: "doomed",
+        places: ["a"],
+        transitions: [],
+        initialMarking: { a: 1 },
+        initialContext: {},
+        terminalPlaces: [],
+      };
+
+      await fetch(`${baseUrl}/definitions/doomed`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(def),
+      });
+
+      const res = await fetch(`${baseUrl}/definitions/doomed`, { method: "DELETE" });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.deleted).toBe("doomed");
+
+      // Gone from store
+      const getRes = await fetch(`${baseUrl}/definitions/doomed`);
+      expect(getRes.status).toBe(404);
+
+      // Gone from runtime — can't create instances
+      const createRes = await fetch(`${baseUrl}/workflows/doomed/instances`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: "x" }),
+      });
+      expect(createRes.status).toBe(400);
+    });
+
+    it("returns 404 for missing definition", async () => {
+      const res = await fetch(`${baseUrl}/definitions/nonexistent`, { method: "DELETE" });
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("404 handling", () => {
     it("returns 404 for unknown routes", async () => {
       const res = await fetch(`${baseUrl}/nonexistent`);
