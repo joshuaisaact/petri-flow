@@ -25,7 +25,6 @@ export type {
   WorkflowTransition,
   WorkflowNet,
   WorkflowStatus,
-  WorkflowContext,
   WorkflowDefinition,
   ExecutionResult,
 } from "./types.js";

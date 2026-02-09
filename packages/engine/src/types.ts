@@ -29,13 +29,6 @@ export type WorkflowStatus =
   | "failed"
   | "suspended";
 
-export type WorkflowContext<
-  Ctx extends Record<string, unknown> = Record<string, unknown>,
-> = {
-  data: Ctx;
-  status: WorkflowStatus;
-};
-
 export type WorkflowDefinition<
   Place extends string,
   Ctx extends Record<string, unknown> = Record<string, unknown>,
