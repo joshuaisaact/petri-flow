@@ -151,7 +151,13 @@ export class Scheduler<
             );
           }
 
-          const status = result.terminal ? "completed" : "active";
+          let status: "active" | "completed" = result.terminal ? "completed" : "active";
+          if (result.terminal) {
+            const hasPending = await this.adapter.hasPendingTimeouts(id);
+            if (hasPending) {
+              status = "active";
+            }
+          }
           await this.adapter.saveExtended(id, {
             marking: result.marking,
             workflowName: state.workflowName,
@@ -165,7 +171,7 @@ export class Scheduler<
           });
           totalFired++;
 
-          if (result.terminal) {
+          if (status === "completed") {
             this.events.onComplete?.(id);
           }
         } catch (err) {

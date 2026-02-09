@@ -71,6 +71,16 @@ export function layoutNet(
     g.setNode(tid, { width: TRANS_W, height: TRANS_H });
   }
 
+  // Build timeout lookup for layout hints
+  const timeoutLookup = new Map<string, { transitionId: string; place: string }>();
+  if (workflowTransitions) {
+    for (const wt of workflowTransitions) {
+      if (wt.timeout) {
+        timeoutLookup.set(wt.name, { transitionId: `t:${wt.name}`, place: wt.timeout.place });
+      }
+    }
+  }
+
   for (const t of net.transitions) {
     const tid = `t:${t.name}`;
     for (const input of t.inputs) {
@@ -78,6 +88,14 @@ export function layoutNet(
     }
     for (const output of t.outputs) {
       g.setEdge(tid, output);
+    }
+  }
+
+  // Add layout-only edges from timed transitions to their timeout places
+  // so Dagre positions timeout places near the transitions that trigger them
+  for (const [, info] of timeoutLookup) {
+    if (places.has(info.place) && !g.hasEdge(info.transitionId, info.place)) {
+      g.setEdge(info.transitionId, info.place);
     }
   }
 
@@ -130,6 +148,22 @@ export function layoutNet(
     for (const pid of feedbackOnlyPlaces) {
       const n = g.node(pid);
       n.x = minX - 180;
+    }
+  }
+
+  // --- Pin resource places to the top row ---
+  if (placeMetadata) {
+    const resourcePlaces = [...places].filter(
+      (p) => placeMetadata[p]?.category === "resource",
+    );
+    if (resourcePlaces.length > 0) {
+      let minY = Infinity;
+      for (const id of g.nodes() as string[]) {
+        minY = Math.min(minY, g.node(id).y as number);
+      }
+      for (const p of resourcePlaces) {
+        g.node(p).y = minY;
+      }
     }
   }
 
@@ -216,6 +250,19 @@ export function layoutNet(
           sourceHandle: "left-source",
           targetHandle: "left-target",
         }),
+      });
+    }
+  }
+
+  // Add dashed timeout edges (transition → timeout place)
+  for (const [, info] of timeoutLookup) {
+    if (places.has(info.place)) {
+      edges.push({
+        id: `${info.transitionId}->timeout:${info.place}`,
+        source: info.transitionId,
+        target: info.place,
+        animated: false,
+        style: { strokeDasharray: "6 3", stroke: "#ef4444", strokeWidth: 1.5 },
       });
     }
   }
