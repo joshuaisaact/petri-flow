@@ -45,7 +45,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "pourOver",
       inputs: ["waterHot", "beansGround", "cupEmpty"],
       outputs: ["coffeeReady"],
-      guard: (ctx) => ctx.waterTemp >= 90,
+      guard: "waterTemp >= 90",
       execute: async (ctx) => ({
         brewed: true,
       }),

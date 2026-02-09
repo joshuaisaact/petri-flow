@@ -41,7 +41,7 @@ const coffeeDefinition = defineWorkflow({
       name: "pourOver",
       inputs: ["waterHot", "beansGround", "cupEmpty"],
       outputs: ["coffeeReady"],
-      guard: (ctx: any) => ctx.waterTemp >= 90,
+      guard: "waterTemp >= 90",
       execute: async () => ({ brewed: true }),
     },
   ],

@@ -42,7 +42,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "out_of_stock",
       inputs: ["order_placed"],
       outputs: ["out_of_stock"],
-      guard: (_ctx, marking) => marking["inventory"] === 0,
+      guard: "marking.inventory == 0",
     },
   ],
   initialMarking: {

@@ -22,7 +22,7 @@ const transitions: WorkflowTransition<Place, Ctx>[] = [
     name: "start",
     inputs: ["idle"],
     outputs: ["processing"],
-    guard: (ctx) => ctx.approved,
+    guard: "approved",
     execute: async (ctx) => ({ ...ctx, approved: true }),
   },
   {
@@ -56,9 +56,10 @@ describe("structural compatibility", () => {
     const net: WorkflowNet<Place, Ctx> = { transitions, initialMarking };
     const plain = toNet(net);
 
-    // Plain net should have no guard/execute/timeout
+    // Plain net should have no guard/execute/timeout/compiledGuard
     for (const t of plain.transitions) {
       expect((t as any).guard).toBeUndefined();
+      expect((t as any).compiledGuard).toBeUndefined();
       expect((t as any).execute).toBeUndefined();
       expect((t as any).timeout).toBeUndefined();
     }

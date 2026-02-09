@@ -30,7 +30,7 @@ function makeTimeoutDef(timeoutMs: number, guardBlocked = true) {
         name: "approve",
         inputs: ["waiting"],
         outputs: ["done"],
-        guard: (ctx) => ctx.approved,
+        guard: "approved",
         execute: async () => ({ result: "approved" }),
         timeout: { place: "timed_out" as Place, ms: timeoutMs },
       },
@@ -140,7 +140,7 @@ describe("Timeout support", () => {
           name: "guarded",
           inputs: ["pending"],
           outputs: ["done_a"],
-          guard: () => false, // always blocked
+          guard: "0", // always blocked
           timeout: { place: "timed_out" as CPlace, ms: 100 },
         },
         {

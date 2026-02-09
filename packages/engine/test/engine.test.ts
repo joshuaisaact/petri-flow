@@ -4,37 +4,42 @@ import {
   enabledWorkflowTransitions,
   fireWorkflow,
 } from "../src/engine.js";
-import type { WorkflowTransition, WorkflowNet } from "../src/types.js";
+import { defineWorkflow } from "../src/workflow.js";
+import type { WorkflowNet } from "../src/types.js";
 import type { Marking } from "petri-ts";
 
 type Place = "idle" | "review" | "approved" | "rejected";
 type Ctx = { amount: number; approved: boolean };
 
-const transitions: WorkflowTransition<Place, Ctx>[] = [
-  {
-    name: "submit",
-    inputs: ["idle"],
-    outputs: ["review"],
-  },
-  {
-    name: "approve",
-    inputs: ["review"],
-    outputs: ["approved"],
-    guard: (ctx) => ctx.amount < 10000,
-    execute: async (ctx) => ({ approved: true }),
-  },
-  {
-    name: "reject",
-    inputs: ["review"],
-    outputs: ["rejected"],
-    guard: (ctx) => ctx.amount >= 10000,
-  },
-];
-
-const net: WorkflowNet<Place, Ctx> = {
-  transitions,
+const def = defineWorkflow<Place, Ctx>({
+  name: "engine-test",
+  places: ["idle", "review", "approved", "rejected"],
+  transitions: [
+    {
+      name: "submit",
+      inputs: ["idle"],
+      outputs: ["review"],
+    },
+    {
+      name: "approve",
+      inputs: ["review"],
+      outputs: ["approved"],
+      guard: "amount < 10000",
+      execute: async (ctx) => ({ approved: true }),
+    },
+    {
+      name: "reject",
+      inputs: ["review"],
+      outputs: ["rejected"],
+      guard: "amount >= 10000",
+    },
+  ],
   initialMarking: { idle: 1, review: 0, approved: 0, rejected: 0 },
-};
+  initialContext: { amount: 0, approved: false },
+});
+
+const transitions = def.net.transitions;
+const net = def.net;
 
 describe("canFireWorkflow", () => {
   it("returns true when structurally enabled and guard passes", () => {
