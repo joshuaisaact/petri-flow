@@ -101,7 +101,7 @@ bun test
 When you need a clean `PetriNet` (for serialization or analysis), `toNet()` strips the extensions. The analyser calls `petri-ts`'s `analyse()` under the hood and adds the workflow name.
 
 ```ts
-import { defineWorkflow, analyse, Scheduler } from "@petriflow/engine";
+import { defineWorkflow, createExecutor, analyse, Scheduler } from "@petriflow/engine";
 
 const definition = defineWorkflow({
   name: "my-workflow",
@@ -124,7 +124,8 @@ const result = analyse(definition);
 // result.isDeadlockFree, result.terminalStates, result.invariants
 
 // Run it
-const scheduler = new Scheduler(definition, { db });
+const executor = createExecutor(definition);
+const scheduler = new Scheduler(executor, { db });
 await scheduler.createInstance("instance-1");
 await scheduler.tick();
 ```
@@ -145,10 +146,11 @@ type DecisionProvider<Place extends string, Ctx extends Record<string, unknown>>
 };
 ```
 
-Wire it into the Scheduler:
+Wire it into the executor, then pass to the Scheduler:
 
 ```ts
-const scheduler = new Scheduler(definition, { db, decisionProvider: provider }, {
+const executor = createExecutor(definition, { decisionProvider: provider });
+const scheduler = new Scheduler(executor, { db }, {
   onDecision: (id, name, reasoning, candidates) => {
     console.log(`[${id}] LLM chose: ${name} (from ${candidates.join(", ")})`);
     console.log(`  reasoning: ${reasoning}`);
@@ -157,6 +159,18 @@ const scheduler = new Scheduler(definition, { db, decisionProvider: provider }, 
 ```
 
 The `onDecision` event fires after every LLM choice, logging the selected transition, reasoning, and the full candidate list.
+
+## External event injection
+
+`Scheduler.injectToken()` lets external events (webhooks, human approvals, async callbacks) add tokens to running instances:
+
+```ts
+// A webhook handler adds an approval token
+await scheduler.injectToken("order-123", "approved");
+// Next tick() picks it up and fires any newly enabled transitions
+```
+
+Injecting a token also reactivates completed instances, so a workflow can pause at a "waiting" state and resume when the external event arrives.
 
 See `workflows/simple-agent/llm-provider.ts` for a reference implementation using the Vercel AI SDK with Claude.
 
