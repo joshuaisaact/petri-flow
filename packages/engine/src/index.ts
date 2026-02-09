@@ -36,7 +36,7 @@ export { defineWorkflow, toNet } from "./workflow.js";
 // Persistence
 export { sqliteAdapter } from "./persistence/index.js";
 export type { ExtendedInstanceState } from "./persistence/index.js";
-export type { WorkflowPersistence } from "./persistence/index.js";
+export type { WorkflowPersistence, TimeoutEntry } from "./persistence/index.js";
 export {
   CREATE_WORKFLOW_INSTANCES,
   CREATE_TIMEOUT_ENTRIES,
@@ -58,7 +58,7 @@ export type {
 
 // Executor
 export { createExecutor } from "./executor.js";
-export type { WorkflowExecutor, StepResult } from "./executor.js";
+export type { WorkflowExecutor, StepResult, TimeoutCandidate } from "./executor.js";
 
 // Scheduler
 export { Scheduler } from "./scheduler.js";

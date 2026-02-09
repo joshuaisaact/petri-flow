@@ -4,4 +4,4 @@ export {
 } from "./schema.js";
 export { sqliteAdapter } from "./sqlite-adapter.js";
 export type { ExtendedInstanceState } from "./sqlite-adapter.js";
-export type { WorkflowPersistence } from "./interface.js";
+export type { WorkflowPersistence, TimeoutEntry } from "./interface.js";

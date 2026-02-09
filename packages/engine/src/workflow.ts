@@ -38,6 +38,11 @@ export function defineWorkflow<
         );
       }
     }
+    if (t.timeout && !placeSet.has(t.timeout.place)) {
+      throw new Error(
+        `Transition "${t.name}" timeout references unknown place "${t.timeout.place}"`,
+      );
+    }
   }
 
   // Validate initial marking references only known places

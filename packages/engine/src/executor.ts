@@ -1,4 +1,4 @@
-import type { Marking } from "petri-ts";
+import { canFire, type Marking } from "petri-ts";
 import type { WorkflowDefinition, WorkflowTransition } from "./types.js";
 import type { DecisionProvider } from "./decision.js";
 import { enabledWorkflowTransitions, fireWorkflow } from "./engine.js";
@@ -17,6 +17,12 @@ export type StepResult<
     }
   | { kind: "idle" };
 
+export type TimeoutCandidate<Place extends string> = {
+  transitionName: string;
+  place: Place;
+  ms: number;
+};
+
 export interface WorkflowExecutor<
   Place extends string,
   Ctx extends Record<string, unknown>,
@@ -29,6 +35,7 @@ export interface WorkflowExecutor<
     marking: Marking<Place>,
     ctx: Ctx,
   ): Promise<StepResult<Place, Ctx>>;
+  getTimeoutCandidates(marking: Marking<Place>): TimeoutCandidate<Place>[];
 }
 
 export function createExecutor<
@@ -44,6 +51,16 @@ export function createExecutor<
     name: definition.name,
     initialMarking: definition.net.initialMarking,
     initialContext: definition.initialContext,
+
+    getTimeoutCandidates(marking: Marking<Place>): TimeoutCandidate<Place>[] {
+      return definition.net.transitions
+        .filter((t) => t.timeout && canFire(marking, t))
+        .map((t) => ({
+          transitionName: t.name,
+          place: t.timeout!.place,
+          ms: t.timeout!.ms,
+        }));
+    },
 
     async step(
       instanceId: string,

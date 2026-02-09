@@ -28,6 +28,7 @@ export type SchedulerEvents<
   ) => void;
   onComplete?: (instanceId: string) => void;
   onError?: (instanceId: string, error: unknown) => void;
+  onTimeout?: (instanceId: string, transitionName: string, place: string) => void;
 };
 
 export class Scheduler<
@@ -71,21 +72,73 @@ export class Scheduler<
       const activeIds = await this.adapter.listActive();
 
       for (const id of activeIds) {
-        const state = await this.adapter.loadExtended(id);
+        let state = await this.adapter.loadExtended(id);
 
         try {
+          // Phase 1: Handle expired timeouts
+          const expired = await this.adapter.getExpiredTimeouts(id, Date.now());
+          const preCandidates = this.executor.getTimeoutCandidates(state.marking);
+          const enabledSet = new Set(preCandidates.map((c) => c.transitionName));
+
+          for (const entry of expired) {
+            if (enabledSet.has(entry.transitionName)) {
+              const place = entry.place as Place;
+              state.marking = { ...state.marking };
+              state.marking[place] = ((state.marking[place] ?? 0) + 1) as Marking<Place>[Place];
+              this.events.onTimeout?.(id, entry.transitionName, entry.place);
+            }
+            await this.adapter.markTimeoutFired(entry.id);
+          }
+          if (expired.length > 0) {
+            await this.adapter.saveExtended(id, state);
+          }
+
+          // Phase 2: Step (same as before)
           const result = await this.executor.step(
             id,
             state.marking,
             state.context,
           );
 
-          if (result.kind === "idle") {
-            await this.adapter.saveExtended(id, {
-              ...state,
-              status: "completed",
+          // Phase 3: Schedule/cancel timeouts based on new marking
+          let postCandidates;
+          if (result.kind === "fired") {
+            await this.adapter.clearTimeouts(id, result.transition);
+            postCandidates = this.executor.getTimeoutCandidates(result.marking);
+          } else {
+            postCandidates = this.executor.getTimeoutCandidates(state.marking);
+          }
+
+          // Cancel entries for transitions that lost enablement
+          const postNames = new Set(postCandidates.map((c) => c.transitionName));
+          for (const pre of preCandidates) {
+            if (!postNames.has(pre.transitionName)) {
+              await this.adapter.clearTimeouts(id, pre.transitionName);
+            }
+          }
+
+          // Schedule new timeouts
+          const now = Date.now();
+          for (const candidate of postCandidates) {
+            await this.adapter.scheduleTimeout({
+              id: `${id}:${candidate.transitionName}:${now}`,
+              instanceId: id,
+              transitionName: candidate.transitionName,
+              place: candidate.place,
+              fireAt: now + candidate.ms,
             });
-            this.events.onComplete?.(id);
+          }
+
+          // Phase 4: Handle step result
+          if (result.kind === "idle") {
+            const hasPending = await this.adapter.hasPendingTimeouts(id);
+            if (!hasPending) {
+              await this.adapter.saveExtended(id, {
+                ...state,
+                status: "completed",
+              });
+              this.events.onComplete?.(id);
+            }
             continue;
           }
 
