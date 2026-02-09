@@ -232,6 +232,13 @@ bun run packages/server/src/main.ts workflows/coffee/definition.ts workflows/ord
 Routes:
 
 ```
+# Definition CRUD
+PUT    /definitions/:name              Save definition (validates, registers)
+GET    /definitions/:name              Get serialized definition
+GET    /definitions                    List all definition names
+DELETE /definitions/:name              Delete and unregister
+
+# Instance management
 GET    /workflows                      List registered workflows
 POST   /workflows/:name/instances      Create instance         { "id": "order-001" }
 GET    /workflows/:name/instances      List instances for workflow
@@ -239,6 +246,8 @@ GET    /instances/:id                  Inspect instance state
 GET    /instances/:id/history          Transition history (what fired and when)
 POST   /instances/:id/inject           Inject token            { "place": "payment", "count": 1 }
 POST   /workflows/register             Register from file      { "path": "./my-workflow.ts" }
+
+# Observability
 GET    /events                         SSE stream (all events)
 GET    /events?workflow=X              SSE filtered by workflow
 GET    /events?instance=X              SSE filtered by instance
