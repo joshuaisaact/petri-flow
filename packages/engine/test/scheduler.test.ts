@@ -2,6 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { Database } from "bun:sqlite";
 import { Scheduler } from "../src/scheduler.js";
 import { defineWorkflow } from "../src/workflow.js";
+import { createExecutor } from "../src/executor.js";
 
 type Place = "start" | "step1" | "step2" | "end";
 type Ctx = { log: string[] };
@@ -39,7 +40,7 @@ describe("Scheduler", () => {
     const fired: string[] = [];
     const completed: string[] = [];
 
-    const scheduler = new Scheduler(definition, { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { db }, {
       onFire: (_id, name) => fired.push(name),
       onComplete: (id) => completed.push(id),
     });
@@ -66,7 +67,7 @@ describe("Scheduler", () => {
     const db = new Database(":memory:");
     const completed: string[] = [];
 
-    const scheduler = new Scheduler(definition, { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { db }, {
       onComplete: (id) => completed.push(id),
     });
 
@@ -114,7 +115,7 @@ describe("Scheduler", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(gatedDef, { db }, {
+    const scheduler = new Scheduler(createExecutor(gatedDef), { db }, {
       onFire: (_id, name) => fired.push(name),
     });
 
@@ -151,7 +152,7 @@ describe("Scheduler", () => {
     const db = new Database(":memory:");
     const errors: unknown[] = [];
 
-    const scheduler = new Scheduler(errorDef, { db }, {
+    const scheduler = new Scheduler(createExecutor(errorDef), { db }, {
       onError: (_id, err) => errors.push(err),
     });
 
@@ -164,4 +165,5 @@ describe("Scheduler", () => {
     const state = await scheduler.inspect("err-1");
     expect(state.status).toBe("failed");
   });
+
 });

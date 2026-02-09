@@ -1,22 +1,12 @@
 import { Database } from "bun:sqlite";
 import type { Marking } from "petri-ts";
-import type {
-  WorkflowDefinition,
-  WorkflowStatus,
-  WorkflowTransition,
-} from "./types.js";
-import type { DecisionProvider } from "./decision.js";
-import { enabledWorkflowTransitions, fireWorkflow } from "./engine.js";
+import type { WorkflowExecutor } from "./executor.js";
 import { sqliteAdapter } from "./persistence/sqlite-adapter.js";
 import type { ExtendedInstanceState } from "./persistence/sqlite-adapter.js";
 
-export type SchedulerOptions<
-  Place extends string = string,
-  Ctx extends Record<string, unknown> = Record<string, unknown>,
-> = {
+export type SchedulerOptions = {
   pollIntervalMs?: number;
   db: Database;
-  decisionProvider?: DecisionProvider<Place, Ctx>;
 };
 
 export type SchedulerEvents<
@@ -46,30 +36,28 @@ export class Scheduler<
   private ticking = false;
   private readonly pollIntervalMs: number;
   private readonly adapter: ReturnType<typeof sqliteAdapter<Place, Ctx>>;
-  private readonly definition: WorkflowDefinition<Place, Ctx>;
+  private readonly executor: WorkflowExecutor<Place, Ctx>;
   private readonly events: SchedulerEvents<Place, Ctx>;
-  private readonly decisionProvider?: DecisionProvider<Place, Ctx>;
 
   constructor(
-    definition: WorkflowDefinition<Place, Ctx>,
-    options: SchedulerOptions<Place, Ctx>,
+    executor: WorkflowExecutor<Place, Ctx>,
+    options: SchedulerOptions,
     events: SchedulerEvents<Place, Ctx> = {},
   ) {
-    this.definition = definition;
+    this.executor = executor;
     this.pollIntervalMs = options.pollIntervalMs ?? 1000;
-    this.adapter = sqliteAdapter<Place, Ctx>(options.db, definition.name);
+    this.adapter = sqliteAdapter<Place, Ctx>(options.db, executor.name);
     this.events = events;
-    this.decisionProvider = options.decisionProvider;
   }
 
   async createInstance(id: string): Promise<Marking<Place>> {
     await this.adapter.saveExtended(id, {
-      marking: this.definition.net.initialMarking,
-      workflowName: this.definition.name,
-      context: this.definition.initialContext,
+      marking: this.executor.initialMarking,
+      workflowName: this.executor.name,
+      context: this.executor.initialContext,
       status: "active",
     });
-    return this.definition.net.initialMarking;
+    return this.executor.initialMarking;
   }
 
   async tick(): Promise<number> {
@@ -82,75 +70,47 @@ export class Scheduler<
 
       for (const id of activeIds) {
         const state = await this.adapter.loadExtended(id);
-        const enabled = enabledWorkflowTransitions(
-          this.definition.net,
-          state.marking,
-          state.context,
-        );
 
-        if (enabled.length === 0) {
-          // No transitions enabled — mark as completed
-          await this.adapter.saveExtended(id, {
-            ...state,
-            status: "completed",
-          });
-          this.events.onComplete?.(id);
-          continue;
-        }
-
-        // Choose transition: use decision provider at choice points, otherwise deterministic
-        let transition: WorkflowTransition<Place, Ctx>;
-        if (enabled.length === 1 || !this.decisionProvider) {
-          transition = enabled[0]!;
-        } else {
-          const result = await this.decisionProvider.choose({
-            instanceId: id,
-            workflowName: this.definition.name,
-            enabled: enabled.map(t => ({ name: t.name, inputs: [...t.inputs], outputs: [...t.outputs] })),
-            marking: state.marking,
-            context: state.context,
-          });
-          transition = enabled.find(t => t.name === result.transition) ?? enabled[0]!;
-          this.events.onDecision?.(
-            id,
-            result.transition,
-            result.reasoning,
-            enabled.map(t => t.name),
-          );
-        }
         try {
-          const result = await fireWorkflow(
+          const result = await this.executor.step(
+            id,
             state.marking,
-            transition,
             state.context,
           );
 
+          if (result.kind === "idle") {
+            await this.adapter.saveExtended(id, {
+              ...state,
+              status: "completed",
+            });
+            this.events.onComplete?.(id);
+            continue;
+          }
+
+          if (result.decision) {
+            this.events.onDecision?.(
+              id,
+              result.transition,
+              result.decision.reasoning,
+              result.decision.candidates,
+            );
+          }
+
+          const status = result.terminal ? "completed" : "active";
           await this.adapter.saveExtended(id, {
             marking: result.marking,
             workflowName: state.workflowName,
             context: result.context,
-            status: "active",
+            status,
           });
 
-          this.events.onFire?.(id, result.firedTransition, {
+          this.events.onFire?.(id, result.transition, {
             marking: result.marking,
             context: result.context,
           });
           totalFired++;
 
-          // Check if we've reached a terminal state after firing
-          const nextEnabled = enabledWorkflowTransitions(
-            this.definition.net,
-            result.marking,
-            result.context,
-          );
-          if (nextEnabled.length === 0) {
-            await this.adapter.saveExtended(id, {
-              marking: result.marking,
-              workflowName: state.workflowName,
-              context: result.context,
-              status: "completed",
-            });
+          if (result.terminal) {
             this.events.onComplete?.(id);
           }
         } catch (err) {

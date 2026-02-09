@@ -2,6 +2,7 @@ import { describe, it, expect } from "bun:test";
 import { Database } from "bun:sqlite";
 import {
   Scheduler,
+  createExecutor,
   toNet,
   checkInvariant,
   terminalStates,
@@ -16,7 +17,7 @@ describe("order-checkout workflow", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(definition, { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { db }, {
       onFire: (_id, name) => fired.push(name),
     });
 
@@ -67,7 +68,7 @@ describe("order-checkout workflow", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(noStockDef, { db }, {
+    const scheduler = new Scheduler(createExecutor(noStockDef), { db }, {
       onFire: (_id, name) => fired.push(name),
     });
 

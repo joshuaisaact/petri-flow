@@ -55,6 +55,10 @@ export type {
   DecisionProvider,
 } from "./decision.js";
 
+// Executor
+export { createExecutor } from "./executor.js";
+export type { WorkflowExecutor, StepResult } from "./executor.js";
+
 // Scheduler
 export { Scheduler } from "./scheduler.js";
 export type { SchedulerOptions, SchedulerEvents } from "./scheduler.js";
