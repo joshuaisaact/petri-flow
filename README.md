@@ -97,9 +97,9 @@ bun test
 
 ## How it works
 
-`WorkflowTransition` is an intersection type with petri-ts's `Transition`, adding optional `guard`, `execute`, and `timeout`. Because TypeScript uses structural typing, a `WorkflowNet` passes directly to all petri-ts analysis functions — no conversion needed.
+`WorkflowTransition` is an intersection type with petri-ts's `Transition`, adding `guard` (filtrex expression or null) and optional `timeout`. Transitions are pure serializable data. Runtime functions — compiled guards and execute handlers — live in separate maps on `WorkflowDefinition` (`guards`, `executors`), populated by `defineWorkflow`.
 
-When you need a clean `PetriNet` (for serialization or analysis), `toNet()` strips the extensions. The analyser calls `petri-ts`'s `analyse()` under the hood and adds the workflow name.
+Because TypeScript uses structural typing, a `WorkflowNet` passes directly to all petri-ts analysis functions — no conversion needed. When you need a clean `PetriNet` (for serialization or analysis), `toNet()` strips the extensions.
 
 ```ts
 import { defineWorkflow, createExecutor, analyse, Scheduler, sqliteAdapter } from "@petriflow/engine";
