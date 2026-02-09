@@ -1,4 +1,4 @@
-import { Scheduler, createExecutor } from "@petriflow/engine";
+import { Scheduler, createExecutor, sqliteAdapter } from "@petriflow/engine";
 import { Database } from "bun:sqlite";
 import { definition } from "./definition";
 import { createLlmProvider } from "./llm-provider";
@@ -6,7 +6,7 @@ import { createLlmProvider } from "./llm-provider";
 const provider = createLlmProvider({ model: "claude-sonnet-4-5-20250929" });
 const db = new Database(":memory:");
 
-const scheduler = new Scheduler(createExecutor(definition, { decisionProvider: provider }), { db }, {
+const scheduler = new Scheduler(createExecutor(definition, { decisionProvider: provider }), { adapter: sqliteAdapter(db, definition.name) }, {
   onDecision: (id, name, reasoning, candidates) => {
     console.log(`[${id}] LLM chose: ${name} (from ${candidates.join(", ")})`);
     console.log(`  reasoning: ${reasoning}`);

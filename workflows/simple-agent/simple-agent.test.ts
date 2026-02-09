@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { Database } from "bun:sqlite";
-import { Scheduler, createExecutor, toNet, terminalStates, reachableStates } from "@petriflow/engine";
+import { Scheduler, createExecutor, sqliteAdapter, toNet, terminalStates, reachableStates } from "@petriflow/engine";
 import { analyse } from "@petriflow/engine";
 import { definition, ITERATION_BUDGET } from "./index.js";
 
@@ -9,7 +9,7 @@ describe("simple-agent workflow", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(definition), { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { adapter: sqliteAdapter(db, definition.name) }, {
       onFire: (_id, name) => fired.push(name),
     });
 

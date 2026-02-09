@@ -3,6 +3,7 @@ import { Database } from "bun:sqlite";
 import { Scheduler } from "../src/scheduler.js";
 import { defineWorkflow } from "../src/workflow.js";
 import { createExecutor } from "../src/executor.js";
+import { sqliteAdapter } from "../src/persistence/sqlite-adapter.js";
 
 type Place = "start" | "step1" | "step2" | "end";
 type Ctx = { log: string[] };
@@ -40,7 +41,7 @@ describe("Scheduler", () => {
     const fired: string[] = [];
     const completed: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(definition), { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { adapter: sqliteAdapter(db, definition.name) }, {
       onFire: (_id, name) => fired.push(name),
       onComplete: (id) => completed.push(id),
     });
@@ -67,7 +68,7 @@ describe("Scheduler", () => {
     const db = new Database(":memory:");
     const completed: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(definition), { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { adapter: sqliteAdapter(db, definition.name) }, {
       onComplete: (id) => completed.push(id),
     });
 
@@ -115,7 +116,7 @@ describe("Scheduler", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(gatedDef), { db }, {
+    const scheduler = new Scheduler(createExecutor(gatedDef), { adapter: sqliteAdapter(db, gatedDef.name) }, {
       onFire: (_id, name) => fired.push(name),
     });
 
@@ -152,7 +153,7 @@ describe("Scheduler", () => {
     const db = new Database(":memory:");
     const errors: unknown[] = [];
 
-    const scheduler = new Scheduler(createExecutor(errorDef), { db }, {
+    const scheduler = new Scheduler(createExecutor(errorDef), { adapter: sqliteAdapter(db, errorDef.name) }, {
       onError: (_id, err) => errors.push(err),
     });
 
@@ -189,7 +190,7 @@ describe("Scheduler", () => {
     const fired: string[] = [];
     const completed: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(waitDef), { db }, {
+    const scheduler = new Scheduler(createExecutor(waitDef), { adapter: sqliteAdapter(db, waitDef.name) }, {
       onFire: (_id, name) => fired.push(name),
       onComplete: (id) => completed.push(id),
     });

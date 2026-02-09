@@ -1,12 +1,14 @@
-import { Database } from "bun:sqlite";
 import type { Marking } from "petri-ts";
 import type { WorkflowExecutor } from "./executor.js";
-import { sqliteAdapter } from "./persistence/sqlite-adapter.js";
 import type { ExtendedInstanceState } from "./persistence/sqlite-adapter.js";
+import type { WorkflowPersistence } from "./persistence/interface.js";
 
-export type SchedulerOptions = {
+export type SchedulerOptions<
+  Place extends string,
+  Ctx extends Record<string, unknown>,
+> = {
+  adapter: WorkflowPersistence<Place, Ctx>;
   pollIntervalMs?: number;
-  db: Database;
 };
 
 export type SchedulerEvents<
@@ -35,18 +37,18 @@ export class Scheduler<
   private timer: ReturnType<typeof setInterval> | null = null;
   private ticking = false;
   private readonly pollIntervalMs: number;
-  private readonly adapter: ReturnType<typeof sqliteAdapter<Place, Ctx>>;
+  private readonly adapter: WorkflowPersistence<Place, Ctx>;
   private readonly executor: WorkflowExecutor<Place, Ctx>;
   private readonly events: SchedulerEvents<Place, Ctx>;
 
   constructor(
     executor: WorkflowExecutor<Place, Ctx>,
-    options: SchedulerOptions,
+    options: SchedulerOptions<Place, Ctx>,
     events: SchedulerEvents<Place, Ctx> = {},
   ) {
     this.executor = executor;
     this.pollIntervalMs = options.pollIntervalMs ?? 1000;
-    this.adapter = sqliteAdapter<Place, Ctx>(options.db, executor.name);
+    this.adapter = options.adapter;
     this.events = events;
   }
 

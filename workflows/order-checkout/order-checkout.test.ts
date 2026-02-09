@@ -3,6 +3,7 @@ import { Database } from "bun:sqlite";
 import {
   Scheduler,
   createExecutor,
+  sqliteAdapter,
   toNet,
   checkInvariant,
   terminalStates,
@@ -17,7 +18,7 @@ describe("order-checkout workflow", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(definition), { db }, {
+    const scheduler = new Scheduler(createExecutor(definition), { adapter: sqliteAdapter(db, definition.name) }, {
       onFire: (_id, name) => fired.push(name),
     });
 
@@ -68,7 +69,7 @@ describe("order-checkout workflow", () => {
     const db = new Database(":memory:");
     const fired: string[] = [];
 
-    const scheduler = new Scheduler(createExecutor(noStockDef), { db }, {
+    const scheduler = new Scheduler(createExecutor(noStockDef), { adapter: sqliteAdapter(db, noStockDef.name) }, {
       onFire: (_id, name) => fired.push(name),
     });
 
