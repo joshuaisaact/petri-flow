@@ -16,6 +16,19 @@ export const CREATE_WORKFLOW_INSTANCES = `
   )
 `;
 
+export const CREATE_TRANSITION_HISTORY = `
+  CREATE TABLE IF NOT EXISTS transition_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    instance_id TEXT NOT NULL REFERENCES workflow_instances(id),
+    workflow_name TEXT NOT NULL,
+    transition_name TEXT NOT NULL,
+    marking_before TEXT NOT NULL,
+    marking_after TEXT NOT NULL,
+    context_after TEXT NOT NULL DEFAULT '{}',
+    fired_at INTEGER NOT NULL DEFAULT (unixepoch('subsec') * 1000)
+  )
+`;
+
 export const CREATE_TIMEOUT_ENTRIES = `
   CREATE TABLE IF NOT EXISTS timeout_entries (
     id TEXT PRIMARY KEY,

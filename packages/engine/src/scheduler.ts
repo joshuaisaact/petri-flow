@@ -54,6 +54,9 @@ export class Scheduler<
   }
 
   async createInstance(id: string): Promise<Marking<Place>> {
+    if (await this.adapter.exists(id)) {
+      throw new Error(`Instance already exists: ${id}`);
+    }
     await this.adapter.saveExtended(id, {
       marking: this.executor.initialMarking,
       workflowName: this.executor.name,
@@ -165,6 +168,16 @@ export class Scheduler<
             status,
           });
 
+          await this.adapter.recordTransition({
+            instanceId: id,
+            workflowName: state.workflowName,
+            transitionName: result.transition,
+            markingBefore: state.marking,
+            markingAfter: result.marking,
+            contextAfter: result.context,
+            firedAt: Date.now(),
+          });
+
           this.events.onFire?.(id, result.transition, {
             marking: result.marking,
             context: result.context,
@@ -220,5 +233,9 @@ export class Scheduler<
     id: string,
   ): Promise<ExtendedInstanceState<Place, Ctx>> {
     return this.adapter.loadExtended(id);
+  }
+
+  async getHistory(id: string) {
+    return this.adapter.getHistory(id);
   }
 }

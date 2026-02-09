@@ -1,8 +1,8 @@
 import { Database } from "bun:sqlite";
 import type { PersistenceAdapter, InstanceState, Marking } from "petri-ts";
 import type { WorkflowStatus } from "../types.js";
-import type { TimeoutEntry } from "./interface.js";
-import { CREATE_WORKFLOW_INSTANCES, CREATE_TIMEOUT_ENTRIES } from "./schema.js";
+import type { TimeoutEntry, HistoryEntry } from "./interface.js";
+import { CREATE_WORKFLOW_INSTANCES, CREATE_TRANSITION_HISTORY, CREATE_TIMEOUT_ENTRIES } from "./schema.js";
 
 export type ExtendedInstanceState<
   Place extends string,
@@ -31,6 +31,7 @@ export function sqliteAdapter<
   db: Database,
   workflowName: string,
 ): PersistenceAdapter<Place> & {
+  exists(id: string): Promise<boolean>;
   loadExtended(id: string): Promise<ExtendedInstanceState<Place, Ctx>>;
   saveExtended(
     id: string,
@@ -42,8 +43,11 @@ export function sqliteAdapter<
   markTimeoutFired(id: string): Promise<void>;
   clearTimeouts(instanceId: string, transitionName?: string): Promise<void>;
   hasPendingTimeouts(instanceId: string): Promise<boolean>;
+  recordTransition(entry: Omit<HistoryEntry, "id">): Promise<void>;
+  getHistory(instanceId: string): Promise<HistoryEntry[]>;
 } {
   db.run(CREATE_WORKFLOW_INSTANCES);
+  db.run(CREATE_TRANSITION_HISTORY);
   db.run(CREATE_TIMEOUT_ENTRIES);
 
   const selectOne = db.query<Row, [string]>(
@@ -106,7 +110,31 @@ export function sqliteAdapter<
     `SELECT COUNT(*) as n FROM timeout_entries WHERE instance_id = ? AND fired = 0`,
   );
 
+  type HistoryRow = {
+    id: number;
+    instance_id: string;
+    workflow_name: string;
+    transition_name: string;
+    marking_before: string;
+    marking_after: string;
+    context_after: string;
+    fired_at: number;
+  };
+
+  const insertHistory = db.query<void, [string, string, string, string, string, string, number]>(
+    `INSERT INTO transition_history (instance_id, workflow_name, transition_name, marking_before, marking_after, context_after, fired_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
+
+  const selectHistory = db.query<HistoryRow, [string]>(
+    `SELECT * FROM transition_history WHERE instance_id = ? ORDER BY id ASC`,
+  );
+
   return {
+    async exists(id: string): Promise<boolean> {
+      return selectOne.get(id) !== null;
+    },
+
     async load(id: string): Promise<InstanceState<Place>> {
       const row = selectOne.get(id);
       if (!row) throw new Error(`Instance not found: ${id}`);
@@ -208,6 +236,31 @@ export function sqliteAdapter<
     async hasPendingTimeouts(instanceId: string): Promise<boolean> {
       const row = selectPending.get(instanceId);
       return (row?.n ?? 0) > 0;
+    },
+
+    async recordTransition(entry: Omit<HistoryEntry, "id">): Promise<void> {
+      insertHistory.run(
+        entry.instanceId,
+        entry.workflowName,
+        entry.transitionName,
+        JSON.stringify(entry.markingBefore),
+        JSON.stringify(entry.markingAfter),
+        JSON.stringify(entry.contextAfter),
+        entry.firedAt,
+      );
+    },
+
+    async getHistory(instanceId: string): Promise<HistoryEntry[]> {
+      return selectHistory.all(instanceId).map((r) => ({
+        id: r.id,
+        instanceId: r.instance_id,
+        workflowName: r.workflow_name,
+        transitionName: r.transition_name,
+        markingBefore: JSON.parse(r.marking_before),
+        markingAfter: JSON.parse(r.marking_after),
+        contextAfter: JSON.parse(r.context_after),
+        firedAt: r.fired_at,
+      }));
     },
   };
 }

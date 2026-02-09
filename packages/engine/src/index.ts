@@ -36,9 +36,10 @@ export { defineWorkflow, toNet } from "./workflow.js";
 // Persistence
 export { sqliteAdapter } from "./persistence/index.js";
 export type { ExtendedInstanceState } from "./persistence/index.js";
-export type { WorkflowPersistence, TimeoutEntry } from "./persistence/index.js";
+export type { WorkflowPersistence, TimeoutEntry, HistoryEntry } from "./persistence/index.js";
 export {
   CREATE_WORKFLOW_INSTANCES,
+  CREATE_TRANSITION_HISTORY,
   CREATE_TIMEOUT_ENTRIES,
 } from "./persistence/index.js";
 

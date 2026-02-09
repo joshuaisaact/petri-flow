@@ -221,4 +221,36 @@ describe("Scheduler", () => {
     expect(finalState.marking.done).toBe(1);
     expect(finalState.context.approvedBy).toBe("external");
   });
+
+  it("rejects duplicate instance IDs", async () => {
+    const db = new Database(":memory:");
+    const scheduler = new Scheduler(createExecutor(definition), { adapter: sqliteAdapter(db, definition.name) });
+
+    await scheduler.createInstance("dup-1");
+    await expect(scheduler.createInstance("dup-1")).rejects.toThrow(
+      "Instance already exists: dup-1",
+    );
+  });
+
+  it("records transition history", async () => {
+    const db = new Database(":memory:");
+    const scheduler = new Scheduler(createExecutor(definition), { adapter: sqliteAdapter(db, definition.name) });
+
+    await scheduler.createInstance("hist-1");
+    for (let i = 0; i < 5; i++) {
+      await scheduler.tick();
+    }
+
+    const history = await scheduler.getHistory("hist-1");
+    expect(history).toHaveLength(3);
+    expect(history.map((h) => h.transitionName)).toEqual(["begin", "process", "complete"]);
+
+    // Each entry has before/after markings
+    const first = history[0]!;
+    expect(first.markingBefore.start).toBe(1);
+    expect(first.markingAfter.start).toBe(0);
+    expect(first.markingAfter.step1).toBe(1);
+    expect(first.workflowName).toBe("test-pipeline");
+    expect(first.firedAt).toBeGreaterThan(0);
+  });
 });
