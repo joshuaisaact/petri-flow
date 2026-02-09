@@ -19,6 +19,11 @@ export type TransitionNodeData = {
   justFired: boolean;
   inputs: string[];
   outputs: string[];
+  hasGuard: boolean;
+  hasExecute: boolean;
+  guardCode?: string;
+  executeCode?: string;
+  timeout?: { place: string; ms: number };
 };
 
 // 56px circle + label below ≈ 72px total. 80px wide for label clearance.
@@ -27,10 +32,18 @@ const PLACE_H = 72;
 const TRANS_W = 140;
 const TRANS_H = 36;
 
+export type WorkflowTransitionMeta = {
+  name: string;
+  guard?: Function;
+  execute?: Function;
+  timeout?: { place: string; ms: number };
+};
+
 export function layoutNet(
   net: PetriNet<string>,
   marking: Marking<string>,
   placeMetadata?: Record<string, PlaceMetadata>,
+  workflowTransitions?: WorkflowTransitionMeta[],
 ): { nodes: Node[]; edges: Edge[] } {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
@@ -146,9 +159,18 @@ export function layoutNet(
   // Build a lookup of place labels for transition tooltips
   const placeLabel = (p: string) => placeMetadata?.[p]?.label ?? p;
 
+  // Build lookup for workflow transition metadata (guard/execute/timeout)
+  const wfLookup = new Map<string, WorkflowTransitionMeta>();
+  if (workflowTransitions) {
+    for (const wt of workflowTransitions) {
+      wfLookup.set(wt.name, wt);
+    }
+  }
+
   for (const t of net.transitions) {
     const tid = `t:${t.name}`;
     const pos = g.node(tid);
+    const wt = wfLookup.get(t.name);
     nodes.push({
       id: tid,
       type: "transition",
@@ -162,6 +184,11 @@ export function layoutNet(
         justFired: false,
         inputs: t.inputs.map(placeLabel),
         outputs: t.outputs.map(placeLabel),
+        hasGuard: !!wt?.guard,
+        hasExecute: !!wt?.execute,
+        guardCode: wt?.guard?.toString(),
+        executeCode: wt?.execute?.toString(),
+        timeout: wt?.timeout,
       } satisfies TransitionNodeData,
     });
   }

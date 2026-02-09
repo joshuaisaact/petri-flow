@@ -10,7 +10,10 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx",
     "noUncheckedIndexedAccess": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@workflows/*": ["../../workflows/*"]
+    }
   },
   "include": ["src"]
 }

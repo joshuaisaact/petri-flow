@@ -6,7 +6,16 @@ export type { WorkflowAnalysisResult };
 
 export function useAnalysis(viewerNet: ViewerNet) {
   const result: WorkflowAnalysisResult<string> = useMemo(() => {
-    // Derive terminal places from placeMetadata
+    if (viewerNet.definition) {
+      // Use real definition directly — has terminalPlaces + invariants from source
+      return analyse(viewerNet.definition, {
+        invariants: viewerNet.invariants?.map((inv) => ({
+          weights: inv.weights,
+        })),
+      });
+    }
+
+    // Fallback: derive terminal places from placeMetadata for viewer-only nets
     const terminalPlaces = Object.entries(viewerNet.placeMetadata ?? {})
       .filter(([, meta]) => meta.category === "terminal")
       .map(([place]) => place);

@@ -1,36 +1,13 @@
+import { definition } from "@workflows/order-checkout/definition";
+import { toNet } from "@petriflow/engine/workflow";
 import type { ViewerNet } from "../types";
 
 export const orderCheckout: ViewerNet = {
-  name: "order-checkout",
+  name: definition.name,
   description:
     "Inventory tokens model limited stock. The reserve transition consumes from both order_placed AND inventory, modeling resource contention. This is something DAG-based tools cannot model.",
-  net: {
-    transitions: [
-      {
-        name: "reserve_stock",
-        inputs: ["order_placed", "inventory"],
-        outputs: ["reserved", "payment"],
-      },
-      {
-        name: "process_payment",
-        inputs: ["payment", "reserved"],
-        outputs: ["shipped"],
-      },
-      {
-        name: "out_of_stock",
-        inputs: ["order_placed"],
-        outputs: ["out_of_stock"],
-      },
-    ],
-    initialMarking: {
-      order_placed: 1,
-      inventory: 3,
-      reserved: 0,
-      payment: 0,
-      shipped: 0,
-      out_of_stock: 0,
-    },
-  },
+  definition,
+  net: toNet(definition.net),
   placeMetadata: {
     order_placed: { category: "default", label: "Order Placed" },
     inventory: { category: "resource", label: "Inventory" },

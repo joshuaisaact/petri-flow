@@ -1,44 +1,13 @@
+import { definition } from "@workflows/simple-agent/definition";
+import { toNet } from "@petriflow/engine/workflow";
 import type { ViewerNet } from "../types";
 
-const ITERATION_BUDGET = 2;
-
 export const simpleAgent: ViewerNet = {
-  name: "simple-agent",
+  name: definition.name,
   description:
     "A ReAct-style agent with one tool and an iteration budget. The agent plans, runs a tool, then either responds or loops back — consuming a budget token each time. When the budget is spent, the agent is forced to respond.",
-  net: {
-    transitions: [
-      { name: "plan", inputs: ["userQuery"], outputs: ["planReady"] },
-      {
-        name: "dispatchTool",
-        inputs: ["planReady"],
-        outputs: ["toolPending"],
-      },
-      {
-        name: "completeTool",
-        inputs: ["toolPending"],
-        outputs: ["resultsReady"],
-      },
-      {
-        name: "generate",
-        inputs: ["resultsReady"],
-        outputs: ["responseGenerated"],
-      },
-      {
-        name: "iterate",
-        inputs: ["resultsReady", "iterationBudget"],
-        outputs: ["userQuery"],
-      },
-    ],
-    initialMarking: {
-      userQuery: 1,
-      planReady: 0,
-      toolPending: 0,
-      resultsReady: 0,
-      responseGenerated: 0,
-      iterationBudget: ITERATION_BUDGET,
-    },
-  },
+  definition,
+  net: toNet(definition.net),
   placeMetadata: {
     userQuery: { category: "default", label: "User Query" },
     planReady: { category: "default", label: "Plan Ready" },

@@ -27,7 +27,12 @@ export function Viewer({ viewerNet }: Props) {
 
   // Layout computed once per net — positions never change
   const { nodes: initialNodes, edges: initialEdges } = useMemo(
-    () => layoutNet(viewerNet.net, viewerNet.net.initialMarking, viewerNet.placeMetadata),
+    () => layoutNet(
+      viewerNet.net,
+      viewerNet.net.initialMarking,
+      viewerNet.placeMetadata,
+      viewerNet.definition?.net.transitions,
+    ),
     [viewerNet],
   );
 

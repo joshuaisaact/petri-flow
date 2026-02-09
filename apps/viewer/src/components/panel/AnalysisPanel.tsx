@@ -6,6 +6,7 @@ import { CurrentMarking } from "./CurrentMarking";
 import { FiringHistory } from "./FiringHistory";
 import { StateSpace } from "./StateSpace";
 import { SafetyProperties } from "./SafetyProperties";
+import { TransitionBehavior } from "./TransitionBehavior";
 import { useTheme } from "../../theme";
 
 type Props = {
@@ -63,6 +64,11 @@ export function AnalysisPanel({
           analysisInvariants={result.invariants}
         />
       </div>
+      {viewerNet.definition && (
+        <div className={`rounded-lg border p-3 ${t("bg-slate-900 border-slate-800", "bg-white border-slate-200")}`}>
+          <TransitionBehavior definition={viewerNet.definition} />
+        </div>
+      )}
     </div>
   );
 }

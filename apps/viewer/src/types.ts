@@ -1,4 +1,5 @@
 import type { AnalysisResult, PetriNet } from "petri-ts";
+import type { WorkflowDefinition } from "@petriflow/engine/types";
 
 export type PlaceCategory = "default" | "terminal" | "human" | "resource";
 
@@ -17,6 +18,7 @@ export type ViewerNet = {
   name: string;
   description: string;
   net: PetriNet<string>;
+  definition?: WorkflowDefinition<string, any>;
   placeMetadata?: Record<string, PlaceMetadata>;
   invariants?: { weights: Partial<Record<string, number>>; label: string }[];
   deriveProperties?: (analysis: AnalysisResult<string>) => PropertyProof[];

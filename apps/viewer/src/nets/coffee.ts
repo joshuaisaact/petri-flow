@@ -1,36 +1,13 @@
+import { definition } from "@workflows/coffee/definition";
+import { toNet } from "@petriflow/engine/workflow";
 import type { ViewerNet } from "../types";
 
 export const coffee: ViewerNet = {
-  name: "coffee",
+  name: definition.name,
   description:
     "pourOver has three inputs — it needs hot water AND ground beans AND an empty cup. heatWater and grindBeans can fire in either order because their inputs are independent. Concurrency and synchronisation, expressed in data.",
-  net: {
-    transitions: [
-      {
-        name: "heatWater",
-        inputs: ["waterCold"],
-        outputs: ["waterHot"],
-      },
-      {
-        name: "grindBeans",
-        inputs: ["beansWhole"],
-        outputs: ["beansGround"],
-      },
-      {
-        name: "pourOver",
-        inputs: ["waterHot", "beansGround", "cupEmpty"],
-        outputs: ["coffeeReady"],
-      },
-    ],
-    initialMarking: {
-      waterCold: 1,
-      waterHot: 0,
-      beansWhole: 1,
-      beansGround: 0,
-      cupEmpty: 1,
-      coffeeReady: 0,
-    },
-  },
+  definition,
+  net: toNet(definition.net),
   placeMetadata: {
     waterCold: { category: "default", label: "Water (cold)" },
     waterHot: { category: "default", label: "Water (hot)" },
