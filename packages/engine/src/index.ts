@@ -48,6 +48,13 @@ export {
   fireWorkflow,
 } from "./engine.js";
 
+// Decision
+export type {
+  DecisionRequest,
+  DecisionResult,
+  DecisionProvider,
+} from "./decision.js";
+
 // Scheduler
 export { Scheduler } from "./scheduler.js";
 export type { SchedulerOptions, SchedulerEvents } from "./scheduler.js";

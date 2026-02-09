@@ -3,14 +3,20 @@ import type { Marking } from "petri-ts";
 import type {
   WorkflowDefinition,
   WorkflowStatus,
+  WorkflowTransition,
 } from "./types.js";
+import type { DecisionProvider } from "./decision.js";
 import { enabledWorkflowTransitions, fireWorkflow } from "./engine.js";
 import { sqliteAdapter } from "./persistence/sqlite-adapter.js";
 import type { ExtendedInstanceState } from "./persistence/sqlite-adapter.js";
 
-export type SchedulerOptions = {
+export type SchedulerOptions<
+  Place extends string = string,
+  Ctx extends Record<string, unknown> = Record<string, unknown>,
+> = {
   pollIntervalMs?: number;
   db: Database;
+  decisionProvider?: DecisionProvider<Place, Ctx>;
 };
 
 export type SchedulerEvents<
@@ -21,6 +27,12 @@ export type SchedulerEvents<
     instanceId: string,
     transitionName: string,
     result: { marking: Marking<Place>; context: Ctx },
+  ) => void;
+  onDecision?: (
+    instanceId: string,
+    transitionName: string,
+    reasoning: string,
+    candidates: string[],
   ) => void;
   onComplete?: (instanceId: string) => void;
   onError?: (instanceId: string, error: unknown) => void;
@@ -36,16 +48,18 @@ export class Scheduler<
   private readonly adapter: ReturnType<typeof sqliteAdapter<Place, Ctx>>;
   private readonly definition: WorkflowDefinition<Place, Ctx>;
   private readonly events: SchedulerEvents<Place, Ctx>;
+  private readonly decisionProvider?: DecisionProvider<Place, Ctx>;
 
   constructor(
     definition: WorkflowDefinition<Place, Ctx>,
-    options: SchedulerOptions,
+    options: SchedulerOptions<Place, Ctx>,
     events: SchedulerEvents<Place, Ctx> = {},
   ) {
     this.definition = definition;
     this.pollIntervalMs = options.pollIntervalMs ?? 1000;
     this.adapter = sqliteAdapter<Place, Ctx>(options.db, definition.name);
     this.events = events;
+    this.decisionProvider = options.decisionProvider;
   }
 
   async createInstance(id: string): Promise<Marking<Place>> {
@@ -84,8 +98,26 @@ export class Scheduler<
           continue;
         }
 
-        // Fire the first enabled transition
-        const transition = enabled[0]!;
+        // Choose transition: use decision provider at choice points, otherwise deterministic
+        let transition: WorkflowTransition<Place, Ctx>;
+        if (enabled.length === 1 || !this.decisionProvider) {
+          transition = enabled[0]!;
+        } else {
+          const result = await this.decisionProvider.choose({
+            instanceId: id,
+            workflowName: this.definition.name,
+            enabled: enabled.map(t => ({ name: t.name, inputs: [...t.inputs], outputs: [...t.outputs] })),
+            marking: state.marking,
+            context: state.context,
+          });
+          transition = enabled.find(t => t.name === result.transition) ?? enabled[0]!;
+          this.events.onDecision?.(
+            id,
+            result.transition,
+            result.reasoning,
+            enabled.map(t => t.name),
+          );
+        }
         try {
           const result = await fireWorkflow(
             state.marking,

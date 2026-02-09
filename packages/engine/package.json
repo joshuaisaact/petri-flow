@@ -6,7 +6,10 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./analyse": "./src/analyse.ts"
+    "./analyse": "./src/analyse.ts",
+    "./workflow": "./src/workflow.ts",
+    "./types": "./src/types.ts",
+    "./decision": "./src/decision.ts"
   },
   "scripts": {
     "test": "bun test",
