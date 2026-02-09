@@ -1,0 +1,16 @@
+{
+  "name": "@petriflow/workflow-coffee",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "start": "bun run index.ts"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1"
+  }
+}

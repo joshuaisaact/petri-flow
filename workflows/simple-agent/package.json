@@ -1,0 +1,19 @@
+{
+  "name": "@petriflow/workflow-simple-agent",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "bun test",
+    "start": "bun run index.ts"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*",
+    "ai": "^6",
+    "@ai-sdk/anthropic": "^3",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@types/bun": "^1"
+  }
+}
