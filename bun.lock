@@ -68,6 +68,18 @@
         "typescript": "^5.7",
       },
     },
+    "packages/server": {
+      "name": "@petriflow/server",
+      "version": "0.1.0",
+      "dependencies": {
+        "@petriflow/engine": "workspace:*",
+        "hono": "^4.11.9",
+      },
+      "devDependencies": {
+        "@types/bun": "^1",
+        "typescript": "^5.7",
+      },
+    },
     "workflows/agent-benchmark": {
       "name": "@petriflow/workflow-agent-benchmark",
       "version": "0.1.0",
@@ -232,6 +244,8 @@
     "@petriflow/comparison-n8n": ["@petriflow/comparison-n8n@workspace:comparisons/n8n"],
 
     "@petriflow/engine": ["@petriflow/engine@workspace:packages/engine"],
+
+    "@petriflow/server": ["@petriflow/server@workspace:packages/server"],
 
     "@petriflow/viewer": ["@petriflow/viewer@workspace:apps/viewer"],
 
@@ -424,6 +438,8 @@
     "gensync": ["gensync@1.0.0-beta.2", "", {}, "sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg=="],
 
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
+
+    "hono": ["hono@4.11.9", "", {}, "sha512-Eaw2YTGM6WOxA6CXbckaEvslr2Ne4NFsKrvc0v97JD5awbmeBLO5w9Ho9L9kmKonrwF9RJlW6BxT1PVv/agBHQ=="],
 
     "jiti": ["jiti@2.6.1", "", { "bin": { "jiti": "lib/jiti-cli.mjs" } }, "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ=="],
 

@@ -1,0 +1,25 @@
+{
+  "name": "@petriflow/server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "start": "bun run src/main.ts",
+    "lint": "oxlint src/",
+    "fmt": "oxfmt src/",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*",
+    "hono": "^4.11.9"
+  },
+  "devDependencies": {
+    "typescript": "^5.7",
+    "@types/bun": "^1"
+  }
+}
