@@ -71,6 +71,7 @@ export function createExecutor<
         definition.net,
         marking,
         ctx,
+        definition.guards,
       );
 
       if (enabled.length === 0) {
@@ -102,12 +103,13 @@ export function createExecutor<
         };
       }
 
-      const result = await fireWorkflow(marking, transition, ctx);
+      const result = await fireWorkflow(marking, transition, ctx, definition.guards);
 
       const nextEnabled = enabledWorkflowTransitions(
         definition.net,
         result.marking,
         result.context,
+        definition.guards,
       );
 
       return {

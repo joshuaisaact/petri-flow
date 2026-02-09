@@ -22,6 +22,7 @@ export type {
 
 // PetriFlow types
 export type {
+  GuardFn,
   WorkflowTransition,
   WorkflowNet,
   WorkflowStatus,

@@ -64,10 +64,11 @@ export function defineWorkflow<
     }
   }
 
-  // Compile guard expressions into compiledGuard functions
+  // Compile guard expressions into a separate map
+  const guards = new Map<string, ReturnType<typeof compileGuard>>();
   for (const t of def.transitions) {
     if (t.guard) {
-      t.compiledGuard = compileGuard(t.guard);
+      guards.set(t.name, compileGuard(t.guard));
     }
   }
 
@@ -77,6 +78,7 @@ export function defineWorkflow<
       transitions: def.transitions,
       initialMarking: def.initialMarking,
     },
+    guards,
     initialContext: def.initialContext,
     terminalPlaces: def.terminalPlaces,
     invariants: def.invariants,

@@ -3,12 +3,13 @@ import type { Marking } from "petri-ts";
 import type {
   WorkflowTransition,
   WorkflowNet,
+  GuardFn,
   ExecutionResult,
 } from "./types.js";
 
 /**
  * Check if a workflow transition can fire: structural (petri-ts canFire)
- * AND guard function (if present).
+ * AND guard function (if present in the guards map).
  */
 export function canFireWorkflow<
   Place extends string,
@@ -17,9 +18,11 @@ export function canFireWorkflow<
   marking: Marking<Place>,
   transition: WorkflowTransition<Place, Ctx>,
   ctx: Ctx,
+  guards?: Map<string, GuardFn<Place, Ctx>>,
 ): boolean {
   if (!canFire(marking, transition)) return false;
-  if (transition.compiledGuard && !transition.compiledGuard(ctx, marking)) return false;
+  const guard = guards?.get(transition.name);
+  if (guard && !guard(ctx, marking)) return false;
   return true;
 }
 
@@ -34,6 +37,7 @@ export function enabledWorkflowTransitions<
   net: WorkflowNet<Place, Ctx>,
   marking: Marking<Place>,
   ctx: Ctx,
+  guards?: Map<string, GuardFn<Place, Ctx>>,
 ): WorkflowTransition<Place, Ctx>[] {
   // First get structurally enabled transitions from petri-ts
   const structurallyEnabled = enabledTransitions(net, marking);
@@ -41,7 +45,7 @@ export function enabledWorkflowTransitions<
 
   // Then filter by guard
   return net.transitions.filter(
-    (t) => enabledNames.has(t.name) && canFireWorkflow(marking, t, ctx),
+    (t) => enabledNames.has(t.name) && canFireWorkflow(marking, t, ctx, guards),
   );
 }
 
@@ -56,8 +60,9 @@ export async function fireWorkflow<
   marking: Marking<Place>,
   transition: WorkflowTransition<Place, Ctx>,
   ctx: Ctx,
+  guards?: Map<string, GuardFn<Place, Ctx>>,
 ): Promise<ExecutionResult<Place, Ctx>> {
-  if (!canFireWorkflow(marking, transition, ctx)) {
+  if (!canFireWorkflow(marking, transition, ctx, guards)) {
     throw new Error(`Cannot fire workflow transition: ${transition.name}`);
   }
 

@@ -1,5 +1,10 @@
 import type { Transition, PetriNet, Marking } from "petri-ts";
 
+export type GuardFn<
+  Place extends string,
+  Ctx extends Record<string, unknown> = Record<string, unknown>,
+> = (ctx: Ctx, marking: Marking<Place>) => boolean;
+
 /**
  * Extends petri-ts Transition with optional guard, execute, and timeout.
  * Because this is an intersection, a WorkflowTransition IS a Transition
@@ -10,7 +15,6 @@ export type WorkflowTransition<
   Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = Transition<Place> & {
   guard: string | null;
-  compiledGuard?: (ctx: Ctx, marking: Marking<Place>) => boolean;
   execute?: (ctx: Ctx, marking: Marking<Place>) => Promise<Partial<Ctx>>;
   timeout?: { place: Place; ms: number };
 };
@@ -35,6 +39,7 @@ export type WorkflowDefinition<
 > = {
   name: string;
   net: WorkflowNet<Place, Ctx>;
+  guards: Map<string, GuardFn<Place, Ctx>>;
   initialContext: Ctx;
   terminalPlaces: Place[];
   invariants?: { weights: Partial<Record<Place, number>> }[];

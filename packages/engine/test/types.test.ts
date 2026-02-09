@@ -57,10 +57,9 @@ describe("structural compatibility", () => {
     const net: WorkflowNet<Place, Ctx> = { transitions, initialMarking };
     const plain = toNet(net);
 
-    // Plain net should have no guard/execute/timeout/compiledGuard
+    // Plain net should have no guard/execute/timeout
     for (const t of plain.transitions) {
       expect((t as any).guard).toBeUndefined();
-      expect((t as any).compiledGuard).toBeUndefined();
       expect((t as any).execute).toBeUndefined();
       expect((t as any).timeout).toBeUndefined();
     }

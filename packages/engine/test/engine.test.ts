@@ -41,37 +41,38 @@ const def = defineWorkflow<Place, Ctx>({
 });
 
 const transitions = def.net.transitions;
+const guards = def.guards;
 const net = def.net;
 
 describe("canFireWorkflow", () => {
   it("returns true when structurally enabled and guard passes", () => {
     const marking: Marking<Place> = { idle: 0, review: 1, approved: 0, rejected: 0 };
-    expect(canFireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false })).toBe(true);
+    expect(canFireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards)).toBe(true);
   });
 
   it("returns false when guard fails", () => {
     const marking: Marking<Place> = { idle: 0, review: 1, approved: 0, rejected: 0 };
-    expect(canFireWorkflow(marking, transitions[1]!, { amount: 15000, approved: false })).toBe(false);
+    expect(canFireWorkflow(marking, transitions[1]!, { amount: 15000, approved: false }, guards)).toBe(false);
   });
 
   it("returns false when structurally disabled", () => {
     const marking: Marking<Place> = { idle: 1, review: 0, approved: 0, rejected: 0 };
-    expect(canFireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false })).toBe(false);
+    expect(canFireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards)).toBe(false);
   });
 
   it("returns true with no guard", () => {
     const marking: Marking<Place> = { idle: 1, review: 0, approved: 0, rejected: 0 };
-    expect(canFireWorkflow(marking, transitions[0]!, { amount: 5000, approved: false })).toBe(true);
+    expect(canFireWorkflow(marking, transitions[0]!, { amount: 5000, approved: false }, guards)).toBe(true);
   });
 });
 
 describe("enabledWorkflowTransitions", () => {
   it("returns only guard-passing transitions", () => {
     const marking: Marking<Place> = { idle: 0, review: 1, approved: 0, rejected: 0 };
-    const lowAmount = enabledWorkflowTransitions(net, marking, { amount: 5000, approved: false });
+    const lowAmount = enabledWorkflowTransitions(net, marking, { amount: 5000, approved: false }, guards);
     expect(lowAmount.map((t) => t.name)).toEqual(["approve"]);
 
-    const highAmount = enabledWorkflowTransitions(net, marking, { amount: 15000, approved: false });
+    const highAmount = enabledWorkflowTransitions(net, marking, { amount: 15000, approved: false }, guards);
     expect(highAmount.map((t) => t.name)).toEqual(["reject"]);
   });
 });
@@ -79,7 +80,7 @@ describe("enabledWorkflowTransitions", () => {
 describe("fireWorkflow", () => {
   it("fires and executes side effect, merging context", async () => {
     const marking: Marking<Place> = { idle: 0, review: 1, approved: 0, rejected: 0 };
-    const result = await fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false });
+    const result = await fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards);
 
     expect(result.marking).toEqual({ idle: 0, review: 0, approved: 1, rejected: 0 });
     expect(result.context.approved).toBe(true);
@@ -89,7 +90,7 @@ describe("fireWorkflow", () => {
   it("fires without execute (no context change)", async () => {
     const marking: Marking<Place> = { idle: 1, review: 0, approved: 0, rejected: 0 };
     const ctx = { amount: 5000, approved: false };
-    const result = await fireWorkflow(marking, transitions[0]!, ctx);
+    const result = await fireWorkflow(marking, transitions[0]!, ctx, guards);
 
     expect(result.marking).toEqual({ idle: 0, review: 1, approved: 0, rejected: 0 });
     expect(result.context).toEqual(ctx);
@@ -99,7 +100,7 @@ describe("fireWorkflow", () => {
   it("throws when transition cannot fire", async () => {
     const marking: Marking<Place> = { idle: 1, review: 0, approved: 0, rejected: 0 };
     expect(
-      fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }),
+      fireWorkflow(marking, transitions[1]!, { amount: 5000, approved: false }, guards),
     ).rejects.toThrow("Cannot fire workflow transition: approve");
   });
 });
