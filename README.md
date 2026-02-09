@@ -16,6 +16,7 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | Package | Description |
 |---|---|
 | `@petriflow/engine` | Core types, engine, scheduler, pluggable persistence (SQLite adapter included), analysis |
+| `@petriflow/server` | HTTP server — run workflows as a service, inject tokens via REST, observe via SSE |
 | `@petriflow/cli` | `petriflow analyse <workflow.ts>` CLI tool |
 | `@petriflow/viewer` | Interactive Petri net viewer — click to fire transitions, live analysis |
 
@@ -215,6 +216,58 @@ const scheduler = new Scheduler(executor, { adapter }, {
 });
 ```
 
+## HTTP Server
+
+`@petriflow/server` runs workflows as a long-lived service. Create instances, inject tokens (external events like webhooks or human approvals), and observe state changes via SSE — all over HTTP.
+
+Start the server with one or more workflow definitions:
+
+```bash
+bun run packages/server/src/main.ts workflows/coffee/definition.ts workflows/order-checkout/definition.ts
+```
+
+Routes:
+
+```
+GET    /workflows                      List registered workflows
+POST   /workflows/:name/instances      Create instance         { "id": "order-001" }
+GET    /workflows/:name/instances      List instances for workflow
+GET    /instances/:id                  Inspect instance state
+POST   /instances/:id/inject           Inject token            { "place": "payment", "count": 1 }
+POST   /workflows/register             Register from file      { "path": "./my-workflow.ts" }
+GET    /events                         SSE stream (all events)
+GET    /events?workflow=X              SSE filtered by workflow
+GET    /events?instance=X              SSE filtered by instance
+```
+
+Example — create an instance and watch it run:
+
+```bash
+# Terminal 1: stream events
+curl -N http://localhost:3000/events
+
+# Terminal 2: create and observe
+curl -X POST http://localhost:3000/workflows/coffee/instances \
+  -H 'Content-Type: application/json' -d '{"id":"brew-1"}'
+curl http://localhost:3000/instances/brew-1
+```
+
+For programmatic use, import the runtime directly without the HTTP layer:
+
+```ts
+import { Database } from "bun:sqlite";
+import { WorkflowRuntime, createServer } from "@petriflow/server";
+
+const runtime = new WorkflowRuntime({ db: new Database(":memory:") });
+runtime.register(myDefinition);
+runtime.start();
+
+// Optional: expose over HTTP
+const server = createServer({ runtime, port: 3000 });
+```
+
+The `WorkflowRuntime` class is framework-agnostic — it has no HTTP knowledge. The `createServer` function is a thin Hono layer on top. BYO users can import the runtime and wire their own framework.
+
 ## Persistence
 
 The scheduler takes a `WorkflowPersistence` adapter. A SQLite adapter is included:
@@ -251,6 +304,7 @@ const scheduler = new Scheduler(executor, { adapter: customAdapter });
 - [petri-ts](https://www.npmjs.com/package/petri-ts) — Petri net engine and analysis
 - [Bun](https://bun.sh) — runtime, test runner, bundler
 - [Turborepo](https://turbo.build) — monorepo orchestration
+- [Hono](https://hono.dev) — HTTP router for the server
 - [React Flow](https://reactflow.dev) — graph rendering for the viewer
 - [dagre](https://github.com/dagrejs/dagre) — automatic graph layout
 - [Vercel AI SDK](https://sdk.vercel.ai) — LLM integration for the decision provider
