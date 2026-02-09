@@ -27,6 +27,7 @@ const definition = defineWorkflow<Place, Ctx>({
   ],
   initialMarking: { start: 1, middle: 0, end: 0 },
   initialContext: { log: [] },
+  terminalPlaces: ["end"],
 });
 
 describe("createExecutor", () => {
@@ -87,6 +88,7 @@ describe("createExecutor", () => {
       ],
       initialMarking: { a: 1, b: 0 },
       initialContext: {},
+      terminalPlaces: ["b"],
     });
 
     const executor = createExecutor(errorDef);
@@ -116,6 +118,7 @@ describe("createExecutor", () => {
       ],
       initialMarking: { pending: 1, approved: 0, denied: 0 },
       initialContext: { score: 90 },
+      terminalPlaces: ["approved", "denied"],
     });
 
     const executor = createExecutor(gatedDef);
@@ -140,6 +143,7 @@ describe("createExecutor", () => {
       ],
       initialMarking: { start: 1, a: 0, b: 0 },
       initialContext: {},
+      terminalPlaces: ["a", "b"],
     });
 
     const provider: DecisionProvider<CPlace, CCtx> = {
@@ -176,6 +180,7 @@ describe("createExecutor", () => {
       ],
       initialMarking: { start: 1, a: 0, b: 0 },
       initialContext: {},
+      terminalPlaces: ["a", "b"],
     });
 
     const provider: DecisionProvider<CPlace, CCtx> = {

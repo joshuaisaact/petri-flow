@@ -64,6 +64,7 @@ describe("order-checkout workflow", () => {
         quantity: 1,
         paid: false,
       },
+      terminalPlaces: ["shipped", "out_of_stock"],
     });
 
     const db = new Database(":memory:");

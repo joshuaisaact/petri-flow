@@ -36,6 +36,7 @@ const definition = defineWorkflow<Place, Ctx>({
   ],
   initialMarking: { start: 1, step1: 0, step2: 0, end: 0 },
   initialContext: { log: [] },
+  terminalPlaces: ["end"],
 });
 
 describe("Scheduler", () => {
@@ -114,6 +115,7 @@ describe("Scheduler", () => {
       ],
       initialMarking: { pending: 1, approved: 0, denied: 0 },
       initialContext: { score: 50 },
+      terminalPlaces: ["approved", "denied"],
     });
 
     const db = new Database(":memory:");
@@ -152,6 +154,7 @@ describe("Scheduler", () => {
       ],
       initialMarking: { start: 1, end: 0 },
       initialContext: {},
+      terminalPlaces: ["end"],
     });
 
     const db = new Database(":memory:");
@@ -189,6 +192,7 @@ describe("Scheduler", () => {
       ],
       initialMarking: { waiting: 1, approved: 0, done: 0 },
       initialContext: { approvedBy: "" },
+      terminalPlaces: ["done"],
     });
 
     const db = new Database(":memory:");

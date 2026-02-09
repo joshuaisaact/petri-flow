@@ -102,6 +102,7 @@ describe("defineWorkflow", () => {
       transitions,
       initialMarking,
       initialContext: { approved: false },
+      terminalPlaces: ["done"],
     });
 
     expect(def.name).toBe("test");
@@ -119,6 +120,7 @@ describe("defineWorkflow", () => {
         ],
         initialMarking: { idle: 1, done: 0 } as any,
         initialContext: {},
+        terminalPlaces: ["done"] as any,
       }),
     ).toThrow('unknown output place "unknown"');
   });
@@ -131,6 +133,7 @@ describe("defineWorkflow", () => {
         transitions: [],
         initialMarking: { idle: 1, ghost: 0 } as any,
         initialContext: {},
+        terminalPlaces: [] as any,
       }),
     ).toThrow('unknown place "ghost"');
   });
@@ -143,7 +146,7 @@ describe("defineWorkflow", () => {
         transitions: [],
         initialMarking: { idle: 1, done: 0 } as any,
         initialContext: {},
-        terminalPlaces: ["donee"] as any,
+        terminalPlaces: ["donee"] as any, // intentionally invalid
       }),
     ).toThrow('Terminal place "donee" is not a known place');
   });

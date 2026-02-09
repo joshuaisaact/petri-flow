@@ -43,7 +43,7 @@ export type WorkflowDefinition<
   name: string;
   net: WorkflowNet<Place, Ctx>;
   initialContext: Ctx;
-  terminalPlaces?: Place[];
+  terminalPlaces: Place[];
   invariants?: { weights: Partial<Record<Place, number>> }[];
 };
 

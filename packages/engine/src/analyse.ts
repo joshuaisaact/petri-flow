@@ -41,7 +41,7 @@ export function analyse<
   let validTerminalStates: Marking<Place>[];
   let unexpectedTerminalStates: Marking<Place>[];
 
-  if (terminalPlaces && terminalPlaces.length > 0) {
+  if (terminalPlaces.length > 0) {
     validTerminalStates = result.terminalStates.filter((s) =>
       isValidTerminal(s, terminalPlaces),
     );
@@ -49,7 +49,7 @@ export function analyse<
       (s) => !isValidTerminal(s, terminalPlaces),
     );
   } else {
-    // No terminal places declared — all terminal states are valid (can't distinguish)
+    // Empty terminal places — all terminal states are valid (can't distinguish)
     validTerminalStates = result.terminalStates;
     unexpectedTerminalStates = [];
   }

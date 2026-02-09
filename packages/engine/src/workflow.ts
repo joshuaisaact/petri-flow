@@ -19,7 +19,7 @@ export function defineWorkflow<
   transitions: WorkflowTransition<Place, Ctx>[];
   initialMarking: Marking<Place>;
   initialContext: Ctx;
-  terminalPlaces?: Place[];
+  terminalPlaces: Place[];
   invariants?: { weights: Partial<Record<Place, number>> }[];
 }): WorkflowDefinition<Place, Ctx> {
   const placeSet = new Set<string>(def.places);
@@ -56,13 +56,11 @@ export function defineWorkflow<
   }
 
   // Validate terminal places reference known places
-  if (def.terminalPlaces) {
-    for (const p of def.terminalPlaces) {
-      if (!placeSet.has(p)) {
-        throw new Error(
-          `Terminal place "${p}" is not a known place`,
-        );
-      }
+  for (const p of def.terminalPlaces) {
+    if (!placeSet.has(p)) {
+      throw new Error(
+        `Terminal place "${p}" is not a known place`,
+      );
     }
   }
 

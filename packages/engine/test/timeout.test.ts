@@ -44,6 +44,7 @@ function makeTimeoutDef(timeoutMs: number, guardBlocked = true) {
     ],
     initialMarking: { waiting: 1, timed_out: 0, done: 0, expired: 0 },
     initialContext: { approved: !guardBlocked, result: "" },
+    terminalPlaces: ["done", "expired"],
   });
 }
 
@@ -153,6 +154,7 @@ describe("Timeout support", () => {
       ],
       initialMarking: { pending: 1, alt_path: 0, timed_out: 0, done_a: 0, done_b: 0 },
       initialContext: {},
+      terminalPlaces: ["done_a", "done_b"],
     });
 
     const db = new Database(":memory:");
@@ -241,6 +243,7 @@ describe("Timeout support", () => {
         ],
         initialMarking: { a: 1, b: 0 } as any,
         initialContext: {},
+        terminalPlaces: ["b"] as any,
       }),
     ).toThrow('Transition "t" timeout references unknown place "nonexistent"');
   });

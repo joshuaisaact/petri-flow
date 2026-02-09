@@ -113,12 +113,13 @@ const definition = defineWorkflow({
       name: "go",
       inputs: ["start"],
       outputs: ["end"],
-      guard: (ctx) => ctx.ready,
+      guard: "ready",
       execute: async (ctx) => ({ done: true }),
     },
   ],
   initialMarking: { start: 1, end: 0 },
   initialContext: { ready: true, done: false },
+  terminalPlaces: ["end"],
 });
 
 // Prove properties before running
@@ -190,17 +191,19 @@ const definition = defineWorkflow({
       name: "approve",
       inputs: ["waiting"],
       outputs: ["approved"],
-      guard: (ctx) => ctx.approved,
+      guard: "approved",
       timeout: { place: "timed_out", ms: 30_000 }, // 30s deadline
     },
     {
       name: "escalate",
       inputs: ["waiting", "timed_out"],
       outputs: ["escalated"],
+      guard: null,
     },
   ],
   initialMarking: { waiting: 1, timed_out: 0, approved: 0, escalated: 0 },
   initialContext: { approved: false },
+  terminalPlaces: ["approved", "escalated"],
 });
 ```
 

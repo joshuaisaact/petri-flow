@@ -37,6 +37,7 @@ const def = defineWorkflow<Place, Ctx>({
   ],
   initialMarking: { idle: 1, review: 0, approved: 0, rejected: 0 },
   initialContext: { amount: 0, approved: false },
+  terminalPlaces: ["approved", "rejected"],
 });
 
 const transitions = def.net.transitions;

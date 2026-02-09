@@ -12,6 +12,7 @@ const definition = defineWorkflow<Place, Record<string, unknown>>({
   ],
   initialMarking: { idle: 1, processing: 0, done: 0 },
   initialContext: {},
+  terminalPlaces: ["done"],
 });
 
 describe("analyse", () => {
@@ -54,6 +55,7 @@ describe("analyse", () => {
       ],
       initialMarking: { a: 1, b: 0 },
       initialContext: {},
+      terminalPlaces: [],
     });
 
     const result = analyse(cycleDef);
