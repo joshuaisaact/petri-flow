@@ -23,7 +23,15 @@ export function useAnalysis(viewerNet: ViewerNet) {
     return analyse(
       {
         name: viewerNet.name,
-        net: viewerNet.net,
+        net: {
+          transitions: viewerNet.net.transitions.map((t) => ({
+            ...t,
+            guard: null as string | null,
+          })),
+          initialMarking: viewerNet.net.initialMarking,
+        },
+        guards: new Map(),
+        executors: new Map(),
         initialContext: {},
         terminalPlaces,
         invariants: viewerNet.invariants?.map((inv) => ({

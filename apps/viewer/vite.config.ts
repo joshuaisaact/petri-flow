@@ -15,4 +15,10 @@ export default defineConfig({
       "@workflows": path.resolve(__dirname, "../../workflows"),
     },
   },
+  server: {
+    proxy: {
+      "/definitions": "http://localhost:3000",
+      "/workflows": "http://localhost:3000",
+    },
+  },
 });

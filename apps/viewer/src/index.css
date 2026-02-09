@@ -64,3 +64,39 @@ body {
 .light-minimap.react-flow__minimap {
   border: 1px solid #e2e8f0;
 }
+
+/* Editor canvas: make connection handles visible and easy to grab */
+.editor-canvas .react-flow__handle {
+  opacity: 1 !important;
+  width: 10px !important;
+  height: 10px !important;
+  background: #6366f1;
+  border: 2px solid #1e293b;
+  transition: all 0.15s;
+}
+
+.editor-canvas .react-flow__handle:hover {
+  background: #818cf8;
+  transform: scale(1.4);
+}
+
+/* Edge click hint */
+.editor-canvas .react-flow__edge {
+  cursor: pointer;
+}
+
+/* Selection ring */
+.editor-canvas .react-flow__node.selected {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Connecting mode — crosshair on valid targets */
+.editor-canvas.connecting .react-flow__node {
+  cursor: crosshair;
+}
+
+.editor-canvas.connecting .react-flow__pane {
+  cursor: not-allowed;
+}

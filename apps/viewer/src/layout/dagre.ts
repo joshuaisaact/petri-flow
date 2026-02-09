@@ -34,7 +34,7 @@ const TRANS_H = 36;
 
 export type WorkflowTransitionMeta = {
   name: string;
-  guard?: string;
+  guard?: string | null;
   timeout?: { place: string; ms: number };
 };
 

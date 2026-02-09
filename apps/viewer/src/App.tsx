@@ -1,10 +1,50 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { nets } from "./nets";
 import { NetSelector } from "./components/controls/NetSelector";
 import { Viewer } from "./Viewer";
+import { Editor } from "./editor/Editor";
 import { ThemeProvider, useTheme } from "./theme";
 
+function usePath() {
+  return useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("popstate", cb);
+      return () => window.removeEventListener("popstate", cb);
+    },
+    () => window.location.pathname,
+  );
+}
+
+function navigate(to: string) {
+  window.history.pushState(null, "", to);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function NavLink({ to, children, active }: { to: string; children: React.ReactNode; active: boolean }) {
+  const { t } = useTheme();
+  const onClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate(to);
+  };
+
+  return (
+    <a
+      href={to}
+      onClick={onClick}
+      className={`text-xs px-2.5 py-1.5 rounded-md transition-colors ${
+        active
+          ? t("bg-slate-800 text-white", "bg-slate-200 text-slate-900")
+          : t("text-slate-400 hover:text-slate-300", "text-slate-500 hover:text-slate-700")
+      }`}
+    >
+      {children}
+    </a>
+  );
+}
+
 function AppInner() {
+  const path = usePath();
+  const isEditor = path === "/editor";
   const [selectedName, setSelectedName] = useState(nets[0]!.name);
   const viewerNet = nets.find((n) => n.name === selectedName) ?? nets[0]!;
   const { isDark, toggle, t } = useTheme();
@@ -21,11 +61,20 @@ function AppInner() {
           PetriFlow
         </h1>
         <div className={`w-px h-4 ${t("bg-slate-700", "bg-slate-300")}`} />
-        <NetSelector
-          nets={nets}
-          selected={selectedName}
-          onSelect={setSelectedName}
-        />
+        <nav className="flex items-center gap-1">
+          <NavLink to="/" active={!isEditor}>Viewer</NavLink>
+          <NavLink to="/editor" active={isEditor}>Editor</NavLink>
+        </nav>
+        {!isEditor && (
+          <>
+            <div className={`w-px h-4 ${t("bg-slate-700", "bg-slate-300")}`} />
+            <NetSelector
+              nets={nets}
+              selected={selectedName}
+              onSelect={setSelectedName}
+            />
+          </>
+        )}
         <div className="flex-1" />
         <button
           onClick={toggle}
@@ -54,7 +103,11 @@ function AppInner() {
           {isDark ? "Light" : "Dark"}
         </button>
       </header>
-      <Viewer key={viewerNet.name} viewerNet={viewerNet} />
+      {isEditor ? (
+        <Editor />
+      ) : (
+        <Viewer key={viewerNet.name} viewerNet={viewerNet} />
+      )}
     </div>
   );
 }
