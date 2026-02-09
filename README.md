@@ -23,20 +23,10 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 
 | Workflow | What it proves |
 |---|---|
+| `coffee` | Concurrency and synchronisation. `heatWater` and `grindBeans` fire independently, `pourOver` joins them with a temperature guard. |
+| `simple-agent` | Iteration loop with budget tokens. Agent is structurally forced to respond when budget is exhausted. |
 | `order-checkout` | Cannot oversell inventory. `reserve_stock` consumes from a shared `inventory` place. Every order terminates. |
 | `agent-benchmark` | Termination, human approval gate, no orphaned work, bounded iterations. See [BENCHMARK.md](./BENCHMARK.md). |
-
-### Order Checkout
-
-<p align="center">
-  <img src="docs/order-checkout.svg" alt="Order checkout Petri net" width="500">
-</p>
-
-### Agent Benchmark
-
-<p align="center">
-  <img src="docs/agent-benchmark.svg" alt="Agent benchmark Petri net" width="600">
-</p>
 
 ## Viewer
 
@@ -74,8 +64,16 @@ bun install
 Run a workflow end-to-end:
 
 ```bash
+bun run workflows/coffee/index.ts
+bun run workflows/simple-agent/index.ts
 bun run workflows/order-checkout/index.ts
 bun run workflows/agent-benchmark/index.ts
+```
+
+Run with LLM decision-making (requires an Anthropic API key):
+
+```bash
+ANTHROPIC_API_KEY=sk-... bun run workflows/simple-agent/run-llm.ts
 ```
 
 Analyse a workflow:
@@ -131,6 +129,37 @@ await scheduler.createInstance("instance-1");
 await scheduler.tick();
 ```
 
+## LLM Decision Provider
+
+When multiple transitions are enabled, a `DecisionProvider` calls an LLM to choose which one to fire. When only one transition is enabled it is fired automatically — no LLM call is made.
+
+```ts
+type DecisionProvider<Place extends string, Ctx extends Record<string, unknown>> = {
+  choose(request: {
+    instanceId: string;
+    workflowName: string;
+    enabled: { name: string; inputs: string[]; outputs: string[] }[];
+    marking: Marking<Place>;
+    context: Ctx;
+  }): Promise<{ transition: string; reasoning: string }>;
+};
+```
+
+Wire it into the Scheduler:
+
+```ts
+const scheduler = new Scheduler(definition, { db, decisionProvider: provider }, {
+  onDecision: (id, name, reasoning, candidates) => {
+    console.log(`[${id}] LLM chose: ${name} (from ${candidates.join(", ")})`);
+    console.log(`  reasoning: ${reasoning}`);
+  },
+});
+```
+
+The `onDecision` event fires after every LLM choice, logging the selected transition, reasoning, and the full candidate list.
+
+See `workflows/simple-agent/llm-provider.ts` for a reference implementation using the Vercel AI SDK with Claude.
+
 ## Built with
 
 - [petri-ts](https://www.npmjs.com/package/petri-ts) — Petri net engine and analysis
@@ -138,3 +167,4 @@ await scheduler.tick();
 - [Turborepo](https://turbo.build) — monorepo orchestration
 - [React Flow](https://reactflow.dev) — graph rendering for the viewer
 - [dagre](https://github.com/dagrejs/dagre) — automatic graph layout
+- [Vercel AI SDK](https://sdk.vercel.ai) — LLM integration for the decision provider
