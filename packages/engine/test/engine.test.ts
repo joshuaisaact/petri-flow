@@ -19,6 +19,7 @@ const def = defineWorkflow<Place, Ctx>({
       name: "submit",
       inputs: ["idle"],
       outputs: ["review"],
+      guard: null,
     },
     {
       name: "approve",

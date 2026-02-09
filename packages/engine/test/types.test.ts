@@ -29,6 +29,7 @@ const transitions: WorkflowTransition<Place, Ctx>[] = [
     name: "finish",
     inputs: ["processing"],
     outputs: ["done"],
+    guard: null,
   },
 ];
 
@@ -114,7 +115,7 @@ describe("defineWorkflow", () => {
         name: "bad",
         places: ["idle", "done"] as any,
         transitions: [
-          { name: "bad", inputs: ["idle"], outputs: ["unknown" as any] },
+          { name: "bad", inputs: ["idle"], outputs: ["unknown" as any], guard: null },
         ],
         initialMarking: { idle: 1, done: 0 } as any,
         initialContext: {},

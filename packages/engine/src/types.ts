@@ -9,7 +9,7 @@ export type WorkflowTransition<
   Place extends string,
   Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = Transition<Place> & {
-  guard?: string;
+  guard: string | null;
   compiledGuard?: (ctx: Ctx, marking: Marking<Place>) => boolean;
   execute?: (ctx: Ctx, marking: Marking<Place>) => Promise<Partial<Ctx>>;
   timeout?: { place: Place; ms: number };

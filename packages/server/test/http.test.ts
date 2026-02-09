@@ -8,7 +8,7 @@ import type { Server } from "bun";
 const simpleDefinition = defineWorkflow({
   name: "simple",
   places: ["start", "end"] as const,
-  transitions: [{ name: "go", inputs: ["start"], outputs: ["end"] }],
+  transitions: [{ name: "go", inputs: ["start"], outputs: ["end"], guard: null }],
   initialMarking: { start: 1, end: 0 },
   initialContext: {},
   terminalPlaces: ["end"],
@@ -29,12 +29,14 @@ const coffeeDefinition = defineWorkflow({
       name: "heatWater",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
+      guard: null,
       execute: async () => ({ waterTemp: 96 }),
     },
     {
       name: "grindBeans",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
+      guard: null,
       execute: async () => ({ grindSize: "medium" }),
     },
     {

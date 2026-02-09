@@ -32,16 +32,19 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "plan",
       inputs: ["userQuery"],
       outputs: ["planReady"],
+      guard: null,
     },
     {
       name: "dispatchTool",
       inputs: ["planReady"],
       outputs: ["toolPending"],
+      guard: null,
     },
     {
       name: "completeTool",
       inputs: ["toolPending"],
       outputs: ["resultsReady"],
+      guard: null,
       execute: async (ctx) => ({
         toolResult: `tool result for iteration ${ctx.iteration}`,
       }),
@@ -50,6 +53,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "generate",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
+      guard: null,
       execute: async (ctx) => ({
         response: `Response after ${ctx.iteration} iteration(s)`,
       }),
@@ -58,6 +62,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "iterate",
       inputs: ["resultsReady", "iterationBudget"],
       outputs: ["userQuery"],
+      guard: null,
       execute: async (ctx) => ({
         iteration: ctx.iteration + 1,
       }),

@@ -29,11 +29,13 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "reserve_stock",
       inputs: ["order_placed", "inventory"],
       outputs: ["reserved", "payment"],
+      guard: null,
     },
     {
       name: "process_payment",
       inputs: ["payment", "reserved"],
       outputs: ["shipped"],
+      guard: null,
       execute: async (ctx) => ({
         paid: true,
       }),

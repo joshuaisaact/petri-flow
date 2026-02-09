@@ -55,6 +55,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "plan",
       inputs: ["userQuery"],
       outputs: ["planReady"],
+      guard: null,
     },
 
     // Fan-out: distribute planReady to per-tool decision points
@@ -62,6 +63,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "distribute",
       inputs: ["planReady"],
       outputs: ["searchDecision", "dbDecision", "codeDecision"],
+      guard: null,
     },
 
     // === Search tool ===
@@ -69,16 +71,19 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "dispatchSearch",
       inputs: ["searchDecision"],
       outputs: ["searchPending"],
+      guard: null,
     },
     {
       name: "skipSearch",
       inputs: ["searchDecision"],
       outputs: ["searchDone"],
+      guard: null,
     },
     {
       name: "completeSearch",
       inputs: ["searchPending"],
       outputs: ["searchDone"],
+      guard: null,
       execute: async (ctx) => ({
         searchResult: "search: found 3 results",
       }),
@@ -89,16 +94,19 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "dispatchDB",
       inputs: ["dbDecision"],
       outputs: ["dbPending"],
+      guard: null,
     },
     {
       name: "skipDB",
       inputs: ["dbDecision"],
       outputs: ["dbDone"],
+      guard: null,
     },
     {
       name: "completeDB",
       inputs: ["dbPending"],
       outputs: ["dbDone"],
+      guard: null,
       execute: async (ctx) => ({
         dbResult: "db: 42 rows matched",
       }),
@@ -109,31 +117,37 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "dispatchCode",
       inputs: ["codeDecision"],
       outputs: ["codePending"],
+      guard: null,
     },
     {
       name: "skipCode",
       inputs: ["codeDecision"],
       outputs: ["codeDone"],
+      guard: null,
     },
     {
       name: "requestApproval",
       inputs: ["codePending"],
       outputs: ["humanApproval"],
+      guard: null,
     },
     {
       name: "approveCode",
       inputs: ["humanApproval"],
       outputs: ["codeApproved"],
+      guard: null,
     },
     {
       name: "rejectCode",
       inputs: ["humanApproval"],
       outputs: ["codeDone"],
+      guard: null,
     },
     {
       name: "executeCode",
       inputs: ["codeApproved"],
       outputs: ["codeDone"],
+      guard: null,
       execute: async (ctx) => ({
         codeResult: "code: executed successfully",
       }),
@@ -144,6 +158,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "joinResults",
       inputs: ["searchDone", "dbDone", "codeDone"],
       outputs: ["resultsReady"],
+      guard: null,
     },
 
     // Generate response — does NOT consume iterationBudget
@@ -152,6 +167,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "generate",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
+      guard: null,
       execute: async (ctx) => ({
         response: `Response after ${ctx.iteration} iteration(s)`,
       }),
@@ -162,6 +178,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "iterate",
       inputs: ["resultsReady", "iterationBudget"],
       outputs: ["userQuery"],
+      guard: null,
       execute: async (ctx) => ({
         iteration: ctx.iteration + 1,
       }),

@@ -29,6 +29,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "heatWater",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
+      guard: null,
       execute: async (ctx) => ({
         waterTemp: 96,
       }),
@@ -37,6 +38,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       name: "grindBeans",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
+      guard: null,
       execute: async (ctx) => ({
         grindSize: "medium",
       }),
