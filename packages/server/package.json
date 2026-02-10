@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "bun test",
+    "dev": "bun run src/main.ts --no-require-workflows",
     "start": "bun run src/main.ts",
     "lint": "oxlint src/",
     "fmt": "oxfmt src/",

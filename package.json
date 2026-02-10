@@ -7,8 +7,10 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "fmt": "turbo run fmt",
-    "check": "turbo run check"
+    "check": "turbo run check",
+    "dev": "turbo run dev --filter=@petriflow/server --filter=@petriflow/viewer"
   },
+  "packageManager": "bun@1.2.7",
   "devDependencies": {
     "turbo": "^2",
     "typescript": "^5.7",

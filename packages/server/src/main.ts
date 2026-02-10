@@ -9,15 +9,17 @@ if (args.length === 0 || args.includes("--help")) {
   console.log(`Usage: bun run packages/server/src/main.ts <workflow-paths...>
 
 Options:
-  --port <port>    HTTP port (default: 3000, or PORT env)
-  --db <path>      SQLite database path (default: :memory:, or DATABASE env)
-  --help           Show this help`);
+  --port <port>              HTTP port (default: 3000, or PORT env)
+  --db <path>                SQLite database path (default: :memory:, or DATABASE env)
+  --no-require-workflows     Start server without requiring workflow paths
+  --help                     Show this help`);
   process.exit(0);
 }
 
 // Parse flags
 let port = Number(process.env.PORT) || 3000;
 let dbPath = process.env.DATABASE || ":memory:";
+let requireWorkflows = true;
 const workflowPaths: string[] = [];
 
 for (let i = 0; i < args.length; i++) {
@@ -25,12 +27,14 @@ for (let i = 0; i < args.length; i++) {
     port = Number(args[++i]);
   } else if (args[i] === "--db" && args[i + 1]) {
     dbPath = args[++i]!;
+  } else if (args[i] === "--no-require-workflows") {
+    requireWorkflows = false;
   } else {
     workflowPaths.push(args[i]!);
   }
 }
 
-if (workflowPaths.length === 0) {
+if (requireWorkflows && workflowPaths.length === 0) {
   console.error("Error: at least one workflow path required");
   process.exit(1);
 }
