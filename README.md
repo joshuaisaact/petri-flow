@@ -31,9 +31,13 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 
 ## Viewer
 
-An interactive React app for exploring Petri nets. Click enabled transitions to fire them, watch tokens flow, and see live reachability analysis.
+An interactive React app for exploring and editing Petri nets. Click enabled transitions to fire them, watch tokens flow, and see live reachability analysis. The built-in editor lets you create workflows visually and save them to the server.
 
 ```bash
+# Full stack (API server + viewer)
+bun dev
+
+# Viewer only (no save/load)
 bun run --filter=@petriflow/viewer dev
 ```
 
@@ -52,6 +56,7 @@ Features:
 - **Auto-play** — random firing with adjustable speed, stops at terminal state
 - **Live analysis** — reachable states, terminal states, deadlock-free status, safety properties and invariants
 - **Token display** — toggle between numbers and traditional Petri net dot notation
+- **Visual editor** — create places and transitions, edit properties in a modal, connect arcs via dropdowns or drag
 - **Light/dark theme** — toggle in the header
 
 Built with React 19, React Flow, dagre layout, framer-motion, and Tailwind CSS v4. Uses `@petriflow/engine/analyse` for workflow-aware analysis (distinguishes valid terminal states from true deadlocks).
@@ -60,6 +65,9 @@ Built with React 19, React Flow, dagre layout, framer-motion, and Tailwind CSS v
 
 ```bash
 bun install
+
+# Start the viewer + API server
+bun dev
 ```
 
 Run a workflow end-to-end:
