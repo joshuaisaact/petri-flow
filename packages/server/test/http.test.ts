@@ -8,7 +8,7 @@ import type { Server } from "bun";
 const simpleDefinition = defineWorkflow({
   name: "simple",
   places: ["start", "end"] as const,
-  transitions: [{ name: "go", inputs: ["start"], outputs: ["end"], guard: null }],
+  transitions: [{ name: "go", type: "automatic", inputs: ["start"], outputs: ["end"], guard: null }],
   initialMarking: { start: 1, end: 0 },
   initialContext: {},
   terminalPlaces: ["end"],
@@ -27,6 +27,7 @@ const coffeeDefinition = defineWorkflow({
   transitions: [
     {
       name: "heatWater",
+      type: "script",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
       guard: null,
@@ -34,6 +35,7 @@ const coffeeDefinition = defineWorkflow({
     },
     {
       name: "grindBeans",
+      type: "script",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
       guard: null,
@@ -41,6 +43,7 @@ const coffeeDefinition = defineWorkflow({
     },
     {
       name: "pourOver",
+      type: "script",
       inputs: ["waterHot", "beansGround", "cupEmpty"],
       outputs: ["coffeeReady"],
       guard: "waterTemp >= 90",
@@ -315,7 +318,7 @@ describe("HTTP API", () => {
       const def = {
         name: "dynamic",
         places: ["a", "b"],
-        transitions: [{ name: "go", inputs: ["a"], outputs: ["b"], guard: null }],
+        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null }],
         initialMarking: { a: 1, b: 0 },
         initialContext: {},
         terminalPlaces: ["b"],
@@ -374,7 +377,7 @@ describe("HTTP API", () => {
       const def = {
         name: "stored",
         places: ["x", "y"],
-        transitions: [{ name: "move", inputs: ["x"], outputs: ["y"], guard: "ready" }],
+        transitions: [{ name: "move", type: "automatic", inputs: ["x"], outputs: ["y"], guard: "ready" }],
         initialMarking: { x: 1, y: 0 },
         initialContext: { ready: true },
         terminalPlaces: ["y"],

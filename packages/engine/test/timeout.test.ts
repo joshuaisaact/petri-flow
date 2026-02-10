@@ -28,6 +28,7 @@ function makeTimeoutDef(timeoutMs: number, guardBlocked = true) {
     transitions: [
       {
         name: "approve",
+        type: "manual",
         inputs: ["waiting"],
         outputs: ["done"],
         guard: "approved",
@@ -36,6 +37,7 @@ function makeTimeoutDef(timeoutMs: number, guardBlocked = true) {
       },
       {
         name: "handle_timeout",
+        type: "timer",
         inputs: ["waiting", "timed_out"],
         outputs: ["expired"],
         guard: null,
@@ -140,6 +142,7 @@ describe("Timeout support", () => {
       transitions: [
         {
           name: "guarded",
+          type: "automatic",
           inputs: ["pending"],
           outputs: ["done_a"],
           guard: "0", // always blocked
@@ -147,6 +150,7 @@ describe("Timeout support", () => {
         },
         {
           name: "alt",
+          type: "automatic",
           inputs: ["pending", "alt_path"],
           outputs: ["done_b"],
           guard: null,
@@ -235,6 +239,7 @@ describe("Timeout support", () => {
         transitions: [
           {
             name: "t",
+            type: "automatic",
             inputs: ["a"],
             outputs: ["b"],
             guard: null,

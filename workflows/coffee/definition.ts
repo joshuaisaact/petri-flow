@@ -27,6 +27,7 @@ export const definition = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "heatWater",
+      type: "script",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
       guard: null,
@@ -36,6 +37,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "grindBeans",
+      type: "script",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
       guard: null,
@@ -45,6 +47,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "pourOver",
+      type: "script",
       inputs: ["waterHot", "beansGround", "cupEmpty"],
       outputs: ["coffeeReady"],
       guard: "waterTemp >= 90",

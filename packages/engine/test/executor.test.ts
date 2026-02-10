@@ -12,6 +12,7 @@ const definition = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "begin",
+      type: "automatic",
       inputs: ["start"],
       outputs: ["middle"],
       guard: null,
@@ -19,6 +20,7 @@ const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "finish",
+      type: "automatic",
       inputs: ["middle"],
       outputs: ["end"],
       guard: null,
@@ -80,6 +82,7 @@ describe("createExecutor", () => {
       transitions: [
         {
           name: "explode",
+          type: "automatic",
           inputs: ["a"],
           outputs: ["b"],
           guard: null,
@@ -105,12 +108,14 @@ describe("createExecutor", () => {
       transitions: [
         {
           name: "approve",
+          type: "automatic",
           inputs: ["pending"],
           outputs: ["approved"],
           guard: "score >= 80",
         },
         {
           name: "deny",
+          type: "automatic",
           inputs: ["pending"],
           outputs: ["denied"],
           guard: "score < 80",
@@ -138,8 +143,8 @@ describe("createExecutor", () => {
       name: "choice-exec",
       places: ["start", "a", "b"],
       transitions: [
-        { name: "go_a", inputs: ["start"], outputs: ["a"], guard: null },
-        { name: "go_b", inputs: ["start"], outputs: ["b"], guard: null },
+        { name: "go_a", type: "automatic", inputs: ["start"], outputs: ["a"], guard: null },
+        { name: "go_b", type: "automatic", inputs: ["start"], outputs: ["b"], guard: null },
       ],
       initialMarking: { start: 1, a: 0, b: 0 },
       initialContext: {},
@@ -175,8 +180,8 @@ describe("createExecutor", () => {
       name: "choice-fallback",
       places: ["start", "a", "b"],
       transitions: [
-        { name: "go_a", inputs: ["start"], outputs: ["a"], guard: null },
-        { name: "go_b", inputs: ["start"], outputs: ["b"], guard: null },
+        { name: "go_a", type: "automatic", inputs: ["start"], outputs: ["a"], guard: null },
+        { name: "go_b", type: "automatic", inputs: ["start"], outputs: ["b"], guard: null },
       ],
       initialMarking: { start: 1, a: 0, b: 0 },
       initialContext: {},

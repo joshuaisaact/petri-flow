@@ -53,6 +53,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     // === Planning ===
     {
       name: "plan",
+      type: "ai",
       inputs: ["userQuery"],
       outputs: ["planReady"],
       guard: null,
@@ -61,6 +62,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     // Fan-out: distribute planReady to per-tool decision points
     {
       name: "distribute",
+      type: "automatic",
       inputs: ["planReady"],
       outputs: ["searchDecision", "dbDecision", "codeDecision"],
       guard: null,
@@ -69,18 +71,21 @@ export const definition = defineWorkflow<Place, Ctx>({
     // === Search tool ===
     {
       name: "dispatchSearch",
+      type: "http",
       inputs: ["searchDecision"],
       outputs: ["searchPending"],
       guard: null,
     },
     {
       name: "skipSearch",
+      type: "automatic",
       inputs: ["searchDecision"],
       outputs: ["searchDone"],
       guard: null,
     },
     {
       name: "completeSearch",
+      type: "http",
       inputs: ["searchPending"],
       outputs: ["searchDone"],
       guard: null,
@@ -92,18 +97,21 @@ export const definition = defineWorkflow<Place, Ctx>({
     // === Database tool ===
     {
       name: "dispatchDB",
+      type: "http",
       inputs: ["dbDecision"],
       outputs: ["dbPending"],
       guard: null,
     },
     {
       name: "skipDB",
+      type: "automatic",
       inputs: ["dbDecision"],
       outputs: ["dbDone"],
       guard: null,
     },
     {
       name: "completeDB",
+      type: "http",
       inputs: ["dbPending"],
       outputs: ["dbDone"],
       guard: null,
@@ -115,36 +123,42 @@ export const definition = defineWorkflow<Place, Ctx>({
     // === Code execution tool (dangerous — requires human approval) ===
     {
       name: "dispatchCode",
+      type: "automatic",
       inputs: ["codeDecision"],
       outputs: ["codePending"],
       guard: null,
     },
     {
       name: "skipCode",
+      type: "automatic",
       inputs: ["codeDecision"],
       outputs: ["codeDone"],
       guard: null,
     },
     {
       name: "requestApproval",
+      type: "automatic",
       inputs: ["codePending"],
       outputs: ["humanApproval"],
       guard: null,
     },
     {
       name: "approveCode",
+      type: "manual",
       inputs: ["humanApproval"],
       outputs: ["codeApproved"],
       guard: null,
     },
     {
       name: "rejectCode",
+      type: "manual",
       inputs: ["humanApproval"],
       outputs: ["codeDone"],
       guard: null,
     },
     {
       name: "executeCode",
+      type: "script",
       inputs: ["codeApproved"],
       outputs: ["codeDone"],
       guard: null,
@@ -156,6 +170,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     // === Join + Decision ===
     {
       name: "joinResults",
+      type: "automatic",
       inputs: ["searchDone", "dbDone", "codeDone"],
       outputs: ["resultsReady"],
       guard: null,
@@ -165,6 +180,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     // When budget is exhausted, this is the only enabled transition
     {
       name: "generate",
+      type: "ai",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
       guard: null,
@@ -176,6 +192,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     // Iterate — consumes one budget token, loops back to userQuery
     {
       name: "iterate",
+      type: "automatic",
       inputs: ["resultsReady", "iterationBudget"],
       outputs: ["userQuery"],
       guard: null,

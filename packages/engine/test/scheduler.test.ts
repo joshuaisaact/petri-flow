@@ -14,6 +14,7 @@ const definition = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "begin",
+      type: "automatic",
       inputs: ["start"],
       outputs: ["step1"],
       guard: null,
@@ -21,6 +22,7 @@ const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "process",
+      type: "automatic",
       inputs: ["step1"],
       outputs: ["step2"],
       guard: null,
@@ -28,6 +30,7 @@ const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "complete",
+      type: "automatic",
       inputs: ["step2"],
       outputs: ["end"],
       guard: null,
@@ -102,12 +105,14 @@ describe("Scheduler", () => {
       transitions: [
         {
           name: "approve",
+          type: "automatic",
           inputs: ["pending"],
           outputs: ["approved"],
           guard: "score >= 80",
         },
         {
           name: "deny",
+          type: "automatic",
           inputs: ["pending"],
           outputs: ["denied"],
           guard: "score < 80",
@@ -144,6 +149,7 @@ describe("Scheduler", () => {
       transitions: [
         {
           name: "explode",
+          type: "automatic",
           inputs: ["start"],
           outputs: ["end"],
           guard: null,
@@ -184,6 +190,7 @@ describe("Scheduler", () => {
       transitions: [
         {
           name: "process",
+          type: "automatic",
           inputs: ["waiting", "approved"],
           outputs: ["done"],
           guard: null,

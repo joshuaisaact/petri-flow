@@ -32,12 +32,14 @@ export const definition = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "submit",
+      type: "automatic",
       inputs: ["submitted"],
       outputs: ["awaitingFinance", "awaitingLegal"],
       guard: null,
     },
     {
       name: "approveFinance",
+      type: "manual",
       inputs: ["awaitingFinance"],
       outputs: ["financeApproved"],
       guard: null,
@@ -45,6 +47,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "rejectFinance",
+      type: "manual",
       inputs: ["awaitingFinance"],
       outputs: ["financeRejected"],
       guard: null,
@@ -52,6 +55,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "approveLegal",
+      type: "manual",
       inputs: ["awaitingLegal"],
       outputs: ["legalApproved"],
       guard: null,
@@ -59,6 +63,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "rejectLegal",
+      type: "manual",
       inputs: ["awaitingLegal"],
       outputs: ["legalRejected"],
       guard: null,
@@ -66,6 +71,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "execute",
+      type: "automatic",
       inputs: ["financeApproved", "legalApproved"],
       outputs: ["executed"],
       guard: null,

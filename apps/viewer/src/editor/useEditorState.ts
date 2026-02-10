@@ -62,6 +62,7 @@ function buildNodes(
       measured: { width: TRANS_W, height: TRANS_H },
       data: {
         label: t.name,
+        transitionType: t.type ?? "automatic",
         enabled: false,
         justFired: false,
         inputs: t.inputs,
@@ -207,7 +208,7 @@ export function useEditorState() {
       ...d,
       transitions: [
         ...d.transitions,
-        { name, inputs: [], outputs: [], guard: null },
+        { name, type: "automatic", inputs: [], outputs: [], guard: null },
       ],
     }));
     const tid = `t:${name}`;
@@ -337,6 +338,16 @@ export function useEditorState() {
     }));
   }
 
+  function setTransitionType(transitionName: string, type: string) {
+    snapshot();
+    setDefinition((d) => ({
+      ...d,
+      transitions: d.transitions.map((t) =>
+        t.name === transitionName ? { ...t, type } : t,
+      ),
+    }));
+  }
+
   function autoLayout() {
     snapshot();
     setPositions(computeLayout(definition));
@@ -407,6 +418,7 @@ export function useEditorState() {
     toggleTerminal,
     setGuard,
     setTimeout,
+    setTransitionType,
     autoLayout,
     renamePlace,
     renameTransition,

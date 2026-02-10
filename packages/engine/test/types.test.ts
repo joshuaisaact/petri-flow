@@ -20,12 +20,14 @@ type Ctx = { approved: boolean };
 const transitions: WorkflowTransition<Place, Ctx>[] = [
   {
     name: "start",
+    type: "automatic",
     inputs: ["idle"],
     outputs: ["processing"],
     guard: "approved",
   },
   {
     name: "finish",
+    type: "automatic",
     inputs: ["processing"],
     outputs: ["done"],
     guard: null,
@@ -113,7 +115,7 @@ describe("defineWorkflow", () => {
         name: "bad",
         places: ["idle", "done"] as any,
         transitions: [
-          { name: "bad", inputs: ["idle"], outputs: ["unknown" as any], guard: null },
+          { name: "bad", type: "automatic", inputs: ["idle"], outputs: ["unknown" as any], guard: null },
         ],
         initialMarking: { idle: 1, done: 0 } as any,
         initialContext: {},

@@ -27,12 +27,14 @@ export const definition = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "reserve_stock",
+      type: "automatic",
       inputs: ["order_placed", "inventory"],
       outputs: ["reserved", "payment"],
       guard: null,
     },
     {
       name: "process_payment",
+      type: "http",
       inputs: ["payment", "reserved"],
       outputs: ["shipped"],
       guard: null,
@@ -42,6 +44,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "out_of_stock",
+      type: "automatic",
       inputs: ["order_placed"],
       outputs: ["out_of_stock"],
       guard: "marking.inventory == 0",

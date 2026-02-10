@@ -17,12 +17,14 @@ const def = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "submit",
+      type: "automatic",
       inputs: ["idle"],
       outputs: ["review"],
       guard: null,
     },
     {
       name: "approve",
+      type: "manual",
       inputs: ["review"],
       outputs: ["approved"],
       guard: "amount < 10000",
@@ -30,6 +32,7 @@ const def = defineWorkflow<Place, Ctx>({
     },
     {
       name: "reject",
+      type: "automatic",
       inputs: ["review"],
       outputs: ["rejected"],
       guard: "amount >= 10000",

@@ -9,8 +9,8 @@ type Place = "idle" | "processing" | "done";
 
 const net: WorkflowNet<Place> = {
   transitions: [
-    { name: "start", inputs: ["idle"], outputs: ["processing"], guard: null },
-    { name: "finish", inputs: ["processing"], outputs: ["done"], guard: null },
+    { name: "start", type: "automatic", inputs: ["idle"], outputs: ["processing"], guard: null },
+    { name: "finish", type: "automatic", inputs: ["processing"], outputs: ["done"], guard: null },
   ],
   initialMarking: { idle: 1, processing: 0, done: 0 },
 };

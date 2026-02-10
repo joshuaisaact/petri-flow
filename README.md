@@ -97,7 +97,9 @@ bun test
 
 ## How it works
 
-`WorkflowTransition` is an intersection type with petri-ts's `Transition`, adding `guard` (filtrex expression or null) and optional `timeout`. Transitions are pure serializable data. Runtime functions — compiled guards and execute handlers — live in separate maps on `WorkflowDefinition` (`guards`, `executors`), populated by `defineWorkflow`.
+`WorkflowTransition` is an intersection type with petri-ts's `Transition`, adding `type` (classification string), `guard` (filtrex expression or null), and optional `timeout`. Transitions are pure serializable data. Runtime functions — compiled guards and execute handlers — live in separate maps on `WorkflowDefinition` (`guards`, `executors`), populated by `defineWorkflow`.
+
+Transition types (`automatic`, `manual`, `timer`, `script`, `http`, `ai`) are metadata — they have no runtime behavior yet but are used for visual differentiation in the editor.
 
 Because TypeScript uses structural typing, a `WorkflowNet` passes directly to all petri-ts analysis functions — no conversion needed. When you need a clean `PetriNet` (for serialization or analysis), `toNet()` strips the extensions.
 
@@ -111,6 +113,7 @@ const definition = defineWorkflow({
   transitions: [
     {
       name: "go",
+      type: "script",
       inputs: ["start"],
       outputs: ["end"],
       guard: "ready",
@@ -189,6 +192,7 @@ const definition = defineWorkflow({
   transitions: [
     {
       name: "approve",
+      type: "manual",
       inputs: ["waiting"],
       outputs: ["approved"],
       guard: "approved",
@@ -196,6 +200,7 @@ const definition = defineWorkflow({
     },
     {
       name: "escalate",
+      type: "automatic",
       inputs: ["waiting", "timed_out"],
       outputs: ["escalated"],
       guard: null,

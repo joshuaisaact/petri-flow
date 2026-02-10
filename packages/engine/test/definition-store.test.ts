@@ -8,8 +8,8 @@ const sample: SerializedDefinition = {
   name: "test-workflow",
   places: ["start", "middle", "end"],
   transitions: [
-    { name: "begin", inputs: ["start"], outputs: ["middle"], guard: null },
-    { name: "finish", inputs: ["middle"], outputs: ["end"], guard: "ready" },
+    { name: "begin", type: "automatic", inputs: ["start"], outputs: ["middle"], guard: null },
+    { name: "finish", type: "automatic", inputs: ["middle"], outputs: ["end"], guard: "ready" },
   ],
   initialMarking: { start: 1, middle: 0, end: 0 },
   initialContext: { ready: true },
@@ -69,7 +69,7 @@ describe("serializeDefinition", () => {
       name: "serialize-test",
       places: ["a", "b"],
       transitions: [
-        { name: "go", inputs: ["a"], outputs: ["b"], guard: "x > 1", execute: async () => ({}) },
+        { name: "go", type: "script", inputs: ["a"], outputs: ["b"], guard: "x > 1", execute: async () => ({}) },
       ],
       initialMarking: { a: 1, b: 0 },
       initialContext: { x: 5 },
@@ -82,7 +82,7 @@ describe("serializeDefinition", () => {
     expect(serialized.name).toBe("serialize-test");
     expect(serialized.places).toEqual(["a", "b"]);
     expect(serialized.transitions).toEqual([
-      { name: "go", inputs: ["a"], outputs: ["b"], guard: "x > 1" },
+      { name: "go", type: "script", inputs: ["a"], outputs: ["b"], guard: "x > 1" },
     ]);
     expect(serialized.initialMarking).toEqual({ a: 1, b: 0 });
     expect(serialized.initialContext).toEqual({ x: 5 });
@@ -95,8 +95,8 @@ describe("serializeDefinition", () => {
       name: "timeout-ser",
       places: ["waiting", "timed_out", "done"],
       transitions: [
-        { name: "wait", inputs: ["waiting"], outputs: ["done"], guard: "approved", timeout: { place: "timed_out" as any, ms: 5000 } },
-        { name: "escalate", inputs: ["waiting", "timed_out"], outputs: ["done"], guard: null },
+        { name: "wait", type: "timer", inputs: ["waiting"], outputs: ["done"], guard: "approved", timeout: { place: "timed_out" as any, ms: 5000 } },
+        { name: "escalate", type: "automatic", inputs: ["waiting", "timed_out"], outputs: ["done"], guard: null },
       ],
       initialMarking: { waiting: 1, timed_out: 0, done: 0 },
       initialContext: { approved: false },
@@ -113,7 +113,7 @@ describe("serializeDefinition", () => {
       name: "round-trip",
       places: ["a", "b"],
       transitions: [
-        { name: "go", inputs: ["a"], outputs: ["b"], guard: "score > 10" },
+        { name: "go", type: "automatic", inputs: ["a"], outputs: ["b"], guard: "score > 10" },
       ],
       initialMarking: { a: 1, b: 0 },
       initialContext: { score: 20 },
@@ -138,7 +138,7 @@ describe("serializeDefinition", () => {
       name: "full-trip",
       places: ["idle", "done"],
       transitions: [
-        { name: "finish", inputs: ["idle"], outputs: ["done"], guard: null },
+        { name: "finish", type: "automatic", inputs: ["idle"], outputs: ["done"], guard: null },
       ],
       initialMarking: { idle: 1, done: 0 },
       initialContext: {},

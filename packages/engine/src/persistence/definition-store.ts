@@ -11,6 +11,7 @@ export type SerializedDefinition = {
   places: string[];
   transitions: Array<{
     name: string;
+    type: string;
     inputs: string[];
     outputs: string[];
     guard: string | null;
@@ -86,6 +87,7 @@ export function serializeDefinition<
     places: Object.keys(def.net.initialMarking),
     transitions: def.net.transitions.map((t) => ({
       name: t.name,
+      type: t.type,
       inputs: [...t.inputs],
       outputs: [...t.outputs],
       guard: t.guard,

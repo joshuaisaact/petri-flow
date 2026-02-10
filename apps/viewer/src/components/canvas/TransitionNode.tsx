@@ -4,11 +4,31 @@ import { Tooltip } from "./Tooltip";
 import { useTheme } from "../../theme";
 import type { TransitionNodeData } from "../../layout/dagre";
 
+const TRANSITION_COLORS: Record<string, { accent: string; badge: string }> = {
+  automatic: { accent: "border-l-slate-400", badge: "bg-slate-500/20 text-slate-400" },
+  manual:    { accent: "border-l-amber-400", badge: "bg-amber-500/20 text-amber-400" },
+  timer:     { accent: "border-l-blue-400", badge: "bg-blue-500/20 text-blue-400" },
+  script:    { accent: "border-l-violet-400", badge: "bg-violet-500/20 text-violet-400" },
+  http:      { accent: "border-l-emerald-400", badge: "bg-emerald-500/20 text-emerald-400" },
+  ai:        { accent: "border-l-rose-400", badge: "bg-rose-500/20 text-rose-400" },
+};
+
+const DEFAULT_COLORS = TRANSITION_COLORS.automatic!;
+
+function getTypeColors(type: string) {
+  return TRANSITION_COLORS[type] ?? DEFAULT_COLORS;
+}
+
 function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
   const { t } = useTheme();
   return (
     <div className="flex flex-col gap-1.5 max-w-xs">
-      <span className={`font-medium ${t("text-white", "text-slate-900")}`}>{data.label}</span>
+      <div className="flex items-center gap-1.5">
+        <span className={`font-medium ${t("text-white", "text-slate-900")}`}>{data.label}</span>
+        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getTypeColors(data.transitionType).badge}`}>
+          {data.transitionType}
+        </span>
+      </div>
       <div className="flex items-center gap-1.5">
         <span className={t("text-slate-500", "text-slate-400")}>{data.inputs.join(", ")}</span>
         <span className={t("text-slate-500", "text-slate-400")}>&rarr;</span>
@@ -53,6 +73,7 @@ function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
 export function TransitionNode({ data }: { data: TransitionNodeData }) {
   const { enabled, justFired } = data;
   const { t } = useTheme();
+  const typeColors = getTypeColors(data.transitionType);
 
   return (
     <Tooltip content={<TransitionTooltipContent data={data} />}>
@@ -70,7 +91,7 @@ export function TransitionNode({ data }: { data: TransitionNodeData }) {
             : {}
         }
         transition={justFired ? { duration: 0.5 } : undefined}
-        className={`flex items-center justify-center w-[140px] h-[36px] rounded-md border text-[11px] font-semibold tracking-wide transition-colors ${
+        className={`flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-[11px] font-semibold tracking-wide transition-colors ${typeColors.accent} ${
           enabled
             ? t(
                 "bg-white text-slate-900 border-slate-300 cursor-pointer shadow-lg shadow-white/10",

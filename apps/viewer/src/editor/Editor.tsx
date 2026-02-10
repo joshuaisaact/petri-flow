@@ -100,6 +100,7 @@ export function Editor() {
           onToggleTerminal={editor.toggleTerminal}
           onSetGuard={editor.setGuard}
           onSetTimeout={editor.setTimeout}
+          onSetType={editor.setTransitionType}
           onRenamePlace={editor.renamePlace}
           onRenameTransition={editor.renameTransition}
         />

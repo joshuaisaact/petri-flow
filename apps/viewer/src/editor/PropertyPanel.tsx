@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { SerializedDefinition } from "@petriflow/engine";
 import { useTheme } from "../theme";
 
+const TRANSITION_TYPES = ["automatic", "manual", "timer", "script", "http", "ai"] as const;
+
 type Props = {
   definition: SerializedDefinition;
   selectedId: string | null;
@@ -11,6 +13,7 @@ type Props = {
   onToggleTerminal: (place: string) => void;
   onSetGuard: (transition: string, guard: string | null) => void;
   onSetTimeout: (transition: string, timeout: { place: string; ms: number } | undefined) => void;
+  onSetType: (transition: string, type: string) => void;
   onRenamePlace: (oldName: string, newName: string) => void;
   onRenameTransition: (oldName: string, newName: string) => void;
 };
@@ -113,6 +116,7 @@ function TransitionProperties({
   onRemove,
   onSetGuard,
   onSetTimeout,
+  onSetType,
   onRename,
 }: {
   transition: SerializedDefinition["transitions"][number];
@@ -120,6 +124,7 @@ function TransitionProperties({
   onRemove: () => void;
   onSetGuard: (guard: string | null) => void;
   onSetTimeout: (timeout: { place: string; ms: number } | undefined) => void;
+  onSetType: (type: string) => void;
   onRename: (newName: string) => void;
 }) {
   const { t } = useTheme();
@@ -152,6 +157,21 @@ function TransitionProperties({
     <div className="space-y-3">
       <Section label="Transition">
         <div className="space-y-2">
+          <label className={`flex items-center gap-2 text-sm ${t("text-slate-300", "text-slate-600")}`}>
+            Type
+            <select
+              value={transition.type ?? "automatic"}
+              onChange={(e) => onSetType(e.target.value)}
+              className={`flex-1 text-xs px-2 py-1 rounded-md border outline-none ${t(
+                "bg-slate-800 border-slate-700 text-white focus:border-slate-500",
+                "bg-white border-slate-300 text-slate-900 focus:border-slate-400",
+              )}`}
+            >
+              {TRANSITION_TYPES.map((tt) => (
+                <option key={tt} value={tt}>{tt}</option>
+              ))}
+            </select>
+          </label>
           <label className={`flex items-center gap-2 text-sm ${t("text-slate-300", "text-slate-600")}`}>
             Name
             <input
@@ -239,6 +259,7 @@ export function PropertyPanel({
   onToggleTerminal,
   onSetGuard,
   onSetTimeout,
+  onSetType,
   onRenamePlace,
   onRenameTransition,
 }: Props) {
@@ -280,6 +301,7 @@ export function PropertyPanel({
           onRemove={() => onRemoveTransition(transition.name)}
           onSetGuard={(guard) => onSetGuard(transition.name, guard)}
           onSetTimeout={(timeout) => onSetTimeout(transition.name, timeout)}
+          onSetType={(type) => onSetType(transition.name, type)}
           onRename={(newName) => onRenameTransition(transition.name, newName)}
         />
       )}

@@ -21,6 +21,7 @@ export type WorkflowTransition<
   Place extends string,
   Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = Transition<Place> & {
+  type: string;
   guard: string | null;
   timeout?: { place: Place; ms: number };
 };

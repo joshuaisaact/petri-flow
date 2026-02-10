@@ -23,6 +23,7 @@ export function EditorAnalysis({ definition }: Props) {
         places: definition.places,
         transitions: definition.transitions.map((t) => ({
           name: t.name,
+          type: t.type ?? "automatic",
           inputs: t.inputs as typeof definition.places,
           outputs: t.outputs as typeof definition.places,
           guard: t.guard,

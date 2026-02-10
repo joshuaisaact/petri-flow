@@ -30,18 +30,21 @@ export const definition = defineWorkflow<Place, Ctx>({
   transitions: [
     {
       name: "plan",
+      type: "ai",
       inputs: ["userQuery"],
       outputs: ["planReady"],
       guard: null,
     },
     {
       name: "dispatchTool",
+      type: "http",
       inputs: ["planReady"],
       outputs: ["toolPending"],
       guard: null,
     },
     {
       name: "completeTool",
+      type: "http",
       inputs: ["toolPending"],
       outputs: ["resultsReady"],
       guard: null,
@@ -51,6 +54,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "generate",
+      type: "ai",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
       guard: null,
@@ -60,6 +64,7 @@ export const definition = defineWorkflow<Place, Ctx>({
     },
     {
       name: "iterate",
+      type: "automatic",
       inputs: ["resultsReady", "iterationBudget"],
       outputs: ["userQuery"],
       guard: null,
