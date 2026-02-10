@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { SerializedDefinition } from "@petriflow/engine";
 import { useTheme } from "../theme";
+import { displayName } from "../utils/displayName";
 
 const TRANSITION_TYPES = ["automatic", "manual", "timer", "script", "http", "ai"] as const;
 
@@ -168,7 +169,7 @@ function TransitionProperties({
               )}`}
             >
               {TRANSITION_TYPES.map((tt) => (
-                <option key={tt} value={tt}>{tt}</option>
+                <option key={tt} value={tt}>{displayName(tt)}</option>
               ))}
             </select>
           </label>

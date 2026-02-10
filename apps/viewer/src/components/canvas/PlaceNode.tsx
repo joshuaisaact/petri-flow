@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Tooltip } from "./Tooltip";
 import { useTheme } from "../../theme";
 import type { PlaceNodeData } from "../../layout/dagre";
+import { displayName } from "../../utils/displayName";
 
 const categoryRing: Record<string, string> = {
   default: "border-slate-500",
@@ -136,7 +137,7 @@ function PlaceTooltipContent({ data }: { data: PlaceNodeData }) {
       <div className="flex items-center gap-2">
         <span className={`font-medium ${t("text-white", "text-slate-900")}`}>{data.label}</span>
         <span className={`${badgeBg} ${badgeText} text-[9px] px-1.5 py-0.5 rounded-full`}>
-          {data.category}
+          {displayName(data.category)}
         </span>
       </div>
       <div className={`flex items-center gap-2 ${t("text-slate-400", "text-slate-500")}`}>

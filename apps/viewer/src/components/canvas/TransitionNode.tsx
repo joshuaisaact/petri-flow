@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Tooltip } from "./Tooltip";
 import { useTheme } from "../../theme";
 import type { TransitionNodeData } from "../../layout/dagre";
+import { displayName } from "../../utils/displayName";
 
 const TRANSITION_COLORS: Record<string, { accent: string; badge: string }> = {
   automatic: { accent: "border-l-slate-400", badge: "bg-slate-500/20 text-slate-400" },
@@ -26,7 +27,7 @@ function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
       <div className="flex items-center gap-1.5">
         <span className={`font-medium ${t("text-white", "text-slate-900")}`}>{data.label}</span>
         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getTypeColors(data.transitionType).badge}`}>
-          {data.transitionType}
+          {displayName(data.transitionType)}
         </span>
       </div>
       <div className="flex items-center gap-1.5">
