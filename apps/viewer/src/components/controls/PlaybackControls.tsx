@@ -36,7 +36,7 @@ export function PlaybackControls({
         className={`text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${
           playing
             ? "bg-red-950 hover:bg-red-900 text-red-400 border-red-800"
-            : "bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border-emerald-800 disabled:opacity-30 disabled:cursor-default"
+            : "bg-green-950 hover:bg-green-900 text-green-400 border-green-800 disabled:opacity-30 disabled:cursor-default"
         }`}
       >
         {playing ? "Stop" : "Auto-play"}

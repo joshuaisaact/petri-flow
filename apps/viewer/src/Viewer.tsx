@@ -86,6 +86,7 @@ export function Viewer({ viewerNet }: Props) {
           >
             <button
               onClick={() => setTokenDisplay("numbers")}
+              title="Show token counts as numbers"
               className={`px-2 py-1 rounded-l-md transition-colors cursor-pointer ${
                 tokenDisplay === "numbers"
                   ? t("bg-slate-600 text-white", "bg-slate-200 text-slate-900")
@@ -96,6 +97,7 @@ export function Viewer({ viewerNet }: Props) {
             </button>
             <button
               onClick={() => setTokenDisplay("dots")}
+              title="Show token counts as dots"
               className={`px-2 py-1 rounded-r-md transition-colors cursor-pointer ${
                 tokenDisplay === "dots"
                   ? t("bg-slate-600 text-white", "bg-slate-200 text-slate-900")
