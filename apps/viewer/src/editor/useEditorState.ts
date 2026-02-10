@@ -215,6 +215,7 @@ export function useEditorState() {
     const tid = `t:${name}`;
     const pos = at ?? { x: 250 + definition.transitions.length * 120, y: 300 };
     setPositions((p) => ({ ...p, [tid]: pos }));
+    setSelectedId(tid);
   }
 
   function removeTransition(name: string) {
@@ -316,6 +317,54 @@ export function useEditorState() {
       terminalPlaces: d.terminalPlaces.includes(place)
         ? d.terminalPlaces.filter((p) => p !== place)
         : [...d.terminalPlaces, place],
+    }));
+  }
+
+  function addTransitionInput(transitionName: string, place: string) {
+    snapshot();
+    setDefinition((d) => ({
+      ...d,
+      transitions: d.transitions.map((t) =>
+        t.name === transitionName && !t.inputs.includes(place)
+          ? { ...t, inputs: [...t.inputs, place] }
+          : t,
+      ),
+    }));
+  }
+
+  function removeTransitionInput(transitionName: string, place: string) {
+    snapshot();
+    setDefinition((d) => ({
+      ...d,
+      transitions: d.transitions.map((t) =>
+        t.name === transitionName
+          ? { ...t, inputs: t.inputs.filter((p) => p !== place) }
+          : t,
+      ),
+    }));
+  }
+
+  function addTransitionOutput(transitionName: string, place: string) {
+    snapshot();
+    setDefinition((d) => ({
+      ...d,
+      transitions: d.transitions.map((t) =>
+        t.name === transitionName && !t.outputs.includes(place)
+          ? { ...t, outputs: [...t.outputs, place] }
+          : t,
+      ),
+    }));
+  }
+
+  function removeTransitionOutput(transitionName: string, place: string) {
+    snapshot();
+    setDefinition((d) => ({
+      ...d,
+      transitions: d.transitions.map((t) =>
+        t.name === transitionName
+          ? { ...t, outputs: t.outputs.filter((p) => p !== place) }
+          : t,
+      ),
     }));
   }
 
@@ -434,5 +483,9 @@ export function useEditorState() {
     autoLayout,
     renamePlace,
     renameTransition,
+    addTransitionInput,
+    removeTransitionInput,
+    addTransitionOutput,
+    removeTransitionOutput,
   };
 }

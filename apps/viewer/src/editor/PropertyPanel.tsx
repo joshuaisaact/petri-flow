@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SerializedDefinition } from "@petriflow/engine";
 import { useTheme } from "../theme";
 import { displayName } from "../utils/displayName";
@@ -244,6 +244,10 @@ function TransitionProperties({
   onSetType,
   onSetConfig,
   onRename,
+  onAddInput,
+  onRemoveInput,
+  onAddOutput,
+  onRemoveOutput,
 }: {
   transition: SerializedDefinition["transitions"][number];
   definition: SerializedDefinition;
@@ -253,6 +257,10 @@ function TransitionProperties({
   onSetType: (type: string) => void;
   onSetConfig: (config: Record<string, unknown> | undefined) => void;
   onRename: (newName: string) => void;
+  onAddInput: (place: string) => void;
+  onRemoveInput: (place: string) => void;
+  onAddOutput: (place: string) => void;
+  onRemoveOutput: (place: string) => void;
 }) {
   const { t } = useTheme();
   const [editName, setEditName] = useState(transition.name);
@@ -312,11 +320,85 @@ function TransitionProperties({
               )}`}
             />
           </label>
-          <div className={`text-xs ${t("text-slate-500", "text-slate-400")}`}>
-            Inputs: {transition.inputs.join(", ") || "none"}
+          <div>
+            <span className={`text-xs ${t("text-slate-500", "text-slate-400")}`}>Inputs</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {transition.inputs.map((p) => (
+                <span
+                  key={p}
+                  className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${t(
+                    "bg-slate-800 text-slate-300",
+                    "bg-slate-200 text-slate-700",
+                  )}`}
+                >
+                  {p}
+                  <button
+                    onClick={() => onRemoveInput(p)}
+                    className={`leading-none cursor-pointer ${t(
+                      "text-slate-500 hover:text-slate-300",
+                      "text-slate-400 hover:text-slate-600",
+                    )}`}
+                  >&times;</button>
+                </span>
+              ))}
+            </div>
+            {(() => {
+              const available = definition.places.filter((p) => !transition.inputs.includes(p));
+              if (available.length === 0) return null;
+              return (
+                <select
+                  value=""
+                  onChange={(e) => { if (e.target.value) onAddInput(e.target.value); }}
+                  className={`mt-1 w-full text-xs px-2 py-1 rounded-md border outline-none cursor-pointer ${t(
+                    "bg-slate-800 border-slate-700 text-slate-400 focus:border-slate-500",
+                    "bg-white border-slate-300 text-slate-500 focus:border-slate-400",
+                  )}`}
+                >
+                  <option value="">Add input place...</option>
+                  {available.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              );
+            })()}
           </div>
-          <div className={`text-xs ${t("text-slate-500", "text-slate-400")}`}>
-            Outputs: {transition.outputs.join(", ") || "none"}
+          <div>
+            <span className={`text-xs ${t("text-slate-500", "text-slate-400")}`}>Outputs</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {transition.outputs.map((p) => (
+                <span
+                  key={p}
+                  className={`inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded ${t(
+                    "bg-slate-800 text-slate-300",
+                    "bg-slate-200 text-slate-700",
+                  )}`}
+                >
+                  {p}
+                  <button
+                    onClick={() => onRemoveOutput(p)}
+                    className={`leading-none cursor-pointer ${t(
+                      "text-slate-500 hover:text-slate-300",
+                      "text-slate-400 hover:text-slate-600",
+                    )}`}
+                  >&times;</button>
+                </span>
+              ))}
+            </div>
+            {(() => {
+              const available = definition.places.filter((p) => !transition.outputs.includes(p));
+              if (available.length === 0) return null;
+              return (
+                <select
+                  value=""
+                  onChange={(e) => { if (e.target.value) onAddOutput(e.target.value); }}
+                  className={`mt-1 w-full text-xs px-2 py-1 rounded-md border outline-none cursor-pointer ${t(
+                    "bg-slate-800 border-slate-700 text-slate-400 focus:border-slate-500",
+                    "bg-white border-slate-300 text-slate-500 focus:border-slate-400",
+                  )}`}
+                >
+                  <option value="">Add output place...</option>
+                  {available.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              );
+            })()}
           </div>
         </div>
       </Section>
@@ -387,27 +469,101 @@ function TransitionProperties({
   );
 }
 
-export function PropertyPanel({
+type TransitionModalProps = {
+  open: boolean;
+  transition: SerializedDefinition["transitions"][number];
+  definition: SerializedDefinition;
+  onClose: () => void;
+  onRemove: () => void;
+  onSetGuard: (guard: string | null) => void;
+  onSetTimeout: (timeout: { place: string; ms: number } | undefined) => void;
+  onSetType: (type: string) => void;
+  onSetConfig: (config: Record<string, unknown> | undefined) => void;
+  onRename: (newName: string) => void;
+  onAddInput: (place: string) => void;
+  onRemoveInput: (place: string) => void;
+  onAddOutput: (place: string) => void;
+  onRemoveOutput: (place: string) => void;
+};
+
+export function TransitionModal({
+  open,
+  transition,
   definition,
-  selectedId,
-  onRemovePlace,
-  onRemoveTransition,
-  onSetTokens,
-  onToggleTerminal,
+  onClose,
+  onRemove,
   onSetGuard,
   onSetTimeout,
   onSetType,
   onSetConfig,
+  onRename,
+  onAddInput,
+  onRemoveInput,
+  onAddOutput,
+  onRemoveOutput,
+}: TransitionModalProps) {
+  const { t } = useTheme();
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className={`relative rounded-lg border shadow-xl p-5 w-96 max-h-[80%] overflow-y-auto ${t(
+          "bg-slate-900 border-slate-700",
+          "bg-white border-slate-200",
+        )}`}
+      >
+        <button
+          onClick={onClose}
+          className={`absolute top-3 right-3 text-sm leading-none px-1.5 py-0.5 rounded transition-colors cursor-pointer ${t(
+            "text-slate-500 hover:text-slate-300 hover:bg-slate-800",
+            "text-slate-400 hover:text-slate-600 hover:bg-slate-100",
+          )}`}
+        >
+          &times;
+        </button>
+        <TransitionProperties
+          key={transition.name}
+          transition={transition}
+          definition={definition}
+          onRemove={() => { onRemove(); onClose(); }}
+          onSetGuard={onSetGuard}
+          onSetTimeout={onSetTimeout}
+          onSetType={onSetType}
+          onSetConfig={onSetConfig}
+          onRename={onRename}
+          onAddInput={onAddInput}
+          onRemoveInput={onRemoveInput}
+          onAddOutput={onAddOutput}
+          onRemoveOutput={onRemoveOutput}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function PropertyPanel({
+  definition,
+  selectedId,
+  onRemovePlace,
+  onSetTokens,
+  onToggleTerminal,
   onRenamePlace,
-  onRenameTransition,
-}: Props) {
+}: Pick<Props, "definition" | "selectedId" | "onRemovePlace" | "onSetTokens" | "onToggleTerminal" | "onRenamePlace">) {
   const { t } = useTheme();
 
   const isTransition = selectedId?.startsWith("t:");
-  const transitionName = isTransition ? selectedId!.slice(2) : null;
-  const transition = transitionName
-    ? definition.transitions.find((t) => t.name === transitionName)
-    : null;
   const isPlace = selectedId && !isTransition;
 
   return (
@@ -415,9 +571,9 @@ export function PropertyPanel({
       <h2 className={`text-xs font-semibold uppercase tracking-wider ${t("text-slate-400", "text-slate-500")}`}>
         Properties
       </h2>
-      {!selectedId && (
+      {(!selectedId || isTransition) && (
         <p className={`text-xs ${t("text-slate-600", "text-slate-400")}`}>
-          Select a place or transition to edit its properties.
+          Select a place to edit its properties.
         </p>
       )}
       {isPlace && (
@@ -429,19 +585,6 @@ export function PropertyPanel({
           onSetTokens={(count) => onSetTokens(selectedId, count)}
           onToggleTerminal={() => onToggleTerminal(selectedId)}
           onRename={(newName) => onRenamePlace(selectedId, newName)}
-        />
-      )}
-      {transition && (
-        <TransitionProperties
-          key={selectedId}
-          transition={transition}
-          definition={definition}
-          onRemove={() => onRemoveTransition(transition.name)}
-          onSetGuard={(guard) => onSetGuard(transition.name, guard)}
-          onSetTimeout={(timeout) => onSetTimeout(transition.name, timeout)}
-          onSetType={(type) => onSetType(transition.name, type)}
-          onSetConfig={(config) => onSetConfig(transition.name, config)}
-          onRename={(newName) => onRenameTransition(transition.name, newName)}
         />
       )}
     </div>

@@ -5,7 +5,7 @@ import { useEditorState } from "./useEditorState";
 import { WorkflowList } from "./WorkflowList";
 import { EditorToolbar } from "./EditorToolbar";
 import { EditorCanvas } from "./EditorCanvas";
-import { PropertyPanel } from "./PropertyPanel";
+import { PropertyPanel, TransitionModal } from "./PropertyPanel";
 import { EditorAnalysis } from "./EditorAnalysis";
 import { NameDialog, ConfirmDialog } from "./Dialog";
 
@@ -133,15 +133,9 @@ export function Editor() {
               definition={editor.definition}
               selectedId={editor.selectedId}
               onRemovePlace={editor.removePlace}
-              onRemoveTransition={editor.removeTransition}
               onSetTokens={editor.setInitialTokens}
               onToggleTerminal={editor.toggleTerminal}
-              onSetGuard={editor.setGuard}
-              onSetTimeout={editor.setTimeout}
-              onSetType={editor.setTransitionType}
-              onSetConfig={editor.setConfig}
               onRenamePlace={editor.renamePlace}
-              onRenameTransition={editor.renameTransition}
             />
             <div className="px-4 pb-4">
               <EditorAnalysis definition={editor.definition} />
@@ -149,6 +143,31 @@ export function Editor() {
           </div>
         </>
       )}
+
+      {(() => {
+        const isTransition = editor.selectedId?.startsWith("t:");
+        const transition = isTransition
+          ? editor.definition.transitions.find((t) => t.name === editor.selectedId!.slice(2))
+          : null;
+        return transition ? (
+          <TransitionModal
+            open
+            transition={transition}
+            definition={editor.definition}
+            onClose={() => editor.setSelectedId(null)}
+            onRemove={() => editor.removeTransition(transition.name)}
+            onSetGuard={(guard) => editor.setGuard(transition.name, guard)}
+            onSetTimeout={(timeout) => editor.setTimeout(transition.name, timeout)}
+            onSetType={(type) => editor.setTransitionType(transition.name, type)}
+            onSetConfig={(config) => editor.setConfig(transition.name, config)}
+            onRename={(newName) => editor.renameTransition(transition.name, newName)}
+            onAddInput={(place) => editor.addTransitionInput(transition.name, place)}
+            onRemoveInput={(place) => editor.removeTransitionInput(transition.name, place)}
+            onAddOutput={(place) => editor.addTransitionOutput(transition.name, place)}
+            onRemoveOutput={(place) => editor.removeTransitionOutput(transition.name, place)}
+          />
+        ) : null;
+      })()}
 
       <NameDialog
         open={showNewDialog}
