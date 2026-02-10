@@ -14,8 +14,10 @@ body {
   width: 100vw;
 }
 
-/* Dark theme for ReactFlow Controls */
+/* Dark theme for ReactFlow Controls — horizontal layout */
 .react-flow__controls {
+  display: flex;
+  flex-direction: row;
   background: #0f172a;
   border: 1px solid #334155;
   border-radius: 8px;
@@ -24,7 +26,8 @@ body {
 
 .react-flow__controls-button {
   background: #0f172a;
-  border-bottom: 1px solid #1e293b;
+  border-bottom: none;
+  border-right: 1px solid #1e293b;
   fill: #94a3b8;
   width: 28px;
   height: 28px;
@@ -34,8 +37,13 @@ body {
   background: #1e293b;
 }
 
+.react-flow__controls-button:first-child {
+  border-radius: 7px 0 0 7px;
+}
+
 .react-flow__controls-button:last-child {
-  border-bottom: none;
+  border-right: none;
+  border-radius: 0 7px 7px 0;
 }
 
 /* Dark theme for MiniMap */
@@ -52,8 +60,13 @@ body {
 
 .light-controls .react-flow__controls-button {
   background: #ffffff;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: none;
+  border-right: 1px solid #f1f5f9;
   fill: #64748b;
+}
+
+.light-controls .react-flow__controls-button:last-child {
+  border-right: none;
 }
 
 .light-controls .react-flow__controls-button:hover {

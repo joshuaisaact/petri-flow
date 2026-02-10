@@ -139,7 +139,7 @@ export function PetriNetCanvas({
         color={isDark ? "#1e293b" : "#cbd5e1"}
         style={{ backgroundColor: isDark ? undefined : "#f8fafc" }}
       />
-      <Controls showInteractive={false} className={isDark ? "" : "light-controls"} />
+      <Controls showInteractive={false} className={isDark ? "" : "light-controls"} style={{ left: 110 }} />
       <MiniMap
         nodeColor={(node) => {
           if (node.type === "transition") return isDark ? "#475569" : "#94a3b8";
