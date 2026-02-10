@@ -50,6 +50,7 @@ body {
 .react-flow__minimap {
   border: 1px solid #334155;
   border-radius: 8px;
+  overflow: hidden;
 }
 
 /* Light theme for ReactFlow Controls */
