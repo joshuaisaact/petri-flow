@@ -43,7 +43,7 @@ export function EditorToolbar({
         title="Undo (Ctrl+Z)"
         className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
           canUndo
-            ? t("border-slate-700 text-slate-300 hover:bg-slate-800", "border-slate-300 text-slate-600 hover:bg-slate-100")
+            ? t("border-slate-700 text-slate-300 hover:bg-slate-800 cursor-pointer", "border-slate-300 text-slate-600 hover:bg-slate-100 cursor-pointer")
             : t("border-slate-800 text-slate-600", "border-slate-200 text-slate-400")
         }`}
       >
@@ -51,7 +51,7 @@ export function EditorToolbar({
       </button>
       <button
         onClick={onAutoLayout}
-        className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${t(
+        className={`text-xs px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${t(
           "border-slate-700 text-slate-300 hover:bg-slate-800",
           "border-slate-300 text-slate-600 hover:bg-slate-100",
         )}`}
@@ -69,8 +69,8 @@ export function EditorToolbar({
           saving
             ? t("bg-slate-700 text-slate-500", "bg-slate-200 text-slate-400")
             : t(
-                "bg-emerald-600 text-white hover:bg-emerald-500",
-                "bg-emerald-600 text-white hover:bg-emerald-500",
+                "bg-emerald-600 text-white hover:bg-emerald-500 cursor-pointer",
+                "bg-emerald-600 text-white hover:bg-emerald-500 cursor-pointer",
               )
         }`}
       >

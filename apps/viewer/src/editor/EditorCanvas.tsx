@@ -86,7 +86,7 @@ function ContextMenu({
       >
         <button
           onClick={onAddPlace}
-          className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${t(
+          className={`w-full text-left px-3 py-1.5 text-sm transition-colors cursor-pointer ${t(
             "text-slate-300 hover:bg-slate-800",
             "text-slate-700 hover:bg-slate-100",
           )}`}
@@ -96,7 +96,7 @@ function ContextMenu({
         </button>
         <button
           onClick={onAddTransition}
-          className={`w-full text-left px-3 py-1.5 text-sm transition-colors ${t(
+          className={`w-full text-left px-3 py-1.5 text-sm transition-colors cursor-pointer ${t(
             "text-slate-300 hover:bg-slate-800",
             "text-slate-700 hover:bg-slate-100",
           )}`}
@@ -136,7 +136,7 @@ function ConnectingBanner({ fromId, onCancel }: { fromId: string; onCancel: () =
         <span className="text-xs font-medium">
           Connecting from <span className="font-bold">{label}</span> — click a target node
         </span>
-        <button onClick={onCancel} className="text-xs opacity-70 hover:opacity-100">
+        <button onClick={onCancel} className="text-xs opacity-70 hover:opacity-100 cursor-pointer">
           Esc to cancel
         </button>
       </div>

@@ -68,7 +68,7 @@ export function NameDialog({
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${t(
+            className={`text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${t(
               "border-slate-700 text-slate-400 hover:bg-slate-800",
               "border-slate-300 text-slate-500 hover:bg-slate-100",
             )}`}
@@ -80,7 +80,7 @@ export function NameDialog({
             disabled={!value.trim()}
             className={`text-xs px-3 py-1.5 rounded-md font-medium transition-colors ${
               value.trim()
-                ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                ? "bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer"
                 : t("bg-slate-700 text-slate-500", "bg-slate-200 text-slate-400")
             }`}
           >

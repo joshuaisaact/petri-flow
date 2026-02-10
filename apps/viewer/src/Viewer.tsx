@@ -61,7 +61,7 @@ export function Viewer({ viewerNet }: Props) {
           >
             <button
               onClick={() => setTokenDisplay("numbers")}
-              className={`px-2 py-1 rounded-l-md transition-colors ${
+              className={`px-2 py-1 rounded-l-md transition-colors cursor-pointer ${
                 tokenDisplay === "numbers"
                   ? t("bg-slate-600 text-white", "bg-slate-200 text-slate-900")
                   : t("text-slate-400 hover:text-slate-300", "text-slate-400 hover:text-slate-600")
@@ -71,7 +71,7 @@ export function Viewer({ viewerNet }: Props) {
             </button>
             <button
               onClick={() => setTokenDisplay("dots")}
-              className={`px-2 py-1 rounded-r-md transition-colors ${
+              className={`px-2 py-1 rounded-r-md transition-colors cursor-pointer ${
                 tokenDisplay === "dots"
                   ? t("bg-slate-600 text-white", "bg-slate-200 text-slate-900")
                   : t("text-slate-400 hover:text-slate-300", "text-slate-400 hover:text-slate-600")

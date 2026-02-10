@@ -19,7 +19,7 @@ export function WorkflowList({ names, activeName, onSelect, onNew, onDelete }: P
         </h2>
         <button
           onClick={onNew}
-          className={`text-xs px-2 py-1 rounded-md border transition-colors ${t(
+          className={`text-xs px-2 py-1 rounded-md border transition-colors cursor-pointer ${t(
             "border-slate-700 text-slate-300 hover:bg-slate-800",
             "border-slate-300 text-slate-600 hover:bg-slate-100",
           )}`}
@@ -50,7 +50,7 @@ export function WorkflowList({ names, activeName, onSelect, onNew, onDelete }: P
                 e.stopPropagation();
                 onDelete(name);
               }}
-              className={`opacity-0 group-hover:opacity-100 text-xs px-1 rounded transition-opacity ${t(
+              className={`opacity-0 group-hover:opacity-100 text-xs px-1 rounded transition-opacity cursor-pointer ${t(
                 "text-red-400 hover:bg-red-950",
                 "text-red-500 hover:bg-red-50",
               )}`}

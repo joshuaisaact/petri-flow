@@ -23,7 +23,7 @@ export function PlaybackControls({
     <div className="flex items-center gap-2">
       <button
         onClick={onReset}
-        className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${t(
+        className={`text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${t(
           "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700",
           "bg-white hover:bg-slate-50 text-slate-600 border-slate-300",
         )}`}
@@ -33,7 +33,7 @@ export function PlaybackControls({
       <button
         onClick={onTogglePlay}
         disabled={isTerminal && !playing}
-        className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${
+        className={`text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${
           playing
             ? "bg-red-950 hover:bg-red-900 text-red-400 border-red-800"
             : "bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border-emerald-800 disabled:opacity-30 disabled:cursor-default"

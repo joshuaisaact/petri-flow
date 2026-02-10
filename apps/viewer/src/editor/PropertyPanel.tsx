@@ -98,7 +98,7 @@ function PlaceProperties({
           </label>
           <button
             onClick={onRemove}
-            className={`text-xs px-2 py-1 rounded-md border transition-colors ${t(
+            className={`text-xs px-2 py-1 rounded-md border transition-colors cursor-pointer ${t(
               "border-red-800 text-red-400 hover:bg-red-950",
               "border-red-200 text-red-600 hover:bg-red-50",
             )}`}
@@ -163,7 +163,7 @@ function TransitionProperties({
             <select
               value={transition.type ?? "automatic"}
               onChange={(e) => onSetType(e.target.value)}
-              className={`flex-1 text-xs px-2 py-1 rounded-md border outline-none ${t(
+              className={`flex-1 text-xs px-2 py-1 rounded-md border outline-none cursor-pointer ${t(
                 "bg-slate-800 border-slate-700 text-white focus:border-slate-500",
                 "bg-white border-slate-300 text-slate-900 focus:border-slate-400",
               )}`}
@@ -240,7 +240,7 @@ function TransitionProperties({
       </Section>
       <button
         onClick={onRemove}
-        className={`text-xs px-2 py-1 rounded-md border transition-colors ${t(
+        className={`text-xs px-2 py-1 rounded-md border transition-colors cursor-pointer ${t(
           "border-red-800 text-red-400 hover:bg-red-950",
           "border-red-200 text-red-600 hover:bg-red-50",
         )}`}

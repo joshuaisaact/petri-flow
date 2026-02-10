@@ -78,7 +78,7 @@ function AppInner() {
         <div className="flex-1" />
         <button
           onClick={toggle}
-          className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border transition-colors ${t(
+          className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border transition-colors cursor-pointer ${t(
             "bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-300",
             "bg-slate-100 border-slate-300 text-slate-500 hover:text-slate-700",
           )}`}
