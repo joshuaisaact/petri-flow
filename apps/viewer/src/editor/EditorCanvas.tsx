@@ -13,6 +13,8 @@ import {
   type Node,
   type Edge,
   type Connection,
+  type OnConnectStart,
+  type NodeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { PlaceNode } from "../components/canvas/PlaceNode";
@@ -37,6 +39,7 @@ type PendingAdd = {
   type: "place" | "transition";
   flowX: number;
   flowY: number;
+  connectFrom?: string;
 };
 
 type Props = {
@@ -45,6 +48,7 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   onConnect: (source: string, target: string) => void;
+  onNodeDragStart: () => void;
   onNodeDrag: (id: string, pos: { x: number; y: number }) => void;
   onDeleteEdge: (edgeId: string) => void;
   onDeleteNode: (id: string) => void;
@@ -153,6 +157,7 @@ function EditorCanvasInner({
   selectedId,
   onSelect,
   onConnect,
+  onNodeDragStart,
   onNodeDrag,
   onDeleteEdge,
   onDeleteNode,
@@ -165,6 +170,10 @@ function EditorCanvasInner({
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [pendingAdd, setPendingAdd] = useState<PendingAdd | null>(null);
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+
+  // Track handle-drag for drag-to-create
+  const dragSourceRef = useRef<string | null>(null);
+  const connectionMadeRef = useRef(false);
 
   const isEmpty = nodes.length === 0;
 
@@ -206,10 +215,54 @@ function EditorCanvasInner({
     };
   });
 
+  function handleNodesChange(changes: NodeChange[]) {
+    for (const change of changes) {
+      if (change.type === "position" && change.position) {
+        onNodeDrag(change.id, change.position);
+      }
+    }
+  }
+
   function handleConnect(connection: Connection) {
+    connectionMadeRef.current = true;
     if (connection.source && connection.target) {
       onConnect(connection.source, connection.target);
     }
+  }
+
+  const handleConnectStart: OnConnectStart = (_, { nodeId }) => {
+    dragSourceRef.current = nodeId ?? null;
+    connectionMadeRef.current = false;
+  };
+
+  function handleConnectEnd(event: MouseEvent | TouchEvent) {
+    const sourceId = dragSourceRef.current;
+    dragSourceRef.current = null;
+
+    if (connectionMadeRef.current || !sourceId) return;
+
+    // Drag ended on empty space — offer to create a connected node
+    const clientX = "changedTouches" in event ? event.changedTouches[0]!.clientX : event.clientX;
+    const clientY = "changedTouches" in event ? event.changedTouches[0]!.clientY : event.clientY;
+
+    // Check if we dropped on a node (which means the connection just wasn't valid)
+    const target = event.target as HTMLElement;
+    if (target.closest(".react-flow__node")) return;
+
+    const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
+    const sourceIsTransition = sourceId.startsWith("t:");
+
+    // Only offer the valid complementary type
+    setPendingAdd({
+      type: sourceIsTransition ? "place" : "transition",
+      flowX: flowPos.x,
+      flowY: flowPos.y,
+      connectFrom: sourceId,
+    });
+  }
+
+  function handleNodeDragStart() {
+    onNodeDragStart();
   }
 
   function handleNodeDragStop(_: React.MouseEvent, node: Node) {
@@ -298,10 +351,21 @@ function EditorCanvasInner({
   function commitAdd(name: string) {
     if (!pendingAdd) return;
     const pos = { x: pendingAdd.flowX, y: pendingAdd.flowY };
+    const connectFrom = pendingAdd.connectFrom;
+
     if (pendingAdd.type === "place") {
       onAddPlace(name, pos);
+      if (connectFrom) {
+        // Source must be a transition, new node is a place: transition → place
+        onConnect(connectFrom, name);
+      }
     } else {
       onAddTransition(name, pos);
+      const newId = `t:${name}`;
+      if (connectFrom) {
+        // Source must be a place, new node is a transition: place → transition
+        onConnect(connectFrom, newId);
+      }
     }
     setPendingAdd(null);
   }
@@ -312,7 +376,11 @@ function EditorCanvasInner({
         nodes={styledNodes}
         edges={styledEdges}
         nodeTypes={nodeTypes}
+        onNodesChange={handleNodesChange}
         onConnect={handleConnect}
+        onConnectStart={handleConnectStart}
+        onConnectEnd={handleConnectEnd}
+        onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}

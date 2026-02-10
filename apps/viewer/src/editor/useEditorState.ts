@@ -401,6 +401,7 @@ export function useEditorState() {
     removeTransition,
     addArc,
     removeEdge,
+    snapshot,
     updateNodePosition,
     setInitialTokens,
     toggleTerminal,

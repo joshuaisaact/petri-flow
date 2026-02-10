@@ -80,6 +80,7 @@ export function Editor() {
             selectedId={editor.selectedId}
             onSelect={editor.setSelectedId}
             onConnect={editor.addArc}
+            onNodeDragStart={editor.snapshot}
             onNodeDrag={editor.updateNodePosition}
             onDeleteEdge={editor.removeEdge}
             onDeleteNode={handleDeleteNode}
