@@ -16,6 +16,7 @@ export type SerializedDefinition = {
     outputs: string[];
     guard: string | null;
     timeout?: { place: string; ms: number };
+    config?: Record<string, unknown>;
   }>;
   initialMarking: Record<string, number>;
   initialContext: Record<string, unknown>;
@@ -92,6 +93,7 @@ export function serializeDefinition<
       outputs: [...t.outputs],
       guard: t.guard,
       ...(t.timeout && { timeout: t.timeout }),
+      ...(t.config && { config: t.config }),
     })),
     initialMarking: def.net.initialMarking,
     initialContext: def.initialContext as Record<string, unknown>,

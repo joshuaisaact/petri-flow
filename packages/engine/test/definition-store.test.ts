@@ -131,6 +131,47 @@ describe("serializeDefinition", () => {
     expect(restored.guards.has("go")).toBe(true);
   });
 
+  it("includes config when present", () => {
+    const def = defineWorkflow({
+      name: "config-ser",
+      places: ["a", "b"],
+      transitions: [
+        { name: "call", type: "http", inputs: ["a"], outputs: ["b"], guard: null, config: { url: "https://example.com", method: "POST" } },
+        { name: "auto", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null },
+      ],
+      initialMarking: { a: 1, b: 0 },
+      initialContext: {},
+      terminalPlaces: ["b"],
+    });
+
+    const serialized = serializeDefinition(def);
+    expect(serialized.transitions[0]!.config).toEqual({ url: "https://example.com", method: "POST" });
+    expect(serialized.transitions[1]!.config).toBeUndefined();
+  });
+
+  it("config round-trips through store", () => {
+    const store = createDefinitionStore(new Database(":memory:"));
+    const config = { url: "https://api.example.com", method: "POST", headers: '{"Authorization": "Bearer token"}' };
+
+    const original = defineWorkflow({
+      name: "config-trip",
+      places: ["idle", "done"],
+      transitions: [
+        { name: "fetch", type: "http", inputs: ["idle"], outputs: ["done"], guard: null, config },
+      ],
+      initialMarking: { idle: 1, done: 0 },
+      initialContext: {},
+      terminalPlaces: ["done"],
+    });
+
+    store.save(serializeDefinition(original));
+    const loaded = store.load("config-trip")!;
+    expect(loaded.transitions[0]!.config).toEqual(config);
+
+    const restored = defineWorkflow(loaded);
+    expect(restored.net.transitions[0]!.config).toEqual(config);
+  });
+
   it("round-trips through store and defineWorkflow", () => {
     const store = createDefinitionStore(new Database(":memory:"));
 

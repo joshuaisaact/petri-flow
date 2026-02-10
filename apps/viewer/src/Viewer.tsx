@@ -5,6 +5,7 @@ import { useAutoPlay } from "./hooks/useAutoPlay";
 import { layoutNet, type TokenDisplay } from "./layout/dagre";
 import { PetriNetCanvas } from "./components/canvas/PetriNetCanvas";
 import { AnalysisPanel } from "./components/panel/AnalysisPanel";
+import { NodeInspectorOverlay } from "./components/panel/NodeInspector";
 import { PlaybackControls } from "./components/controls/PlaybackControls";
 import { useTheme } from "./theme";
 import type { ViewerNet } from "./types";
@@ -23,6 +24,7 @@ export function Viewer({ viewerNet }: Props) {
     fireTransition,
   );
   const [tokenDisplay, setTokenDisplay] = useState<TokenDisplay>("numbers");
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const { t } = useTheme();
 
   // Layout computed once per net — positions never change
@@ -36,6 +38,29 @@ export function Viewer({ viewerNet }: Props) {
     ),
     [viewerNet],
   );
+
+  const selectedNode = selectedNodeId
+    ? (() => {
+        const node = initialNodes.find((n) => n.id === selectedNodeId);
+        if (!node) return undefined;
+        if (node.type === "place") {
+          return {
+            id: node.id,
+            type: "place" as const,
+            data: { ...(node.data as any), tokens: marking[node.id] ?? 0 },
+          };
+        }
+        if (node.type === "transition") {
+          const name = node.id.slice(2);
+          return {
+            id: node.id,
+            type: "transition" as const,
+            data: { ...(node.data as any), enabled: enabled.some((t) => t.name === name) },
+          };
+        }
+        return undefined;
+      })()
+    : undefined;
 
   return (
     <div className="flex flex-1 min-h-0">
@@ -81,7 +106,7 @@ export function Viewer({ viewerNet }: Props) {
             </button>
           </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 relative">
           <PetriNetCanvas
             initialNodes={initialNodes}
             initialEdges={initialEdges}
@@ -91,7 +116,16 @@ export function Viewer({ viewerNet }: Props) {
             tokenDisplay={tokenDisplay}
             lastFired={lastFired}
             isTerminal={isTerminal}
+            selectedNodeId={selectedNodeId}
+            onSelectNode={setSelectedNodeId}
           />
+          {selectedNode && (
+            <NodeInspectorOverlay
+              selectedNode={selectedNode}
+              onClose={() => setSelectedNodeId(null)}
+              onExecute={fireTransition}
+            />
+          )}
         </div>
       </div>
       <AnalysisPanel

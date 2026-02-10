@@ -57,6 +57,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["userQuery"],
       outputs: ["planReady"],
       guard: null,
+      config: { model: "claude-sonnet-4-20250514", prompt: "Analyze the query and decide which tools to use.", temperature: 0.7 },
     },
 
     // Fan-out: distribute planReady to per-tool decision points
@@ -75,6 +76,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["searchDecision"],
       outputs: ["searchPending"],
       guard: null,
+      config: { url: "https://search.example.com/query", method: "POST" },
     },
     {
       name: "skipSearch",
@@ -89,6 +91,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["searchPending"],
       outputs: ["searchDone"],
       guard: null,
+      config: { url: "https://search.example.com/result", method: "GET" },
       execute: async (ctx) => ({
         searchResult: "search: found 3 results",
       }),
@@ -101,6 +104,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["dbDecision"],
       outputs: ["dbPending"],
       guard: null,
+      config: { url: "https://db.example.com/query", method: "POST" },
     },
     {
       name: "skipDB",
@@ -115,6 +119,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["dbPending"],
       outputs: ["dbDone"],
       guard: null,
+      config: { url: "https://db.example.com/result", method: "GET" },
       execute: async (ctx) => ({
         dbResult: "db: 42 rows matched",
       }),
@@ -148,6 +153,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["humanApproval"],
       outputs: ["codeApproved"],
       guard: null,
+      config: { label: "Approve" },
     },
     {
       name: "rejectCode",
@@ -155,6 +161,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["humanApproval"],
       outputs: ["codeDone"],
       guard: null,
+      config: { label: "Reject" },
     },
     {
       name: "executeCode",
@@ -162,6 +169,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["codeApproved"],
       outputs: ["codeDone"],
       guard: null,
+      config: { code: "// Execute sandboxed code\nresult = eval(ctx.codeSnippet)" },
       execute: async (ctx) => ({
         codeResult: "code: executed successfully",
       }),
@@ -184,6 +192,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
       guard: null,
+      config: { model: "claude-sonnet-4-20250514", prompt: "Synthesize results into a final response.", temperature: 0.5 },
       execute: async (ctx) => ({
         response: `Response after ${ctx.iteration} iteration(s)`,
       }),

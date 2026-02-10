@@ -31,6 +31,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["waterCold"],
       outputs: ["waterHot"],
       guard: null,
+      config: { code: "ctx.waterTemp = 96" },
       execute: async (ctx) => ({
         waterTemp: 96,
       }),
@@ -41,6 +42,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
       guard: null,
+      config: { code: "ctx.grindSize = 'medium'" },
       execute: async (ctx) => ({
         grindSize: "medium",
       }),
@@ -51,6 +53,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["waterHot", "beansGround", "cupEmpty"],
       outputs: ["coffeeReady"],
       guard: "waterTemp >= 90",
+      config: { code: "ctx.brewed = true" },
       execute: async (ctx) => ({
         brewed: true,
       }),

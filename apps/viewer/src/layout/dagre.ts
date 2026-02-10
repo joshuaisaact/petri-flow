@@ -25,6 +25,7 @@ export type TransitionNodeData = {
   guardCode?: string;
   executeCode?: string;
   timeout?: { place: string; ms: number };
+  config?: Record<string, unknown>;
 };
 
 // 56px circle + label below ≈ 72px total. 80px wide for label clearance.
@@ -38,6 +39,7 @@ export type WorkflowTransitionMeta = {
   type?: string;
   guard?: string | null;
   timeout?: { place: string; ms: number };
+  config?: Record<string, unknown>;
 };
 
 export function layoutNet(
@@ -226,6 +228,7 @@ export function layoutNet(
         guardCode: wt?.guard?.toString(),
         executeCode: executors?.get(t.name)?.toString(),
         timeout: wt?.timeout,
+        config: wt?.config,
       } satisfies TransitionNodeData,
     });
   }

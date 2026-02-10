@@ -31,6 +31,8 @@ type Props = {
   tokenDisplay: TokenDisplay;
   lastFired: string | null;
   isTerminal: boolean;
+  selectedNodeId?: string | null;
+  onSelectNode?: (id: string | null) => void;
 };
 
 export function PetriNetCanvas({
@@ -42,15 +44,25 @@ export function PetriNetCanvas({
   tokenDisplay,
   lastFired,
   isTerminal,
+  selectedNodeId,
+  onSelectNode,
 }: Props) {
   const { isDark } = useTheme();
   const enabledSet = new Set(enabled.map((t) => t.name));
 
+  const selectionStyle = {
+    filter: isDark
+      ? "drop-shadow(0 0 6px rgba(99, 102, 241, 0.7))"
+      : "drop-shadow(0 0 6px rgba(99, 102, 241, 0.5))",
+  };
+
   const nodes = initialNodes.map((node) => {
+    const isSelected = selectedNodeId === node.id;
     if (node.type === "place") {
       const place = node.id;
       return {
         ...node,
+        style: isSelected ? selectionStyle : undefined,
         data: {
           ...(node.data as PlaceNodeData),
           tokens: marking[place] ?? 0,
@@ -63,6 +75,7 @@ export function PetriNetCanvas({
       const name = node.id.slice(2);
       return {
         ...node,
+        style: isSelected ? selectionStyle : undefined,
         data: {
           ...(node.data as TransitionNodeData),
           enabled: enabledSet.has(name),
@@ -107,10 +120,14 @@ export function PetriNetCanvas({
   });
 
   function handleNodeClick(_: React.MouseEvent, node: Node) {
-    if (node.type !== "transition") return;
-    const name = node.id.slice(2);
-    if (enabledSet.has(name)) {
-      onFire(name);
+    if (onSelectNode) {
+      onSelectNode(selectedNodeId === node.id ? null : node.id);
+    }
+  }
+
+  function handlePaneClick() {
+    if (onSelectNode) {
+      onSelectNode(null);
     }
   }
 
@@ -120,6 +137,7 @@ export function PetriNetCanvas({
       edges={edges}
       nodeTypes={nodeTypes}
       onNodeClick={handleNodeClick}
+      onPaneClick={handlePaneClick}
       nodesDraggable={false}
       nodesConnectable={false}
       elementsSelectable={false}

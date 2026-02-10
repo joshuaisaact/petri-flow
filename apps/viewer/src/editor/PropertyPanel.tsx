@@ -15,6 +15,7 @@ type Props = {
   onSetGuard: (transition: string, guard: string | null) => void;
   onSetTimeout: (transition: string, timeout: { place: string; ms: number } | undefined) => void;
   onSetType: (transition: string, type: string) => void;
+  onSetConfig: (transition: string, config: Record<string, unknown> | undefined) => void;
   onRenamePlace: (oldName: string, newName: string) => void;
   onRenameTransition: (oldName: string, newName: string) => void;
 };
@@ -111,6 +112,129 @@ function PlaceProperties({
   );
 }
 
+type ConfigFormProps = {
+  config: Record<string, unknown>;
+  onCommit: (config: Record<string, unknown>) => void;
+};
+
+function HttpConfig({ config, onCommit }: ConfigFormProps) {
+  const { t } = useTheme();
+  const [url, setUrl] = useState((config.url as string) ?? "");
+  const [method, setMethod] = useState((config.method as string) ?? "GET");
+  const [headers, setHeaders] = useState((config.headers as string) ?? "");
+  const [body, setBody] = useState((config.body as string) ?? "");
+  const inputCls = `w-full text-xs px-2 py-1 rounded-md border outline-none ${t(
+    "bg-slate-800 border-slate-700 text-white focus:border-slate-500",
+    "bg-white border-slate-300 text-slate-900 focus:border-slate-400",
+  )}`;
+  const labelCls = `text-xs ${t("text-slate-400", "text-slate-500")}`;
+
+  function commit() {
+    onCommit({ url, method, ...(headers && { headers }), ...(body && { body }) });
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className={labelCls}>URL</label>
+      <input value={url} onChange={(e) => setUrl(e.target.value)} onBlur={commit} placeholder="https://api.example.com" className={inputCls} />
+      <label className={labelCls}>Method</label>
+      <select value={method} onChange={(e) => { setMethod(e.target.value); }} onBlur={commit} className={`${inputCls} cursor-pointer`}>
+        {["GET", "POST", "PUT", "DELETE"].map((m) => <option key={m} value={m}>{m}</option>)}
+      </select>
+      <label className={labelCls}>Headers</label>
+      <textarea value={headers} onChange={(e) => setHeaders(e.target.value)} onBlur={commit} placeholder='{"Content-Type": "application/json"}' rows={2} className={`${inputCls} font-mono`} />
+      <label className={labelCls}>Body</label>
+      <textarea value={body} onChange={(e) => setBody(e.target.value)} onBlur={commit} placeholder='{"key": "value"}' rows={3} className={`${inputCls} font-mono`} />
+    </div>
+  );
+}
+
+function ScriptConfig({ config, onCommit }: ConfigFormProps) {
+  const { t } = useTheme();
+  const [code, setCode] = useState((config.code as string) ?? "");
+  const inputCls = `w-full text-xs px-2 py-1 rounded-md border outline-none font-mono ${t(
+    "bg-slate-800 border-slate-700 text-emerald-300 focus:border-slate-500",
+    "bg-white border-slate-300 text-emerald-700 focus:border-slate-400",
+  )}`;
+
+  return (
+    <div className="space-y-2">
+      <label className={`text-xs ${t("text-slate-400", "text-slate-500")}`}>Code</label>
+      <textarea value={code} onChange={(e) => setCode(e.target.value)} onBlur={() => onCommit({ code })} placeholder="ctx.result = transform(ctx.input)" rows={5} className={inputCls} />
+    </div>
+  );
+}
+
+function AiConfig({ config, onCommit }: ConfigFormProps) {
+  const { t } = useTheme();
+  const [model, setModel] = useState((config.model as string) ?? "");
+  const [prompt, setPrompt] = useState((config.prompt as string) ?? "");
+  const [temperature, setTemperature] = useState((config.temperature as number) ?? 0.7);
+  const inputCls = `w-full text-xs px-2 py-1 rounded-md border outline-none ${t(
+    "bg-slate-800 border-slate-700 text-white focus:border-slate-500",
+    "bg-white border-slate-300 text-slate-900 focus:border-slate-400",
+  )}`;
+  const labelCls = `text-xs ${t("text-slate-400", "text-slate-500")}`;
+
+  function commit() {
+    onCommit({ ...(model && { model }), ...(prompt && { prompt }), temperature });
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className={labelCls}>Model</label>
+      <input value={model} onChange={(e) => setModel(e.target.value)} onBlur={commit} placeholder="claude-sonnet-4-20250514" className={inputCls} />
+      <label className={labelCls}>Prompt</label>
+      <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} onBlur={commit} placeholder="You are a helpful assistant..." rows={4} className={`${inputCls} font-mono`} />
+      <label className={labelCls}>Temperature: {temperature}</label>
+      <input type="range" min={0} max={1} step={0.1} value={temperature} onChange={(e) => { setTemperature(parseFloat(e.target.value)); }} onBlur={commit} className="w-full" />
+    </div>
+  );
+}
+
+function TimerConfig({ config, onCommit }: ConfigFormProps) {
+  const { t } = useTheme();
+  const [delayMs, setDelayMs] = useState((config.delayMs as number) ?? 0);
+  const inputCls = `w-full text-xs px-2 py-1 rounded-md border outline-none ${t(
+    "bg-slate-800 border-slate-700 text-white focus:border-slate-500",
+    "bg-white border-slate-300 text-slate-900 focus:border-slate-400",
+  )}`;
+
+  return (
+    <div className="space-y-2">
+      <label className={`text-xs ${t("text-slate-400", "text-slate-500")}`}>Delay (ms)</label>
+      <input type="number" min={0} value={delayMs} onChange={(e) => setDelayMs(parseInt(e.target.value) || 0)} onBlur={() => onCommit({ delayMs })} className={inputCls} />
+    </div>
+  );
+}
+
+function ManualConfig({ config, onCommit }: ConfigFormProps) {
+  const { t } = useTheme();
+  const [label, setLabel] = useState((config.label as string) ?? "");
+  const inputCls = `w-full text-xs px-2 py-1 rounded-md border outline-none ${t(
+    "bg-slate-800 border-slate-700 text-white focus:border-slate-500",
+    "bg-white border-slate-300 text-slate-900 focus:border-slate-400",
+  )}`;
+
+  return (
+    <div className="space-y-2">
+      <label className={`text-xs ${t("text-slate-400", "text-slate-500")}`}>Button label</label>
+      <input value={label} onChange={(e) => setLabel(e.target.value)} onBlur={() => onCommit({ ...(label && { label }) })} placeholder="Approve" className={inputCls} />
+    </div>
+  );
+}
+
+function ConfigSection({ type, config, onCommit }: { type: string; config: Record<string, unknown>; onCommit: (config: Record<string, unknown>) => void }) {
+  switch (type) {
+    case "http": return <HttpConfig config={config} onCommit={onCommit} />;
+    case "script": return <ScriptConfig config={config} onCommit={onCommit} />;
+    case "ai": return <AiConfig config={config} onCommit={onCommit} />;
+    case "timer": return <TimerConfig config={config} onCommit={onCommit} />;
+    case "manual": return <ManualConfig config={config} onCommit={onCommit} />;
+    default: return null;
+  }
+}
+
 function TransitionProperties({
   transition,
   definition,
@@ -118,6 +242,7 @@ function TransitionProperties({
   onSetGuard,
   onSetTimeout,
   onSetType,
+  onSetConfig,
   onRename,
 }: {
   transition: SerializedDefinition["transitions"][number];
@@ -126,6 +251,7 @@ function TransitionProperties({
   onSetGuard: (guard: string | null) => void;
   onSetTimeout: (timeout: { place: string; ms: number } | undefined) => void;
   onSetType: (type: string) => void;
+  onSetConfig: (config: Record<string, unknown> | undefined) => void;
   onRename: (newName: string) => void;
 }) {
   const { t } = useTheme();
@@ -238,6 +364,16 @@ function TransitionProperties({
           />
         </div>
       </Section>
+      {transition.type !== "automatic" && (
+        <Section label="Config">
+          <ConfigSection
+            key={transition.type}
+            type={transition.type ?? "automatic"}
+            config={(transition.config as Record<string, unknown>) ?? {}}
+            onCommit={(config) => onSetConfig(Object.keys(config).length > 0 ? config : undefined)}
+          />
+        </Section>
+      )}
       <button
         onClick={onRemove}
         className={`text-xs px-2 py-1 rounded-md border transition-colors cursor-pointer ${t(
@@ -261,6 +397,7 @@ export function PropertyPanel({
   onSetGuard,
   onSetTimeout,
   onSetType,
+  onSetConfig,
   onRenamePlace,
   onRenameTransition,
 }: Props) {
@@ -303,6 +440,7 @@ export function PropertyPanel({
           onSetGuard={(guard) => onSetGuard(transition.name, guard)}
           onSetTimeout={(timeout) => onSetTimeout(transition.name, timeout)}
           onSetType={(type) => onSetType(transition.name, type)}
+          onSetConfig={(config) => onSetConfig(transition.name, config)}
           onRename={(newName) => onRenameTransition(transition.name, newName)}
         />
       )}

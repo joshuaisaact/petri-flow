@@ -71,6 +71,7 @@ function buildNodes(
         hasExecute: false,
         guardCode: t.guard ?? undefined,
         timeout: t.timeout,
+        config: t.config,
       } satisfies TransitionNodeData,
     });
   }
@@ -343,7 +344,17 @@ export function useEditorState() {
     setDefinition((d) => ({
       ...d,
       transitions: d.transitions.map((t) =>
-        t.name === transitionName ? { ...t, type } : t,
+        t.name === transitionName ? { ...t, type, config: undefined } : t,
+      ),
+    }));
+  }
+
+  function setConfig(transitionName: string, config: Record<string, unknown> | undefined) {
+    snapshot();
+    setDefinition((d) => ({
+      ...d,
+      transitions: d.transitions.map((t) =>
+        t.name === transitionName ? { ...t, config } : t,
       ),
     }));
   }
@@ -419,6 +430,7 @@ export function useEditorState() {
     setGuard,
     setTimeout,
     setTransitionType,
+    setConfig,
     autoLayout,
     renamePlace,
     renameTransition,

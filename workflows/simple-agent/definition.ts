@@ -34,6 +34,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["userQuery"],
       outputs: ["planReady"],
       guard: null,
+      config: { model: "claude-sonnet-4-20250514", prompt: "Analyze the user query and produce a plan.", temperature: 0.7 },
     },
     {
       name: "dispatchTool",
@@ -41,6 +42,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["planReady"],
       outputs: ["toolPending"],
       guard: null,
+      config: { url: "https://tools.example.com/dispatch", method: "POST" },
     },
     {
       name: "completeTool",
@@ -48,6 +50,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["toolPending"],
       outputs: ["resultsReady"],
       guard: null,
+      config: { url: "https://tools.example.com/result", method: "GET" },
       execute: async (ctx) => ({
         toolResult: `tool result for iteration ${ctx.iteration}`,
       }),
@@ -58,6 +61,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
       guard: null,
+      config: { model: "claude-sonnet-4-20250514", prompt: "Generate a response based on tool results.", temperature: 0.5 },
       execute: async (ctx) => ({
         response: `Response after ${ctx.iteration} iteration(s)`,
       }),

@@ -24,6 +24,7 @@ export type WorkflowTransition<
   type: string;
   guard: string | null;
   timeout?: { place: Place; ms: number };
+  config?: Record<string, unknown>;
 };
 
 export type WorkflowNet<

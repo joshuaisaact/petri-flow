@@ -131,6 +131,7 @@ export function Editor() {
               onSetGuard={editor.setGuard}
               onSetTimeout={editor.setTimeout}
               onSetType={editor.setTransitionType}
+              onSetConfig={editor.setConfig}
               onRenamePlace={editor.renamePlace}
               onRenameTransition={editor.renameTransition}
             />

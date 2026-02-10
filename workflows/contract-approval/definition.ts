@@ -43,6 +43,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["awaitingFinance"],
       outputs: ["financeApproved"],
       guard: null,
+      config: { label: "Approve" },
       execute: async (ctx) => ({ financeReviewer: "cfo" }),
     },
     {
@@ -51,6 +52,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["awaitingFinance"],
       outputs: ["financeRejected"],
       guard: null,
+      config: { label: "Reject" },
       execute: async (ctx) => ({ financeReviewer: "cfo" }),
     },
     {
@@ -59,6 +61,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["awaitingLegal"],
       outputs: ["legalApproved"],
       guard: null,
+      config: { label: "Approve" },
       execute: async (ctx) => ({ legalReviewer: "counsel" }),
     },
     {
@@ -67,6 +70,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["awaitingLegal"],
       outputs: ["legalRejected"],
       guard: null,
+      config: { label: "Reject" },
       execute: async (ctx) => ({ legalReviewer: "counsel" }),
     },
     {

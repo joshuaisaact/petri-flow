@@ -38,6 +38,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["payment", "reserved"],
       outputs: ["shipped"],
       guard: null,
+      config: { url: "https://payments.example.com/charge", method: "POST" },
       execute: async (ctx) => ({
         paid: true,
       }),
