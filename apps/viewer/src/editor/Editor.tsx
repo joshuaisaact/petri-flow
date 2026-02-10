@@ -16,6 +16,11 @@ export function Editor() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showNewDialog, setShowNewDialog] = useState(false);
 
+  const isEmpty =
+    editor.definition.name === "untitled" &&
+    editor.definition.places.length === 0 &&
+    editor.definition.transitions.length === 0;
+
   async function handleSelect(name: string) {
     const def = await api.load(name);
     if (def) {
@@ -62,52 +67,79 @@ export function Editor() {
         onNew={() => setShowNewDialog(true)}
         onDelete={handleDelete}
       />
-      <div className="flex-1 flex flex-col min-w-0">
-        <EditorToolbar
-          name={editor.definition.name}
-          onNameChange={editor.setName}
-          onAutoLayout={editor.autoLayout}
-          onUndo={editor.undo}
-          canUndo={editor.canUndo}
-          onSave={handleSave}
-          saving={api.loading}
-          saveError={saveError}
-        />
-        <div className="flex-1">
-          <EditorCanvas
-            nodes={editor.nodes}
-            edges={editor.edges}
-            selectedId={editor.selectedId}
-            onSelect={editor.setSelectedId}
-            onConnect={editor.addArc}
-            onNodeDragStart={editor.snapshot}
-            onNodeDrag={editor.updateNodePosition}
-            onDeleteEdge={editor.removeEdge}
-            onDeleteNode={handleDeleteNode}
-            onAddPlace={editor.addPlace}
-            onAddTransition={editor.addTransition}
-            onUndo={editor.undo}
-          />
+      {isEmpty ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className={`text-center px-8 py-6 rounded-lg border ${t(
+            "bg-slate-900/80 border-slate-700",
+            "bg-white/80 border-slate-200",
+          )}`}>
+            <p className={`text-sm font-medium mb-1 ${t("text-slate-300", "text-slate-600")}`}>
+              No workflow selected
+            </p>
+            <p className={`text-xs mb-4 ${t("text-slate-500", "text-slate-400")}`}>
+              Select a workflow from the sidebar or create a new one
+            </p>
+            <button
+              onClick={() => setShowNewDialog(true)}
+              className={`text-xs px-4 py-2 rounded-md font-medium transition-colors cursor-pointer ${t(
+                "bg-indigo-600 text-white hover:bg-indigo-500",
+                "bg-indigo-600 text-white hover:bg-indigo-500",
+              )}`}
+            >
+              Create Workflow
+            </button>
+          </div>
         </div>
-      </div>
-      <div className={`w-64 border-l flex flex-col gap-4 overflow-y-auto ${t("bg-slate-950 border-slate-800", "bg-slate-50 border-slate-200")}`}>
-        <PropertyPanel
-          definition={editor.definition}
-          selectedId={editor.selectedId}
-          onRemovePlace={editor.removePlace}
-          onRemoveTransition={editor.removeTransition}
-          onSetTokens={editor.setInitialTokens}
-          onToggleTerminal={editor.toggleTerminal}
-          onSetGuard={editor.setGuard}
-          onSetTimeout={editor.setTimeout}
-          onSetType={editor.setTransitionType}
-          onRenamePlace={editor.renamePlace}
-          onRenameTransition={editor.renameTransition}
-        />
-        <div className="px-4 pb-4">
-          <EditorAnalysis definition={editor.definition} />
-        </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex-1 flex flex-col min-w-0">
+            <EditorToolbar
+              name={editor.definition.name}
+              onNameChange={editor.setName}
+              onAutoLayout={editor.autoLayout}
+              onUndo={editor.undo}
+              canUndo={editor.canUndo}
+              onSave={handleSave}
+              saving={api.loading}
+              saveError={saveError}
+            />
+            <div className="flex-1">
+              <EditorCanvas
+                nodes={editor.nodes}
+                edges={editor.edges}
+                selectedId={editor.selectedId}
+                onSelect={editor.setSelectedId}
+                onConnect={editor.addArc}
+                onNodeDragStart={editor.snapshot}
+                onNodeDrag={editor.updateNodePosition}
+                onDeleteEdge={editor.removeEdge}
+                onDeleteNode={handleDeleteNode}
+                onAddPlace={editor.addPlace}
+                onAddTransition={editor.addTransition}
+                onUndo={editor.undo}
+              />
+            </div>
+          </div>
+          <div className={`w-64 border-l flex flex-col gap-4 overflow-y-auto ${t("bg-slate-950 border-slate-800", "bg-slate-50 border-slate-200")}`}>
+            <PropertyPanel
+              definition={editor.definition}
+              selectedId={editor.selectedId}
+              onRemovePlace={editor.removePlace}
+              onRemoveTransition={editor.removeTransition}
+              onSetTokens={editor.setInitialTokens}
+              onToggleTerminal={editor.toggleTerminal}
+              onSetGuard={editor.setGuard}
+              onSetTimeout={editor.setTimeout}
+              onSetType={editor.setTransitionType}
+              onRenamePlace={editor.renamePlace}
+              onRenameTransition={editor.renameTransition}
+            />
+            <div className="px-4 pb-4">
+              <EditorAnalysis definition={editor.definition} />
+            </div>
+          </div>
+        </>
+      )}
 
       <NameDialog
         open={showNewDialog}
