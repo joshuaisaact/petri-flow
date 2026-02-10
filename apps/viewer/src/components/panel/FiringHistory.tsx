@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { FiringRecord } from "../../hooks/usePetriNet";
 import { useTheme } from "../../theme";
+import { Disclosure } from "../Disclosure";
 
 type Props = {
   history: FiringRecord[];
@@ -15,10 +16,7 @@ export function FiringHistory({ history }: Props) {
   }, [history.length]);
 
   return (
-    <div>
-      <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        History
-      </h3>
+    <Disclosure label="History">
       {history.length === 0 ? (
         <p className={`text-sm ${t("text-slate-500", "text-slate-400")}`}>Click a transition to fire it</p>
       ) : (
@@ -34,6 +32,6 @@ export function FiringHistory({ history }: Props) {
           <div ref={bottomRef} />
         </div>
       )}
-    </div>
+    </Disclosure>
   );
 }

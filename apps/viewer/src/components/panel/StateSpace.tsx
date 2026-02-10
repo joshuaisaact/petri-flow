@@ -1,5 +1,6 @@
 import type { WorkflowAnalysisResult } from "../../hooks/useAnalysis";
 import { useTheme } from "../../theme";
+import { Disclosure } from "../Disclosure";
 
 type Props = {
   result: WorkflowAnalysisResult<string>;
@@ -10,10 +11,7 @@ export function StateSpace({ result }: Props) {
   const deadlockFree = result.unexpectedTerminalStates.length === 0;
 
   return (
-    <div>
-      <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        State Space
-      </h3>
+    <Disclosure label="State Space">
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
           <span className={t("text-slate-400", "text-slate-500")}>Reachable states</span>
@@ -34,6 +32,6 @@ export function StateSpace({ result }: Props) {
           </span>
         </div>
       </div>
-    </div>
+    </Disclosure>
   );
 }

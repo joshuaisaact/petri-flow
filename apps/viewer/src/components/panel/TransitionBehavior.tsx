@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { WorkflowDefinition } from "@petriflow/engine/types";
 import { useTheme } from "../../theme";
+import { Disclosure } from "../Disclosure";
 
 type Props = {
   definition: WorkflowDefinition<string, any>;
@@ -79,15 +80,12 @@ export function TransitionBehavior({ definition }: Props) {
   if (entries.length === 0) return null;
 
   return (
-    <div>
-      <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        Behaviour
-      </h3>
+    <Disclosure label="Behaviour">
       <div className="space-y-1.5">
         {entries.map((entry) => (
           <EntryRow key={entry.name} entry={entry} />
         ))}
       </div>
-    </div>
+    </Disclosure>
   );
 }

@@ -9,6 +9,7 @@ type Props = {
   onSave: () => void;
   saving: boolean;
   saveError: string | null;
+  saveSuccess?: boolean;
 };
 
 export function EditorToolbar({
@@ -20,6 +21,7 @@ export function EditorToolbar({
   onSave,
   saving,
   saveError,
+  saveSuccess,
 }: Props) {
   const { t } = useTheme();
 
@@ -61,6 +63,9 @@ export function EditorToolbar({
       <div className="flex-1" />
       {saveError && (
         <span className="text-xs text-red-400 max-w-xs truncate">{saveError}</span>
+      )}
+      {saveSuccess && (
+        <span className="text-xs text-emerald-400 animate-fade-out">Saved</span>
       )}
       <button
         onClick={onSave}

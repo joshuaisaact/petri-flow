@@ -1,6 +1,7 @@
 import type { AnalysisResult } from "petri-ts";
 import type { PropertyProof, ViewerNet } from "../../types";
 import { useTheme } from "../../theme";
+import { Disclosure } from "../Disclosure";
 
 type Props = {
   properties: PropertyProof[];
@@ -16,10 +17,7 @@ export function SafetyProperties({
   const { t } = useTheme();
 
   return (
-    <div>
-      <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        Safety Properties
-      </h3>
+    <Disclosure label="Safety Properties">
       <div className="space-y-2">
         {properties.map((prop) => (
           <div key={prop.name} className="text-sm">
@@ -47,6 +45,6 @@ export function SafetyProperties({
           );
         })}
       </div>
-    </div>
+    </Disclosure>
   );
 }

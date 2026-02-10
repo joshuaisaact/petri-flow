@@ -7,14 +7,16 @@ import { EditorToolbar } from "./EditorToolbar";
 import { EditorCanvas } from "./EditorCanvas";
 import { PropertyPanel } from "./PropertyPanel";
 import { EditorAnalysis } from "./EditorAnalysis";
-import { NameDialog } from "./Dialog";
+import { NameDialog, ConfirmDialog } from "./Dialog";
 
 export function Editor() {
   const { t } = useTheme();
   const api = useDefinitionsApi();
   const editor = useEditorState();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [showNewDialog, setShowNewDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const isEmpty =
     editor.definition.name === "untitled" &&
@@ -40,13 +42,18 @@ export function Editor() {
     if (editor.definition.name === name) {
       editor.newDefinition();
     }
+    setDeleteTarget(null);
   }
 
   async function handleSave() {
     setSaveError(null);
+    setSaveSuccess(false);
     const result = await api.save(editor.definition);
     if (!result.ok) {
       setSaveError(result.error ?? "Save failed");
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
     }
   }
 
@@ -65,7 +72,7 @@ export function Editor() {
         activeName={editor.definition.name}
         onSelect={handleSelect}
         onNew={() => setShowNewDialog(true)}
-        onDelete={handleDelete}
+        onDelete={setDeleteTarget}
       />
       {isEmpty ? (
         <div className="flex-1 flex items-center justify-center">
@@ -102,6 +109,7 @@ export function Editor() {
               onSave={handleSave}
               saving={api.loading}
               saveError={saveError}
+              saveSuccess={saveSuccess}
             />
             <div className="flex-1">
               <EditorCanvas
@@ -149,6 +157,15 @@ export function Editor() {
         confirmLabel="Create"
         onConfirm={handleNew}
         onCancel={() => setShowNewDialog(false)}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete Workflow"
+        message={`Are you sure you want to delete "${deleteTarget}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   );

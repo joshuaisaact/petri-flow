@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+@keyframes fade-out {
+  0%, 50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fade-out {
+  animation: fade-out 2s ease-out forwards;
+}
+
 body {
   margin: 0;
   font-family:

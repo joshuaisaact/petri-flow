@@ -1,6 +1,74 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "../theme";
 
+type ConfirmDialogProps = {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+export function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Delete",
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  const { t } = useTheme();
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+      if (e.key === "Enter") onConfirm();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onCancel, onConfirm]);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div
+        className={`relative rounded-lg border shadow-xl p-5 w-80 ${t(
+          "bg-slate-900 border-slate-700",
+          "bg-white border-slate-200",
+        )}`}
+      >
+        <h3 className={`text-sm font-semibold mb-2 ${t("text-white", "text-slate-900")}`}>
+          {title}
+        </h3>
+        <p className={`text-sm mb-4 ${t("text-slate-400", "text-slate-500")}`}>
+          {message}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className={`text-xs px-3 py-1.5 rounded-md border transition-colors cursor-pointer ${t(
+              "border-slate-700 text-slate-400 hover:bg-slate-800",
+              "border-slate-300 text-slate-500 hover:bg-slate-100",
+            )}`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer bg-red-600 text-white hover:bg-red-500"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   open: boolean;
   title: string;

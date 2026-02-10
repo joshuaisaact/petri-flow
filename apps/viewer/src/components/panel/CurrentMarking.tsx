@@ -1,6 +1,7 @@
 import type { Marking } from "petri-ts";
 import type { PlaceMetadata } from "../../types";
 import { useTheme } from "../../theme";
+import { Disclosure } from "../Disclosure";
 
 const dotColor: Record<string, string> = {
   default: "bg-slate-400",
@@ -21,10 +22,7 @@ export function CurrentMarking({ marking, placeMetadata }: Props) {
     .sort(([, a], [, b]) => b - a);
 
   return (
-    <div>
-      <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        Current State
-      </h3>
+    <Disclosure label="Current State">
       {active.length === 0 ? (
         <p className={`text-sm ${t("text-slate-500", "text-slate-400")}`}>No tokens</p>
       ) : (
@@ -48,6 +46,6 @@ export function CurrentMarking({ marking, placeMetadata }: Props) {
           })}
         </div>
       )}
-    </div>
+    </Disclosure>
   );
 }
