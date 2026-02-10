@@ -23,7 +23,7 @@ export function CurrentMarking({ marking, placeMetadata }: Props) {
   return (
     <div>
       <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        Current Marking
+        Current State
       </h3>
       {active.length === 0 ? (
         <p className={`text-sm ${t("text-slate-500", "text-slate-400")}`}>No tokens</p>

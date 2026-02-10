@@ -17,7 +17,7 @@ export function FiringHistory({ history }: Props) {
   return (
     <div>
       <h3 className={`text-xs font-semibold uppercase tracking-wider mb-2 ${t("text-slate-400", "text-slate-500")}`}>
-        Firing History
+        History
       </h3>
       {history.length === 0 ? (
         <p className={`text-sm ${t("text-slate-500", "text-slate-400")}`}>Click a transition to fire it</p>
