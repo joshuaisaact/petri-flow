@@ -22,7 +22,7 @@ export function CurrentMarking({ marking, placeMetadata }: Props) {
     .sort(([, a], [, b]) => b - a);
 
   return (
-    <Disclosure label="Current State">
+    <Disclosure label="Marking">
       {active.length === 0 ? (
         <p className={`text-sm ${t("text-slate-500", "text-slate-400")}`}>No tokens</p>
       ) : (
