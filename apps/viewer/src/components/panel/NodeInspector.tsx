@@ -35,11 +35,11 @@ function ConfigDisplay({ config }: { config: Record<string, unknown> }) {
         const isLongText = typeof value === "string" && (value.length > 40 || value.includes("\n"));
         return (
           <div key={key}>
-            <span className={`text-[10px] uppercase tracking-wider ${t("text-slate-500", "text-slate-400")}`}>
+            <span className={`text-xs uppercase tracking-wider ${t("text-slate-500", "text-slate-400")}`}>
               {key}
             </span>
             {isLongText ? (
-              <pre className={`text-[11px] mt-0.5 p-1.5 rounded whitespace-pre-wrap break-all font-mono ${t(
+              <pre className={`text-xs mt-0.5 p-1.5 rounded whitespace-pre-wrap break-all font-mono ${t(
                 "bg-slate-800/50 text-slate-300",
                 "bg-slate-100 text-slate-700",
               )}`}>
@@ -65,7 +65,7 @@ function TransitionInspector({ data }: { data: TransitionNodeData }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span className={`font-medium text-sm ${t("text-white", "text-slate-900")}`}>{data.label}</span>
-        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${badgeColor}`}>
+        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${badgeColor}`}>
           {displayName(data.transitionType)}
         </span>
       </div>
@@ -77,8 +77,8 @@ function TransitionInspector({ data }: { data: TransitionNodeData }) {
       )}
       {data.guardCode && (
         <div>
-          <span className={`text-[10px] uppercase tracking-wider ${t("text-slate-500", "text-slate-400")}`}>Guard</span>
-          <code className={`block text-[11px] mt-0.5 p-1.5 rounded font-mono ${t(
+          <span className={`text-xs uppercase tracking-wider ${t("text-slate-500", "text-slate-400")}`}>Guard</span>
+          <code className={`block text-xs mt-0.5 p-1.5 rounded font-mono ${t(
             "bg-amber-500/10 text-amber-300",
             "bg-amber-50 text-amber-700",
           )}`}>
@@ -88,8 +88,8 @@ function TransitionInspector({ data }: { data: TransitionNodeData }) {
       )}
       {data.executeCode && (
         <div>
-          <span className={`text-[10px] uppercase tracking-wider ${t("text-slate-500", "text-slate-400")}`}>Execute</span>
-          <code className={`block text-[11px] mt-0.5 p-1.5 rounded font-mono whitespace-pre-wrap break-all ${t(
+          <span className={`text-xs uppercase tracking-wider ${t("text-slate-500", "text-slate-400")}`}>Execute</span>
+          <code className={`block text-xs mt-0.5 p-1.5 rounded font-mono whitespace-pre-wrap break-all ${t(
             "bg-blue-500/10 text-blue-300",
             "bg-blue-50 text-blue-700",
           )}`}>
@@ -114,7 +114,7 @@ function PlaceInspector({ data }: { data: PlaceNodeData }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span className={`font-medium text-sm ${t("text-white", "text-slate-900")}`}>{data.label}</span>
-        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${badgeColor}`}>
+        <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${badgeColor}`}>
           {displayName(data.category)}
         </span>
       </div>
@@ -174,7 +174,7 @@ export function NodeInspectorOverlay({
           </button>
         )}
         {isTransition && !transitionData!.enabled && (
-          <p className={`mt-2 text-[10px] italic ${t("text-slate-600", "text-slate-400")}`}>
+          <p className={`mt-2 text-xs italic ${t("text-slate-600", "text-slate-400")}`}>
             Not currently enabled
           </p>
         )}

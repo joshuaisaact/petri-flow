@@ -10,11 +10,11 @@ export function WorkflowContext({ context }: Props) {
   const entries = Object.entries(context);
 
   return (
-    <Disclosure label="Context">
+    <Disclosure label="Context" subtitle="What is known">
       {entries.length === 0 ? (
         <p className={`text-sm ${t("text-slate-500", "text-slate-400")}`}>No context</p>
       ) : (
-        <div className="space-y-1 text-xs">
+        <div className="space-y-1 text-sm">
           {entries.map(([key, value]) => (
             <div key={key} className="flex flex-col gap-0.5">
               <span className={`font-mono font-medium ${t("text-slate-300", "text-slate-600")}`}>
@@ -23,7 +23,7 @@ export function WorkflowContext({ context }: Props) {
               {value === null ? (
                 <span className={`font-mono ${t("text-slate-500", "text-slate-400")}`}>null</span>
               ) : typeof value === "object" ? (
-                <pre className={`font-mono text-[10px] leading-tight whitespace-pre-wrap break-all max-h-32 overflow-y-auto ${t("text-slate-400", "text-slate-500")}`}>
+                <pre className={`font-mono text-[11px] leading-tight whitespace-pre-wrap break-all max-h-32 overflow-y-auto ${t("text-slate-400", "text-slate-500")}`}>
                   {JSON.stringify(value, null, 2)}
                 </pre>
               ) : (

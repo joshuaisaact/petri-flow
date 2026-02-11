@@ -415,7 +415,7 @@ function TransitionProperties({
               "bg-white border-slate-300 text-amber-700 placeholder:text-slate-400 focus:border-slate-400",
             )}`}
           />
-          <p className={`text-[10px] ${t("text-slate-600", "text-slate-400")}`}>
+          <p className={`text-[11px] ${t("text-slate-600", "text-slate-400")}`}>
             e.g. score &gt; 80 and budget &gt; 0
           </p>
         </div>

@@ -90,7 +90,7 @@ export function Viewer({ viewerNet }: Props) {
           />
           <div className={`w-px h-4 mx-1 ${t("bg-slate-700", "bg-slate-300")}`} />
           <div
-            className={`flex items-center rounded-md border text-[11px] ${t(
+            className={`flex items-center rounded-md border text-xs ${t(
               "bg-slate-800 border-slate-700",
               "bg-white border-slate-300",
             )}`}
@@ -122,7 +122,7 @@ export function Viewer({ viewerNet }: Props) {
             <>
               <div className={`w-px h-4 mx-1 ${t("bg-slate-700", "bg-slate-300")}`} />
               <div
-                className={`flex items-center rounded-md border text-[11px] ${t(
+                className={`flex items-center rounded-md border text-xs ${t(
                   "bg-slate-800 border-slate-700",
                   "bg-white border-slate-300",
                 )}`}

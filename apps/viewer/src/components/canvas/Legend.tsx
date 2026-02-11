@@ -52,7 +52,7 @@ export function Legend() {
       <div
         key={item.label}
         onClick={() => handleClick(item)}
-        className={`flex items-center gap-2 text-[10px] cursor-pointer hover:opacity-80 ${t("text-slate-400", "text-slate-500")}`}
+        className={`flex items-center gap-2 text-[11px] cursor-pointer hover:opacity-80 ${t("text-slate-400", "text-slate-500")}`}
       >
         <span
           className={`shrink-0 ${item.color} ${

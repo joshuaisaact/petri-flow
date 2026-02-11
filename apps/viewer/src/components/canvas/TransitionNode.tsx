@@ -26,7 +26,7 @@ function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
     <div className="flex flex-col gap-1.5 max-w-xs">
       <div className="flex items-center gap-1.5">
         <span className={`font-medium ${t("text-white", "text-slate-900")}`}>{data.label}</span>
-        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getTypeColors(data.transitionType).badge}`}>
+        <span className={`px-1.5 py-0.5 rounded text-[11px] font-medium ${getTypeColors(data.transitionType).badge}`}>
           {displayName(data.transitionType)}
         </span>
       </div>
@@ -38,29 +38,29 @@ function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
       {(data.hasGuard || data.hasExecute || data.timeout) && (
         <div className="flex items-center gap-1.5 flex-wrap">
           {data.hasGuard && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/20 text-amber-400">
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-amber-500/20 text-amber-400">
               guard
             </span>
           )}
           {data.hasExecute && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/20 text-blue-400">
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-blue-500/20 text-blue-400">
               execute
             </span>
           )}
           {data.timeout && (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/20 text-red-400">
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-medium bg-red-500/20 text-red-400">
               timeout {data.timeout.ms}ms
             </span>
           )}
         </div>
       )}
       {data.guardCode && (
-        <code className={`text-[10px] leading-tight whitespace-pre-wrap break-all ${t("text-amber-300/80", "text-amber-600")}`}>
+        <code className={`text-[11px] leading-tight whitespace-pre-wrap break-all ${t("text-amber-300/80", "text-amber-600")}`}>
           {data.guardCode}
         </code>
       )}
       {data.executeCode && (
-        <code className={`text-[10px] leading-tight whitespace-pre-wrap break-all ${t("text-blue-300/80", "text-blue-600")}`}>
+        <code className={`text-[11px] leading-tight whitespace-pre-wrap break-all ${t("text-blue-300/80", "text-blue-600")}`}>
           {data.executeCode}
         </code>
       )}
@@ -92,7 +92,7 @@ export function TransitionNode({ data }: { data: TransitionNodeData }) {
             : {}
         }
         transition={justFired ? { duration: 0.5 } : undefined}
-        className={`relative flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-[11px] font-semibold tracking-wide transition-colors ${typeColors.accent} ${
+        className={`relative flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-xs font-semibold tracking-wide transition-colors ${typeColors.accent} ${
           enabled
             ? t(
                 "bg-white text-slate-900 border-slate-300 cursor-pointer shadow-lg shadow-white/10",

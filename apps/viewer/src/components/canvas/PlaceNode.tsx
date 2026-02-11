@@ -136,7 +136,7 @@ function PlaceTooltipContent({ data }: { data: PlaceNodeData }) {
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-2">
         <span className={`font-medium ${t("text-white", "text-slate-900")}`}>{data.label}</span>
-        <span className={`${badgeBg} ${badgeText} text-[9px] px-1.5 py-0.5 rounded-full`}>
+        <span className={`${badgeBg} ${badgeText} text-[10px] px-1.5 py-0.5 rounded-full`}>
           {displayName(data.category)}
         </span>
       </div>
@@ -199,7 +199,7 @@ export function PlaceNode({ data }: { data: PlaceNodeData }) {
           <Handle type="source" position={Position.Left} id="left-source" className="!opacity-0 !w-1 !h-1" />
         </div>
 
-        <span className={`text-[10px] mt-1 leading-tight text-center w-[90px] break-words hyphens-auto ${t("text-slate-400", "text-slate-500")}`}>
+        <span className={`text-[11px] mt-1 leading-tight text-center w-[90px] break-words hyphens-auto ${t("text-slate-400", "text-slate-500")}`}>
           {data.label}
         </span>
       </div>
