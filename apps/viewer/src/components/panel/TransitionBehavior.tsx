@@ -14,21 +14,26 @@ type Detail = { content: string; border: string };
 function EntryRow({ entry }: { entry: Entry }) {
   const [open, setOpen] = useState(false);
   const { t } = useTheme();
+  const hasDetails = entry.details.length > 0;
 
   return (
     <div>
       <div
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 text-sm cursor-pointer"
+        onClick={hasDetails ? () => setOpen(!open) : undefined}
+        className={`flex items-center gap-1.5 text-sm ${hasDetails ? "cursor-pointer" : ""}`}
       >
-        <span className={`text-[10px] select-none ${t("text-slate-600", "text-slate-400")}`}>
-          {open ? "\u25BC" : "\u25B6"}
-        </span>
+        {hasDetails ? (
+          <span className={`text-[11px] select-none ${t("text-slate-600", "text-slate-400")}`}>
+            {open ? "\u25BC" : "\u25B6"}
+          </span>
+        ) : (
+          <span className="w-[11px]" />
+        )}
         <span className={`font-mono truncate ${t("text-slate-200", "text-slate-700")}`}>{entry.name}</span>
         {entry.badges.map((b) => (
           <span
             key={b.label}
-            className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${b.color}`}
+            className={`shrink-0 px-1.5 py-0.5 rounded text-[11px] font-medium ${b.color}`}
           >
             {b.label}
           </span>
@@ -66,8 +71,7 @@ export function TransitionBehavior({ definition }: Props) {
       details.push({ content: tr.guard, border: "border-amber-400" });
     }
     if (definition.executors.has(tr.name)) {
-      badges.push({ label: "function", color: "text-blue-400 bg-blue-500/20" });
-      details.push({ content: definition.executors.get(tr.name)!.toString(), border: "border-blue-400" });
+      badges.push({ label: "executor", color: "text-blue-400 bg-blue-500/20" });
     }
     if (tr.timeout) {
       badges.push({ label: `timeout ${tr.timeout.ms}ms`, color: "text-red-400 bg-red-500/20" });
