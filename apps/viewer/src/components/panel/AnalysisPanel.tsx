@@ -4,6 +4,7 @@ import type { PropertyProof, ViewerNet } from "../../types";
 import type { WorkflowAnalysisResult } from "../../hooks/useAnalysis";
 import { CurrentMarking } from "./CurrentMarking";
 import { FiringHistory } from "./FiringHistory";
+import { WorkflowContext } from "./WorkflowContext";
 import { StateSpace } from "./StateSpace";
 import { SafetyProperties } from "./SafetyProperties";
 import { TransitionBehavior } from "./TransitionBehavior";
@@ -16,6 +17,7 @@ type Props = {
   isTerminal: boolean;
   result: WorkflowAnalysisResult<string>;
   properties: PropertyProof[];
+  context?: Record<string, unknown>;
 };
 
 export function AnalysisPanel({
@@ -25,6 +27,7 @@ export function AnalysisPanel({
   isTerminal,
   result,
   properties,
+  context,
 }: Props) {
   const { t } = useTheme();
 
@@ -46,6 +49,11 @@ export function AnalysisPanel({
       {isTerminal && (
         <div className="bg-emerald-950 border border-emerald-800 rounded-lg px-3 py-2 text-sm text-emerald-400 font-medium">
           Terminal state reached
+        </div>
+      )}
+      {context && Object.keys(context).length > 0 && (
+        <div className={`rounded-lg border p-3 ${t("bg-slate-900 border-slate-800", "bg-white border-slate-200")}`}>
+          <WorkflowContext context={context} />
         </div>
       )}
       <div className={`rounded-lg border p-3 ${t("bg-slate-900 border-slate-800", "bg-white border-slate-200")}`}>
