@@ -14,7 +14,7 @@ export const simpleAgent: ViewerNet = {
     toolPending: { category: "default", label: "Tool Running" },
     resultsReady: { category: "default", label: "Results Ready" },
     responseGenerated: { category: "terminal", label: "Response" },
-    iterationBudget: { category: "resource", label: "Iteration Budget" },
+    iterationBudget: { category: "default", label: "Iteration Budget" },
   },
   deriveProperties: (analysis) => {
     const allTerminal = analysis.terminalStates.every(
