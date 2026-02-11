@@ -25,6 +25,9 @@ type Ctx = {
   codeResult?: string;
   response?: string;
   iteration: number;
+  useSearch: boolean;
+  useDB: boolean;
+  useCode: boolean;
 };
 
 export const ITERATION_BUDGET = 3;
@@ -58,6 +61,14 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["planReady"],
       guard: null,
       config: { model: "claude-sonnet-4-20250514", prompt: "Analyze the query and decide which tools to use.", temperature: 0.7 },
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 1500));
+        return {
+          useSearch: !ctx.searchResult,
+          useDB: !ctx.dbResult,
+          useCode: !ctx.codeResult,
+        };
+      },
     },
 
     // Fan-out: distribute planReady to per-tool decision points
@@ -75,26 +86,29 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["searchDecision"],
       outputs: ["searchPending"],
-      guard: null,
-      config: { url: "https://search.example.com/query", method: "POST" },
+      guard: "useSearch",
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 500));
+        return {};
+      },
     },
     {
       name: "skipSearch",
       type: "automatic",
       inputs: ["searchDecision"],
       outputs: ["searchDone"],
-      guard: null,
+      guard: "not useSearch",
     },
     {
       name: "completeSearch",
-      type: "http",
+      type: "automatic",
       inputs: ["searchPending"],
       outputs: ["searchDone"],
       guard: null,
-      config: { url: "https://search.example.com/result", method: "GET" },
-      execute: async (ctx) => ({
-        searchResult: "search: found 3 results",
-      }),
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 1200));
+        return { searchResult: "search: found 3 results" };
+      },
     },
 
     // === Database tool ===
@@ -103,26 +117,29 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["dbDecision"],
       outputs: ["dbPending"],
-      guard: null,
-      config: { url: "https://db.example.com/query", method: "POST" },
+      guard: "useDB",
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 500));
+        return {};
+      },
     },
     {
       name: "skipDB",
       type: "automatic",
       inputs: ["dbDecision"],
       outputs: ["dbDone"],
-      guard: null,
+      guard: "not useDB",
     },
     {
       name: "completeDB",
-      type: "http",
+      type: "automatic",
       inputs: ["dbPending"],
       outputs: ["dbDone"],
       guard: null,
-      config: { url: "https://db.example.com/result", method: "GET" },
-      execute: async (ctx) => ({
-        dbResult: "db: 42 rows matched",
-      }),
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 1000));
+        return { dbResult: "db: 42 rows matched" };
+      },
     },
 
     // === Code execution tool (dangerous — requires human approval) ===
@@ -131,14 +148,14 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["codeDecision"],
       outputs: ["codePending"],
-      guard: null,
+      guard: "useCode",
     },
     {
       name: "skipCode",
       type: "automatic",
       inputs: ["codeDecision"],
       outputs: ["codeDone"],
-      guard: null,
+      guard: "not useCode",
     },
     {
       name: "requestApproval",
@@ -146,6 +163,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["codePending"],
       outputs: ["humanApproval"],
       guard: null,
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        return {};
+      },
     },
     {
       name: "approveCode",
@@ -154,6 +175,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["codeApproved"],
       guard: null,
       config: { label: "Approve" },
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        return {};
+      },
     },
     {
       name: "rejectCode",
@@ -162,6 +187,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["codeDone"],
       guard: null,
       config: { label: "Reject" },
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        return {};
+      },
     },
     {
       name: "executeCode",
@@ -169,10 +198,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["codeApproved"],
       outputs: ["codeDone"],
       guard: null,
-      config: { code: "// Execute sandboxed code\nresult = eval(ctx.codeSnippet)" },
-      execute: async (ctx) => ({
-        codeResult: "code: executed successfully",
-      }),
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 1500));
+        return { codeResult: "code: executed successfully" };
+      },
     },
 
     // === Join + Decision ===
@@ -193,9 +222,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["responseGenerated"],
       guard: null,
       config: { model: "claude-sonnet-4-20250514", prompt: "Synthesize results into a final response.", temperature: 0.5 },
-      execute: async (ctx) => ({
-        response: `Response after ${ctx.iteration} iteration(s)`,
-      }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 2000));
+        return { response: `Response after ${ctx.iteration} iteration(s)` };
+      },
     },
 
     // Iterate — consumes one budget token, loops back to userQuery
@@ -231,6 +261,9 @@ export const definition = defineWorkflow<Place, Ctx>({
   initialContext: {
     query: "What were last quarter's sales figures?",
     iteration: 0,
+    useSearch: false,
+    useDB: false,
+    useCode: false,
   },
   terminalPlaces: ["responseGenerated"],
 });

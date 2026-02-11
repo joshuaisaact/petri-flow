@@ -5,7 +5,7 @@ import type { ViewerNet } from "../types";
 export const agentBenchmark: ViewerNet = {
   name: definition.name,
   description:
-    "LLM agent loop as a Petri net. The agent picks tools, the net enforces the rules. Human approval gates dangerous operations. Budget tokens bound iteration count structurally.",
+    "LLM agent loop. The planner decides which tools to use by setting useSearch/useDB/useCode in context — guards route tokens accordingly. Code execution requires human approval. Budget tokens bound the loop.",
   definition,
   net: toNet(definition.net),
   placeMetadata: {
