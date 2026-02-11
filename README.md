@@ -25,13 +25,18 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | Workflow | What it proves |
 |---|---|
 | `coffee` | Concurrency and synchronisation. `heatWater` and `grindBeans` fire independently, `pourOver` joins them with a temperature guard. |
+| `github-lookup` | Real HTTP calls as Petri net transitions. Fetches a GitHub user and their repos via the public API. |
+| `contract-approval` | Parallel approval gates. Finance and legal review independently, both must complete before execution. |
 | `simple-agent` | Iteration loop with budget tokens. Agent is structurally forced to respond when budget is exhausted. |
 | `order-checkout` | Cannot oversell inventory. `reserve_stock` consumes from a shared `inventory` place. Every order terminates. |
 | `agent-benchmark` | Termination, human approval gate, no orphaned work, bounded iterations. See [BENCHMARK.md](./BENCHMARK.md). |
 
 ## Viewer
 
-An interactive React app for exploring and editing Petri nets. Click enabled transitions to fire them, watch tokens flow, and see live reachability analysis. The built-in editor lets you create workflows visually and save them to the server.
+An interactive React app for exploring and editing Petri nets. Two modes:
+
+- **Simulate** (default) — instant token movement, no side effects. Great for exploring the state space.
+- **Execute** — runs actual executors (HTTP calls, delays, context updates). Guards are evaluated against context, and the context panel shows data flowing between transitions.
 
 ```bash
 # Full stack (API server + viewer)
@@ -41,20 +46,24 @@ bun dev
 bun run --filter=@petriflow/viewer dev
 ```
 
-Four nets tell a progressive story:
+Six nets tell a progressive story:
 
 | Net | Places | Transitions | What it teaches |
 |---|---|---|---|
-| **coffee** | 6 | 3 | Concurrency and synchronisation — `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
-| **order-checkout** | 6 | 3 | Resource contention — `reserve_stock` consumes from a shared `inventory` place with token count > 1 |
-| **simple-agent** | 6 | 5 | Iteration loop with budget — watch the budget deplete, agent forced to respond when spent |
-| **agent-benchmark** | 16 | 17 | Everything together — concurrent tool fan-out, human approval gate, join semantics, four safety proofs |
+| **Making Coffee** | 6 | 3 | Concurrency and synchronisation — `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
+| **GitHub Lookup** | 4 | 2 | Real HTTP executors — fetches a GitHub user and repos via the public API, results visible in context |
+| **Contract Approval** | 7 | 5 | Parallel approval gates — finance and legal review independently, both must complete |
+| **Order Checkout** | 6 | 3 | Resource contention — `reserve_stock` consumes from a shared `inventory` place with token count > 1 |
+| **Simple Agent** | 6 | 5 | Iteration loop with budget — watch the budget deplete, agent forced to respond when spent |
+| **Agent Benchmark** | 16 | 17 | Everything together — context-driven tool dispatch, human approval gate, join semantics, four safety proofs |
 
 Features:
 
 - **Click to fire** — click any enabled transition, watch marking update in real-time
+- **Simulate / Execute** — toggle between instant token movement and real executor runs with context tracking
 - **Auto-play** — random firing with adjustable speed, stops at terminal state
 - **Live analysis** — reachable states, terminal states, deadlock-free status, safety properties and invariants
+- **Context panel** — see workflow data flow between transitions in execute mode
 - **Token display** — toggle between numbers and traditional Petri net dot notation
 - **Visual editor** — create places and transitions, edit properties in a modal, connect arcs via dropdowns or drag
 - **Light/dark theme** — toggle in the header
