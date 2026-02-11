@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
 import { Database } from "bun:sqlite";
 import { defineWorkflow } from "@petriflow/engine/workflow";
 import { WorkflowRuntime, type RuntimeEvent } from "../src/runtime.js";
@@ -378,6 +378,49 @@ describe("WorkflowRuntime", () => {
       await runtime.tick();
       const state = await runtime.inspect("e-1");
       expect(state.marking.c).toBe(1);
+    });
+  });
+
+  describe("saveDefinition with node executors", () => {
+    it("compiles http node from type + config and executes on tick", async () => {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = Object.assign(
+        mock(async () => new Response(
+          JSON.stringify({ result: "ok" }),
+          { headers: { "content-type": "application/json" } },
+        )),
+        { preconnect() {} },
+      ) as unknown as typeof fetch;
+
+      try {
+        runtime.saveDefinition({
+          name: "http-workflow",
+          places: ["start", "done"],
+          transitions: [
+            {
+              name: "call_api",
+              type: "http",
+              inputs: ["start"],
+              outputs: ["done"],
+              guard: null,
+              config: { url: "http://mock-server/api", method: "POST", body: { key: "value" } },
+            },
+          ],
+          initialMarking: { start: 1, done: 0 },
+          initialContext: {},
+          terminalPlaces: ["done"],
+        });
+
+        await runtime.createInstance("http-workflow", "http-1");
+        await runtime.tick();
+
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        const state = await runtime.inspect("http-1");
+        expect(state.marking.done).toBe(1);
+        expect(state.status).toBe("completed");
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
     });
   });
 

@@ -6,6 +6,8 @@ import type {
   ExecuteFn,
 } from "./types.js";
 import { compileGuard } from "./guard.js";
+import type { NodeExecutor } from "./nodes.js";
+import { defaultNodes } from "./nodes.js";
 
 /**
  * Input transition type for defineWorkflow — includes execute function
@@ -33,6 +35,8 @@ export function defineWorkflow<
   initialContext: Ctx;
   terminalPlaces: Place[];
   invariants?: { weights: Partial<Record<Place, number>> }[];
+}, options?: {
+  nodes?: Map<string, NodeExecutor>;
 }): WorkflowDefinition<Place, Ctx> {
   const placeSet = new Set<string>(def.places);
 
@@ -93,6 +97,19 @@ export function defineWorkflow<
     }
     const { execute: _, ...rest } = t;
     transitions.push(rest);
+  }
+
+  // Compile executors from type + config via node registry
+  const nodes = options?.nodes ?? defaultNodes();
+  for (const t of transitions) {
+    if (executors.has(t.name)) continue;
+    if (!t.config) continue;
+    const node = nodes.get(t.type);
+    if (!node) continue;
+    node.validate(t.config);
+    const config = t.config;
+    executors.set(t.name, ((ctx: Ctx, marking: Marking<Place>) =>
+      node.execute({ ctx, marking, config, transitionName: t.name })) as ExecuteFn<Place, Ctx>);
   }
 
   return {

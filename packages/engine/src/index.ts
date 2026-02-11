@@ -37,6 +37,10 @@ export { defineWorkflow, toNet } from "./workflow.js";
 // Guard compilation
 export { compileGuard } from "./guard.js";
 
+// Node executors
+export type { NodeExecutor } from "./nodes.js";
+export { httpNode, timerNode, defaultNodes } from "./nodes.js";
+
 // Persistence
 export { sqliteAdapter } from "./persistence/index.js";
 export type { ExtendedInstanceState } from "./persistence/index.js";
