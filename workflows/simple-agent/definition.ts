@@ -35,6 +35,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["planReady"],
       guard: null,
       config: { model: "claude-sonnet-4-20250514", prompt: "Analyze the user query and produce a plan.", temperature: 0.7 },
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 1500));
+        return {};
+      },
     },
     {
       name: "dispatchTool",
@@ -43,6 +47,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["toolPending"],
       guard: null,
       config: { url: "https://tools.example.com/dispatch", method: "POST" },
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 500));
+        return { toolResult: ctx.toolResult ?? "dispatched" };
+      },
     },
     {
       name: "completeTool",
@@ -51,9 +59,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["resultsReady"],
       guard: null,
       config: { url: "https://tools.example.com/result", method: "GET" },
-      execute: async (ctx) => ({
-        toolResult: `tool result for iteration ${ctx.iteration}`,
-      }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 1000));
+        return { toolResult: `tool result for iteration ${ctx.iteration}` };
+      },
     },
     {
       name: "generate",
@@ -62,9 +71,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["responseGenerated"],
       guard: null,
       config: { model: "claude-sonnet-4-20250514", prompt: "Generate a response based on tool results.", temperature: 0.5 },
-      execute: async (ctx) => ({
-        response: `Response after ${ctx.iteration} iteration(s)`,
-      }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 2000));
+        return { response: `Response after ${ctx.iteration} iteration(s)` };
+      },
     },
     {
       name: "iterate",

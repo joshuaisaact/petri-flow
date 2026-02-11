@@ -31,6 +31,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["order_placed", "inventory"],
       outputs: ["reserved", "payment"],
       guard: null,
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 800));
+        return {};
+      },
     },
     {
       name: "process_payment",
@@ -39,9 +43,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["shipped"],
       guard: null,
       config: { url: "https://payments.example.com/charge", method: "POST" },
-      execute: async (ctx) => ({
-        paid: true,
-      }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 2500));
+        return { paid: true };
+      },
     },
     {
       name: "out_of_stock",

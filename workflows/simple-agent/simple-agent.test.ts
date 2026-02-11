@@ -1,4 +1,5 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, setDefaultTimeout } from "bun:test";
+setDefaultTimeout(30_000);
 import { Database } from "bun:sqlite";
 import { Scheduler, createExecutor, sqliteAdapter, toNet, terminalStates, reachableStates } from "@petriflow/engine";
 import { analyse } from "@petriflow/engine";

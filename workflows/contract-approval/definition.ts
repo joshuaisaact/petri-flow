@@ -36,6 +36,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["submitted"],
       outputs: ["awaitingFinance", "awaitingLegal"],
       guard: null,
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 500));
+        return { submittedBy: "requester" };
+      },
     },
     {
       name: "approveFinance",
@@ -44,7 +48,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["financeApproved"],
       guard: null,
       config: { label: "Approve" },
-      execute: async (ctx) => ({ financeReviewer: "cfo" }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 300));
+        return { financeReviewer: "cfo" };
+      },
     },
     {
       name: "rejectFinance",
@@ -53,7 +60,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["financeRejected"],
       guard: null,
       config: { label: "Reject" },
-      execute: async (ctx) => ({ financeReviewer: "cfo" }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 300));
+        return { financeReviewer: "cfo" };
+      },
     },
     {
       name: "approveLegal",
@@ -62,7 +72,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["legalApproved"],
       guard: null,
       config: { label: "Approve" },
-      execute: async (ctx) => ({ legalReviewer: "counsel" }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 300));
+        return { legalReviewer: "counsel" };
+      },
     },
     {
       name: "rejectLegal",
@@ -71,7 +84,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       outputs: ["legalRejected"],
       guard: null,
       config: { label: "Reject" },
-      execute: async (ctx) => ({ legalReviewer: "counsel" }),
+      execute: async (ctx) => {
+        await new Promise((r) => setTimeout(r, 300));
+        return { legalReviewer: "counsel" };
+      },
     },
     {
       name: "execute",
@@ -79,6 +95,10 @@ export const definition = defineWorkflow<Place, Ctx>({
       inputs: ["financeApproved", "legalApproved"],
       outputs: ["executed"],
       guard: null,
+      execute: async () => {
+        await new Promise((r) => setTimeout(r, 2000));
+        return {};
+      },
     },
   ],
   initialMarking: {
