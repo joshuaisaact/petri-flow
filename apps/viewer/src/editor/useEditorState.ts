@@ -159,8 +159,11 @@ export function useEditorState() {
   function newDefinition(name?: string) {
     const def = emptyDefinition();
     if (name) def.name = name;
+    def.places = ["start"];
+    def.transitions = [{ name: "doSomething", type: "automatic", inputs: ["start"], outputs: [], guard: null }];
+    def.initialMarking = { start: 1 };
     setDefinition(def);
-    setPositions({});
+    setPositions(computeLayout(def));
     setSelectedId(null);
     setHistory([]);
   }
