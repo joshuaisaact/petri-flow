@@ -11,6 +11,8 @@ export type PlaceNodeData = {
   category: PlaceMetadata["category"];
   tokenDisplay: TokenDisplay;
   isTerminal: boolean;
+  editable?: boolean;
+  showQuickAdd?: boolean;
 };
 
 export type TransitionNodeData = {
@@ -27,6 +29,8 @@ export type TransitionNodeData = {
   executeCode?: string;
   timeout?: { place: string; ms: number };
   config?: Record<string, unknown>;
+  editable?: boolean;
+  showQuickAdd?: boolean;
 };
 
 // 56px circle + label below ≈ 72px total. 80px wide for label clearance.

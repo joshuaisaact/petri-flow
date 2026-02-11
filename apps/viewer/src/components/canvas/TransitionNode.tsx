@@ -71,67 +71,84 @@ function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
   );
 }
 
+const handleHidden = "!opacity-0 !w-1 !h-1";
+const handleVisible = "!w-2.5 !h-2.5 !bg-indigo-500 !border-none";
+
 export function TransitionNode({ data }: { data: TransitionNodeData }) {
   const { enabled, justFired, firing } = data;
   const { t } = useTheme();
   const typeColors = getTypeColors(data.transitionType);
+  const h = data.editable ? handleVisible : handleHidden;
 
   return (
     <Tooltip content={<TransitionTooltipContent data={data} />}>
-      <motion.div
-        whileTap={enabled ? { scale: 0.93 } : undefined}
-        animate={
-          justFired
-            ? {
-                boxShadow: [
-                  "0 0 0 0 rgba(16,185,129,0)",
-                  "0 0 20px 4px rgba(16,185,129,0.6)",
-                  "0 0 0 0 rgba(16,185,129,0)",
-                ],
-              }
-            : {}
-        }
-        transition={justFired ? { duration: 0.5 } : undefined}
-        className={`relative flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-xs font-semibold tracking-wide transition-colors ${typeColors.accent} ${
-          enabled
-            ? t(
-                "bg-white text-slate-900 border-slate-300 cursor-pointer shadow-lg shadow-white/10",
-                "bg-slate-800 text-white border-slate-600 cursor-pointer shadow-lg shadow-slate-800/20",
-              )
-            : firing
+      <div className="flex flex-col items-center relative">
+        <motion.div
+          whileTap={enabled ? { scale: 0.93 } : undefined}
+          animate={
+            justFired
+              ? {
+                  boxShadow: [
+                    "0 0 0 0 rgba(16,185,129,0)",
+                    "0 0 20px 4px rgba(16,185,129,0.6)",
+                    "0 0 0 0 rgba(16,185,129,0)",
+                  ],
+                }
+              : {}
+          }
+          transition={justFired ? { duration: 0.5 } : undefined}
+          className={`relative flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-xs font-semibold tracking-wide transition-colors ${typeColors.accent} ${
+            enabled
               ? t(
-                  "bg-slate-700/80 text-slate-300 border-slate-600 cursor-default",
-                  "bg-slate-200 text-slate-500 border-slate-300 cursor-default",
+                  "bg-white text-slate-900 border-slate-300 cursor-pointer shadow-lg shadow-white/10",
+                  "bg-slate-800 text-white border-slate-600 cursor-pointer shadow-lg shadow-slate-800/20",
                 )
-              : t(
-                  "bg-slate-800/60 text-slate-600 border-slate-700/50 cursor-default",
-                  "bg-slate-100 text-slate-400 border-slate-200 cursor-default",
-                )
-        }`}
-      >
-        {firing && (
-          <span className="absolute inset-0 rounded-md border-2 border-blue-400 animate-pulse pointer-events-none" />
+              : firing
+                ? t(
+                    "bg-slate-700/80 text-slate-300 border-slate-600 cursor-default",
+                    "bg-slate-200 text-slate-500 border-slate-300 cursor-default",
+                  )
+                : t(
+                    "bg-slate-800/60 text-slate-600 border-slate-700/50 cursor-default",
+                    "bg-slate-100 text-slate-400 border-slate-200 cursor-default",
+                  )
+          }`}
+        >
+          {firing && (
+            <span className="absolute inset-0 rounded-md border-2 border-blue-400 animate-pulse pointer-events-none" />
+          )}
+          <Handle type="target" position={Position.Top} className={h} />
+          <Handle type="target" position={Position.Right} id="right-target" className={h} />
+          <Handle type="target" position={Position.Left} id="left-target" className={h} />
+          {firing ? (
+            <span className="w-3 h-3 mr-1.5 shrink-0 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+          ) : enabled ? (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 shrink-0" />
+          ) : null}
+          {data.label}
+          {(data.hasGuard || data.hasExecute || data.timeout) && !firing && (
+            <span className="flex items-center gap-0.5 ml-1.5">
+              {data.hasGuard && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
+              {data.hasExecute && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
+              {data.timeout && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />}
+            </span>
+          )}
+          <Handle type="source" position={Position.Bottom} className={h} />
+          <Handle type="source" position={Position.Right} id="right-source" className={h} />
+          <Handle type="source" position={Position.Left} id="left-source" className={h} />
+        </motion.div>
+
+        {data.showQuickAdd && (
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="quick-add"
+            className="quick-add-handle"
+          >
+            <span style={{ pointerEvents: "none", marginTop: "-3px" }}>+</span>
+          </Handle>
         )}
-        <Handle type="target" position={Position.Top} className="!opacity-0 !w-1 !h-1" />
-        <Handle type="target" position={Position.Right} id="right-target" className="!opacity-0 !w-1 !h-1" />
-        <Handle type="target" position={Position.Left} id="left-target" className="!opacity-0 !w-1 !h-1" />
-        {firing ? (
-          <span className="w-3 h-3 mr-1.5 shrink-0 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-        ) : enabled ? (
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 shrink-0" />
-        ) : null}
-        {data.label}
-        {(data.hasGuard || data.hasExecute || data.timeout) && !firing && (
-          <span className="flex items-center gap-0.5 ml-1.5">
-            {data.hasGuard && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
-            {data.hasExecute && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
-            {data.timeout && <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />}
-          </span>
-        )}
-        <Handle type="source" position={Position.Bottom} className="!opacity-0 !w-1 !h-1" />
-        <Handle type="source" position={Position.Right} id="right-source" className="!opacity-0 !w-1 !h-1" />
-        <Handle type="source" position={Position.Left} id="left-source" className="!opacity-0 !w-1 !h-1" />
-      </motion.div>
+      </div>
     </Tooltip>
   );
 }

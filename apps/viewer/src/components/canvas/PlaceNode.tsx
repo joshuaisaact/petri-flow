@@ -150,6 +150,9 @@ function PlaceTooltipContent({ data }: { data: PlaceNodeData }) {
   );
 }
 
+const handleHidden = "!opacity-0 !w-1 !h-1";
+const handleVisible = "!w-2.5 !h-2.5 !bg-indigo-500 !border-none !opacity-100";
+
 export function PlaceNode({ data }: { data: PlaceNodeData }) {
   const { isDark, t } = useTheme();
   const ring = categoryRing[data.category] ?? categoryRing["default"]!;
@@ -160,10 +163,11 @@ export function PlaceNode({ data }: { data: PlaceNodeData }) {
     data.isTerminal && !empty
       ? categoryGlow[data.category] ?? ""
       : "";
+  const h = data.editable ? handleVisible : handleHidden;
 
   return (
     <Tooltip content={<PlaceTooltipContent data={data} />}>
-      <div className="flex flex-col items-center">
+      <div className={`flex flex-col items-center ${data.editable ? "relative" : ""}`}>
         <div
           className={`flex items-center justify-center w-14 h-14 rounded-full border-2 ${bg} ${ring} ${
             empty
@@ -173,9 +177,9 @@ export function PlaceNode({ data }: { data: PlaceNodeData }) {
                 : "shadow-md"
           } transition-all`}
         >
-          <Handle type="target" position={Position.Top} className="!opacity-0 !w-1 !h-1" />
-          <Handle type="target" position={Position.Right} id="right-target" className="!opacity-0 !w-1 !h-1" />
-          <Handle type="target" position={Position.Left} id="left-target" className="!opacity-0 !w-1 !h-1" />
+          <Handle type="target" position={Position.Top} className={h} />
+          <Handle type="target" position={Position.Right} id="right-target" className={h} />
+          <Handle type="target" position={Position.Left} id="left-target" className={h} />
 
           <AnimatePresence mode="wait">
             <motion.div
@@ -194,14 +198,25 @@ export function PlaceNode({ data }: { data: PlaceNodeData }) {
             </motion.div>
           </AnimatePresence>
 
-          <Handle type="source" position={Position.Bottom} className="!opacity-0 !w-1 !h-1" />
-          <Handle type="source" position={Position.Right} id="right-source" className="!opacity-0 !w-1 !h-1" />
-          <Handle type="source" position={Position.Left} id="left-source" className="!opacity-0 !w-1 !h-1" />
+          <Handle type="source" position={Position.Bottom} className={h} />
+          <Handle type="source" position={Position.Right} id="right-source" className={h} />
+          <Handle type="source" position={Position.Left} id="left-source" className={h} />
         </div>
 
-        <span className={`text-[11px] mt-1 leading-tight text-center w-[90px] break-words hyphens-auto ${t("text-slate-400", "text-slate-500")}`}>
+        <span className={`text-[11px] mt-1 leading-tight text-center w-[90px] break-words hyphens-auto ${data.editable ? "absolute top-full" : ""} ${t("text-slate-400", "text-slate-500")}`}>
           {data.label}
         </span>
+
+        {data.showQuickAdd && (
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id="quick-add"
+            className="quick-add-handle"
+          >
+            <span style={{ pointerEvents: "none", marginTop: "-3px" }}>+</span>
+          </Handle>
+        )}
       </div>
     </Tooltip>
   );

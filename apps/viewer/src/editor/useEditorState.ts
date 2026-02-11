@@ -9,8 +9,8 @@ export type NodePositions = Record<string, { x: number; y: number }>;
 type Snapshot = { definition: SerializedDefinition; positions: NodePositions };
 const MAX_UNDO = 5;
 
-const PLACE_W = 80;
-const PLACE_H = 72;
+const PLACE_W = 56;
+const PLACE_H = 56;
 const TRANS_W = 140;
 const TRANS_H = 36;
 
@@ -46,6 +46,7 @@ function buildNodes(
         category: def.terminalPlaces.includes(place) ? "terminal" : "default",
         tokenDisplay: "numbers",
         isTerminal: false,
+        editable: true,
       } satisfies PlaceNodeData,
     });
   }
@@ -73,6 +74,7 @@ function buildNodes(
         guardCode: t.guard ?? undefined,
         timeout: t.timeout,
         config: t.config,
+        editable: true,
       } satisfies TransitionNodeData,
     });
   }

@@ -10,6 +10,7 @@ import {
   useReactFlow,
   ReactFlowProvider,
   type NodeTypes,
+  type EdgeTypes,
   type Node,
   type Edge,
   type Connection,
@@ -19,6 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { PlaceNode } from "../components/canvas/PlaceNode";
 import { TransitionNode } from "../components/canvas/TransitionNode";
+import { DeletableEdge } from "./DeletableEdge";
 import { useTheme } from "../theme";
 import { NameDialog } from "./Dialog";
 import type { PlaceNodeData } from "../layout/dagre";
@@ -26,6 +28,10 @@ import type { PlaceNodeData } from "../layout/dagre";
 const nodeTypes: NodeTypes = {
   place: PlaceNode,
   transition: TransitionNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  deletable: DeletableEdge,
 };
 
 type ContextMenuState = {
@@ -170,6 +176,7 @@ function EditorCanvasInner({
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [pendingAdd, setPendingAdd] = useState<PendingAdd | null>(null);
   const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
   // Track handle-drag for drag-to-create
   const dragSourceRef = useRef<string | null>(null);
@@ -177,11 +184,15 @@ function EditorCanvasInner({
 
   const isEmpty = nodes.length === 0;
 
+  // Nodes that have at least one outgoing edge — hide their quick-add handle
+  const nodesWithOutgoing = new Set(edges.map((e) => e.source));
+
   // Style nodes — highlight connecting source and valid targets
   const styledNodes = nodes.map((node) => {
     const isConnectSource = connectingFrom === node.id;
     const isValidTarget = connectingFrom !== null && connectingFrom !== node.id && canConnect(connectingFrom, node.id);
     const isSelected = node.id === selectedId && !connectingFrom;
+    const showQuickAdd = !nodesWithOutgoing.has(node.id);
 
     let style: React.CSSProperties | undefined;
     if (isConnectSource) {
@@ -194,6 +205,7 @@ function EditorCanvasInner({
 
     return {
       ...node,
+      data: { ...node.data, showQuickAdd },
       selected: isSelected,
       style,
       className: isValidTarget ? "cursor-crosshair" : undefined,
@@ -201,11 +213,12 @@ function EditorCanvasInner({
   });
 
   const styledEdges = edges.map((edge) => {
-    if (edge.style?.strokeDasharray) return edge;
     const strokeColor = isDark ? "#475569" : "#94a3b8";
-    return {
+    const base = {
       ...edge,
-      style: { stroke: strokeColor, strokeWidth: 1.5 },
+      type: "deletable" as const,
+      data: { ...edge.data, onDelete: onDeleteEdge, hovered: hoveredEdge === edge.id },
+      style: { stroke: strokeColor, strokeWidth: 1.5, ...(edge.style?.strokeDasharray ? { strokeDasharray: edge.style.strokeDasharray } : {}) },
       markerEnd: {
         type: MarkerType.ArrowClosed,
         width: 16,
@@ -213,6 +226,10 @@ function EditorCanvasInner({
         color: strokeColor,
       },
     };
+    if (edge.style?.strokeDasharray) {
+      base.style.stroke = edge.style.stroke as string ?? strokeColor;
+    }
+    return base;
   });
 
   function handleNodesChange(changes: NodeChange[]) {
@@ -314,14 +331,6 @@ function EditorCanvasInner({
     }
   }
 
-  function handleEdgeClick(_: React.MouseEvent, edge: Edge) {
-    if (connectingFrom) {
-      setConnectingFrom(null);
-      return;
-    }
-    onDeleteEdge(edge.id);
-  }
-
   function handleContextMenu(e: React.MouseEvent) {
     if (connectingFrom) {
       setConnectingFrom(null);
@@ -376,6 +385,7 @@ function EditorCanvasInner({
         nodes={styledNodes}
         edges={styledEdges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={handleNodesChange}
         onConnect={handleConnect}
         onConnectStart={handleConnectStart}
@@ -385,7 +395,8 @@ function EditorCanvasInner({
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}
-        onEdgeClick={handleEdgeClick}
+        onEdgeMouseEnter={(_, edge) => setHoveredEdge(edge.id)}
+        onEdgeMouseLeave={() => setHoveredEdge(null)}
         onContextMenu={handleContextMenu}
         onDoubleClick={handlePaneDoubleClick}
         nodesDraggable={!connectingFrom}

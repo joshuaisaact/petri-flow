@@ -94,18 +94,56 @@ body {
   width: 10px !important;
   height: 10px !important;
   background: #6366f1;
-  border: 2px solid #1e293b;
+  border: none;
   transition: all 0.15s;
 }
 
 .editor-canvas .react-flow__handle:hover {
   background: #818cf8;
-  transform: scale(1.4);
 }
 
-/* Edge click hint */
-.editor-canvas .react-flow__edge {
-  cursor: pointer;
+
+/* Quick-add handle — "+" button below nodes */
+.editor-canvas .quick-add-handle.react-flow__handle {
+  width: 20px !important;
+  height: 20px !important;
+  bottom: -40px !important;
+  left: 50% !important;
+  transform: translate(-50%, 0) !important;
+  border-radius: 4px !important;
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+  cursor: grab;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #94a3b8;
+  line-height: 1;
+  padding: 0;
+}
+
+.editor-canvas .quick-add-handle.react-flow__handle > * {
+  pointer-events: none;
+}
+
+.editor-canvas .quick-add-handle.react-flow__handle:hover {
+  background: #334155 !important;
+  color: #e2e8f0;
+  border-color: #64748b !important;
+}
+
+/* Connecting line from node to quick-add handle */
+.editor-canvas .quick-add-handle.react-flow__handle::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  width: 1px;
+  height: 20px;
+  background: #475569;
+  pointer-events: none;
 }
 
 /* Selection ring */
