@@ -13,7 +13,7 @@ export const coffee: ViewerNet = {
     waterHot: { category: "default", label: "Water (hot)" },
     beansWhole: { category: "default", label: "Beans (whole)" },
     beansGround: { category: "default", label: "Beans (ground)" },
-    cupEmpty: { category: "resource", label: "Cup (empty)" },
+    cupEmpty: { category: "default", label: "Cup (empty)" },
     coffeeReady: { category: "terminal", label: "Coffee Ready" },
   },
   deriveProperties: (analysis) => [
