@@ -33,6 +33,7 @@ type Props = {
   isTerminal: boolean;
   selectedNodeId?: string | null;
   onSelectNode?: (id: string | null) => void;
+  firing?: string | null;
 };
 
 export function PetriNetCanvas({
@@ -46,6 +47,7 @@ export function PetriNetCanvas({
   isTerminal,
   selectedNodeId,
   onSelectNode,
+  firing,
 }: Props) {
   const { isDark } = useTheme();
   const enabledSet = new Set(enabled.map((t) => t.name));
@@ -80,6 +82,7 @@ export function PetriNetCanvas({
           ...(node.data as TransitionNodeData),
           enabled: enabledSet.has(name),
           justFired: lastFired === name,
+          firing: firing === name,
         },
       };
     }

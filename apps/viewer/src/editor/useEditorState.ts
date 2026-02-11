@@ -65,6 +65,7 @@ function buildNodes(
         transitionType: t.type ?? "automatic",
         enabled: false,
         justFired: false,
+        firing: false,
         inputs: t.inputs,
         outputs: t.outputs,
         hasGuard: !!t.guard,

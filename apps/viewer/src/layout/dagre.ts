@@ -18,6 +18,7 @@ export type TransitionNodeData = {
   transitionType: string;
   enabled: boolean;
   justFired: boolean;
+  firing: boolean;
   inputs: string[];
   outputs: string[];
   hasGuard: boolean;
@@ -221,6 +222,7 @@ export function layoutNet(
         transitionType: wt?.type ?? "automatic",
         enabled: false,
         justFired: false,
+        firing: false,
         inputs: t.inputs.map(placeLabel),
         outputs: t.outputs.map(placeLabel),
         hasGuard: !!wt?.guard,

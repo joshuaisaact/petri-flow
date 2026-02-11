@@ -72,7 +72,7 @@ function TransitionTooltipContent({ data }: { data: TransitionNodeData }) {
 }
 
 export function TransitionNode({ data }: { data: TransitionNodeData }) {
-  const { enabled, justFired } = data;
+  const { enabled, justFired, firing } = data;
   const { t } = useTheme();
   const typeColors = getTypeColors(data.transitionType);
 
@@ -92,26 +92,36 @@ export function TransitionNode({ data }: { data: TransitionNodeData }) {
             : {}
         }
         transition={justFired ? { duration: 0.5 } : undefined}
-        className={`flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-[11px] font-semibold tracking-wide transition-colors ${typeColors.accent} ${
+        className={`relative flex items-center justify-center w-[140px] h-[36px] rounded-md border border-l-[3px] text-[11px] font-semibold tracking-wide transition-colors ${typeColors.accent} ${
           enabled
             ? t(
                 "bg-white text-slate-900 border-slate-300 cursor-pointer shadow-lg shadow-white/10",
                 "bg-slate-800 text-white border-slate-600 cursor-pointer shadow-lg shadow-slate-800/20",
               )
-            : t(
-                "bg-slate-800/60 text-slate-600 border-slate-700/50 cursor-default",
-                "bg-slate-100 text-slate-400 border-slate-200 cursor-default",
-              )
+            : firing
+              ? t(
+                  "bg-slate-700/80 text-slate-300 border-slate-600 cursor-default",
+                  "bg-slate-200 text-slate-500 border-slate-300 cursor-default",
+                )
+              : t(
+                  "bg-slate-800/60 text-slate-600 border-slate-700/50 cursor-default",
+                  "bg-slate-100 text-slate-400 border-slate-200 cursor-default",
+                )
         }`}
       >
+        {firing && (
+          <span className="absolute inset-0 rounded-md border-2 border-blue-400 animate-pulse pointer-events-none" />
+        )}
         <Handle type="target" position={Position.Top} className="!opacity-0 !w-1 !h-1" />
         <Handle type="target" position={Position.Right} id="right-target" className="!opacity-0 !w-1 !h-1" />
         <Handle type="target" position={Position.Left} id="left-target" className="!opacity-0 !w-1 !h-1" />
-        {enabled && (
+        {firing ? (
+          <span className="w-3 h-3 mr-1.5 shrink-0 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        ) : enabled ? (
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 shrink-0" />
-        )}
+        ) : null}
         {data.label}
-        {(data.hasGuard || data.hasExecute || data.timeout) && (
+        {(data.hasGuard || data.hasExecute || data.timeout) && !firing && (
           <span className="flex items-center gap-0.5 ml-1.5">
             {data.hasGuard && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
             {data.hasExecute && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}

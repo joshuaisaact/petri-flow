@@ -4,36 +4,38 @@ import type { Transition } from "petri-ts";
 export function useAutoPlay(
   enabled: Transition<string>[],
   isTerminal: boolean,
-  fireTransition: (name: string) => void,
+  fireTransition: (name: string) => void | Promise<void>,
+  firing: string | null,
 ) {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(500);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
-    if (!playing || isTerminal) {
+    if (!playing || isTerminal || firing) {
       if (isTerminal) setPlaying(false);
       return;
     }
 
-    intervalRef.current = setInterval(() => {
-      if (enabled.length === 0) {
-        setPlaying(false);
-        return;
-      }
+    if (enabled.length === 0) {
+      setPlaying(false);
+      return;
+    }
+
+    timeoutRef.current = setTimeout(async () => {
       const idx = Math.floor(Math.random() * enabled.length);
-      fireTransition(enabled[idx]!.name);
+      await fireTransition(enabled[idx]!.name);
     }, speed);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [playing, speed, isTerminal, enabled, fireTransition]);
+  }, [playing, speed, isTerminal, enabled, fireTransition, firing]);
 
   return { playing, setPlaying, speed, setSpeed };
 }
