@@ -16,6 +16,15 @@ export const simpleAgent: ViewerNet = {
     responseGenerated: { category: "terminal", label: "Response" },
     iterationBudget: { category: "default", label: "Iteration Budget" },
   },
+  intro: {
+    title: "Bounded Agent Loop",
+    bullets: [
+      "A ReAct-style agent that plans, runs a tool, and decides whether to loop or respond.",
+      "Each loop iteration consumes a budget token. When the budget is spent, the agent must respond.",
+      "The finite budget guarantees a finite state space — the agent always terminates.",
+    ],
+    tip: "Check the state count in the Analysis panel — the budget is what makes it finite.",
+  },
   deriveProperties: (analysis) => {
     const allTerminal = analysis.terminalStates.every(
       (s) => (s["responseGenerated"] ?? 0) > 0,

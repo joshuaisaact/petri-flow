@@ -26,6 +26,15 @@ export const agentBenchmark: ViewerNet = {
     responseGenerated: { category: "terminal", label: "Response Generated" },
     iterationBudget: { category: "resource", label: "Iteration Budget" },
   },
+  intro: {
+    title: "Context-Driven Routing",
+    bullets: [
+      "The planner sets flags (useSearch, useDB, useCode) in context. Guards on each branch read these flags to route tokens.",
+      "Code execution requires passing through a human approval gate — the token can't skip it.",
+      "Budget tokens bound the loop, and joinResults requires all three tool tracks to complete before proceeding.",
+    ],
+    tip: "Switch to Execute mode to see guards read from context and route tokens dynamically.",
+  },
   deriveProperties: (analysis) => {
     const allTerminal = analysis.terminalStates.every(
       (s) => (s["responseGenerated"] ?? 0) > 0,

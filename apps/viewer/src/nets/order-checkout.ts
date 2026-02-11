@@ -16,6 +16,15 @@ export const orderCheckout: ViewerNet = {
     shipped: { category: "terminal", label: "Shipped" },
     out_of_stock: { category: "terminal", label: "Out of Stock" },
   },
+  intro: {
+    title: "Resource Contention",
+    bullets: [
+      "Inventory tokens represent limited stock. The reserve transition consumes from both order_placed and inventory.",
+      "When inventory hits zero, the out_of_stock guard fires instead — overselling is structurally impossible.",
+      "An invariant proves that inventory + reserved + shipped is constant across all reachable states.",
+    ],
+    tip: "This is something DAG-based workflow tools cannot model — resource contention requires tokens.",
+  },
   invariants: [
     {
       weights: { inventory: 1, reserved: 1, shipped: 1 },

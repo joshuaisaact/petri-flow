@@ -18,6 +18,15 @@ export const contractApproval: ViewerNet = {
     legalRejected: { category: "terminal", label: "Legal Rejected" },
     executed: { category: "terminal", label: "Executed" },
   },
+  intro: {
+    title: "Fork-Join Approval",
+    bullets: [
+      "After submission, finance and legal review concurrently — the net forks into two parallel tracks.",
+      "The execute transition requires both approvals (AND-join). If either rejects, execution is structurally impossible.",
+      "The invariant proves one token always stays in the finance pipeline, guaranteeing no work is lost.",
+    ],
+    tip: "Watch the four terminal states: both approve, finance rejects, legal rejects, or both reject.",
+  },
   invariants: [
     {
       weights: { submitted: 1, awaitingFinance: 1, financeApproved: 1, financeRejected: 1, executed: 1 },

@@ -14,6 +14,12 @@ export type PropertyProof = {
   description: string;
 };
 
+export type ViewerNetIntro = {
+  title: string;
+  bullets: string[];
+  tip?: string;
+};
+
 export type ViewerNet = {
   name: string;
   description: string;
@@ -22,4 +28,5 @@ export type ViewerNet = {
   placeMetadata?: Record<string, PlaceMetadata>;
   invariants?: { weights: Partial<Record<string, number>>; label: string }[];
   deriveProperties?: (analysis: AnalysisResult<string>) => PropertyProof[];
+  intro?: ViewerNetIntro;
 };

@@ -16,6 +16,15 @@ export const coffee: ViewerNet = {
     cupEmpty: { category: "default", label: "Cup (empty)" },
     coffeeReady: { category: "terminal", label: "Coffee Ready" },
   },
+  intro: {
+    title: "Concurrency & Synchronization",
+    bullets: [
+      "heatWater and grindBeans are independent — they can fire in either order without coordination.",
+      "pourOver has three inputs, so it only fires when hot water, ground beans, and an empty cup are all present.",
+      "No central orchestrator decides the order. Concurrency and synchronization emerge from the net structure.",
+    ],
+    tip: "Try clicking heatWater first, then grindBeans, then reload and reverse the order. Both paths reach the same result.",
+  },
   deriveProperties: (analysis) => [
     {
       name: "Termination",

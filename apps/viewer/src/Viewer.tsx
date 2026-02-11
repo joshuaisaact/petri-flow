@@ -7,6 +7,7 @@ import { PetriNetCanvas } from "./components/canvas/PetriNetCanvas";
 import { AnalysisPanel } from "./components/panel/AnalysisPanel";
 import { NodeInspectorOverlay } from "./components/panel/NodeInspector";
 import { PlaybackControls } from "./components/controls/PlaybackControls";
+import { IntroModal } from "./components/IntroModal";
 import { useTheme } from "./theme";
 import type { ViewerNet } from "./types";
 
@@ -27,6 +28,7 @@ export function Viewer({ viewerNet }: Props) {
   );
   const [tokenDisplay, setTokenDisplay] = useState<TokenDisplay>("numbers");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(!!viewerNet.intro);
   const { t } = useTheme();
 
   const hasDefinition = !!viewerNet.definition;
@@ -152,6 +154,21 @@ export function Viewer({ viewerNet }: Props) {
               </div>
             </>
           )}
+          {viewerNet.intro && (
+            <>
+              <div className={`w-px h-4 mx-1 ${t("bg-slate-700", "bg-slate-300")}`} />
+              <button
+                onClick={() => setShowIntro(true)}
+                title="About this workflow"
+                className={`w-7 h-7 flex items-center justify-center rounded-md border text-xs transition-colors cursor-pointer ${t(
+                  "bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700",
+                  "bg-white border-slate-300 text-slate-400 hover:text-slate-900 hover:bg-slate-100",
+                )}`}
+              >
+                &#9432;
+              </button>
+            </>
+          )}
         </div>
         <div className="flex-1 relative">
           <PetriNetCanvas
@@ -185,6 +202,13 @@ export function Viewer({ viewerNet }: Props) {
         properties={properties}
         context={mode === "execute" ? context : undefined}
       />
+      {showIntro && viewerNet.intro && (
+        <IntroModal
+          intro={viewerNet.intro}
+          name={viewerNet.name}
+          onClose={() => setShowIntro(false)}
+        />
+      )}
     </div>
   );
 }
