@@ -12,7 +12,8 @@
     "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "paths": {
-      "@workflows/*": ["../../workflows/*"]
+      "@workflows/*": ["../../workflows/*"],
+      "@comparisons/*": ["../../comparisons/*"]
     }
   },
   "include": ["src"]

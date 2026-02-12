@@ -13,6 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@workflows": path.resolve(__dirname, "../../workflows"),
+      "@comparisons": path.resolve(__dirname, "../../comparisons"),
     },
   },
   server: {
