@@ -1,0 +1,24 @@
+{
+  "name": "@petriflow/pi-extension",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./nets/tool-approval": "./src/nets/tool-approval.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@petriflow/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "^0.52",
+    "@types/bun": "^1",
+    "typescript": "^5.7"
+  }
+}
