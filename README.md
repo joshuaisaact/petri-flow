@@ -19,6 +19,8 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | `@petriflow/server` | HTTP server — run workflows as a service, inject tokens via REST, observe via SSE |
 | `@petriflow/cli` | `petriflow analyse <workflow.ts>` CLI tool |
 | `@petriflow/viewer` | Interactive Petri net viewer — click to fire transitions, live analysis |
+| `@petriflow/pi-extension` | Petri net gating for [pi-mono](https://github.com/nicholasgasior/pi-mono) agent tools — intercepts tool calls and enforces workflow structure |
+| `@petriflow/pi-assistant` | Personal assistant skill nets — safe messaging, deployment pipelines, research-before-share, backup-before-destroy |
 
 ## Workflows
 
@@ -30,6 +32,38 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | `simple-agent` | Iteration loop with budget tokens. Agent is structurally forced to respond when budget is exhausted. |
 | `order-checkout` | Cannot oversell inventory. `reserve_stock` consumes from a shared `inventory` place. Every order terminates. |
 | `agent-benchmark` | Termination, human approval gate, no orphaned work, bounded iterations. See [BENCHMARK.md](./BENCHMARK.md). |
+
+## Agent Safety (pi-extension + pi-assistant)
+
+Petri nets aren't just for orchestrating workflows — they can **enforce safety properties on AI agents**. The `pi-extension` package intercepts tool calls in [pi-mono](https://github.com/nicholasgasior/pi-mono) and gates them through a Petri net. The agent can only use a tool if an enabled transition allows it. No enabled transition = tool blocked.
+
+`pi-assistant` builds on this with four skill nets for personal assistants:
+
+| Skill | Safety property | Human approval? |
+|---|---|---|
+| **communicate** | Can't send a message without reading the channel first. Channel-matched, 1:1 read:send ratio. | No |
+| **deploy** | Can't deploy to staging without passing tests. Can't deploy to prod without staging. | Prod only |
+| **research** | Can't share findings without having done actual web research. Each fetch earns one share token. | No |
+| **cleanup** | Can't delete without a successful backup covering the same path. `git stash` covers everything. | No |
+
+Three of four skills have **zero human approval** — safety comes entirely from the Petri net structure. The net is the only thing between the agent and destructive actions.
+
+Key mechanisms:
+- **Deferred transitions** — allow the tool call but only advance the net when the tool succeeds (e.g. backup must actually work)
+- **Tool mapping** — split one tool (e.g. `bash`) into virtual tools based on command content (e.g. `backup` vs `destructive`)
+- **Semantic validation** — hooks check domain-specific properties (path coverage, channel matching) beyond what net structure alone enforces
+
+```bash
+# Run the tests
+bun test packages/pi-extension
+bun test packages/pi-assistant
+```
+
+## Comparisons
+
+| Comparison | Description |
+|---|---|
+| `comparisons/openclaw-safety` | Four OpenClaw safety scenarios (tool approval, message gating, budget escalation, sandbox isolation) modeled as PetriFlow workflows |
 
 ## Viewer
 
@@ -46,7 +80,7 @@ bun dev
 bun run --filter=@petriflow/viewer dev
 ```
 
-Six nets tell a progressive story:
+Ten nets tell a progressive story:
 
 | Net | Places | Transitions | What it teaches |
 |---|---|---|---|
@@ -56,6 +90,10 @@ Six nets tell a progressive story:
 | **Order Checkout** | 6 | 3 | Resource contention — `reserve_stock` consumes from a shared `inventory` place with token count > 1 |
 | **Simple Agent** | 6 | 5 | Iteration loop with budget — watch the budget deplete, agent forced to respond when spent |
 | **Agent Benchmark** | 16 | 17 | Everything together — context-driven tool dispatch, human approval gate, join semantics, four safety proofs |
+| **OpenClaw: Tool Approval** | 13 | 11 | Fan-out/join with shell approval gate and budget tokens |
+| **OpenClaw: Message Gating** | 9 | 10 | Guard-based sender verification with pairing flow |
+| **OpenClaw: Budget Escalation** | 8 | 5 | Budget-limited tool use with privilege escalation (structurally impossible) |
+| **OpenClaw: Sandbox Isolation** | 11 | 12 | Sandbox-first execution with manual elevation to host |
 
 Features:
 
