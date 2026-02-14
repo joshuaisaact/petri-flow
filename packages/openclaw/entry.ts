@@ -7,9 +7,9 @@
  * To switch to enforce mode, change mode: "shadow" → mode: "enforce".
  */
 import { createPetriGatePlugin } from "./src/index.js";
-import { toolApprovalNet } from "../pi-extension/src/nets/tool-approval.js";
+import { openclawToolApprovalNet } from "./src/nets/tool-approval.js";
 
-export default createPetriGatePlugin([toolApprovalNet], {
+export default createPetriGatePlugin([openclawToolApprovalNet], {
   mode: "shadow",
   onDecision: (event, decision) => {
     const action = decision?.block ? `WOULD_BLOCK: ${decision.reason}` : "allow";

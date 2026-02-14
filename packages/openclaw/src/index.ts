@@ -113,3 +113,6 @@ function wireCommands(api: OpenClawPluginApi, manager: GateManager): void {
 // Re-export gate types for convenience
 export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions } from "@petriflow/gate";
 export { defineSkillNet, createGateManager } from "@petriflow/gate";
+
+// Re-export bundled nets
+export { openclawToolApprovalNet } from "./nets/tool-approval.js";
