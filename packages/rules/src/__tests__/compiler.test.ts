@@ -456,3 +456,227 @@ describe("multiple rules compose via GateManager", () => {
     expect(result3).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Dot notation — parser tests
+// ---------------------------------------------------------------------------
+
+describe("compile — dot notation parser", () => {
+  it("parses dotted tool names in sequence rules", () => {
+    const { nets } = compile(
+      "require discord.readMessages before discord.sendMessage",
+    );
+    expect(nets).toHaveLength(1);
+    expect(nets[0]!.name).toBe(
+      "require-discord.readMessages-before-discord.sendMessage",
+    );
+  });
+
+  it("parses dotted tool names in block rules", () => {
+    const { nets } = compile("block discord.timeout");
+    expect(nets).toHaveLength(1);
+    expect(nets[0]!.name).toBe("block-discord.timeout");
+  });
+
+  it("parses dotted tool names in approval rules", () => {
+    const { nets } = compile(
+      "require human-approval before discord.sendMessage",
+    );
+    expect(nets).toHaveLength(1);
+    expect(nets[0]!.name).toBe("approve-before-discord.sendMessage");
+  });
+
+  it("parses dotted tool names in limit rules", () => {
+    const { nets } = compile(
+      "limit discord.sendMessage to 5 per session",
+    );
+    expect(nets).toHaveLength(1);
+    expect(nets[0]!.name).toBe("limit-discord.sendMessage-5");
+  });
+
+  it("attaches toolMapper when dotted tools are used", () => {
+    const net = compile("block discord.sendMessage").nets[0]!;
+    expect(net.toolMapper).toBeDefined();
+  });
+
+  it("does not attach toolMapper for plain tool names", () => {
+    const net = compile("block rm").nets[0]!;
+    expect(net.toolMapper).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Dot notation — semantic tests via GateManager
+// ---------------------------------------------------------------------------
+
+describe("dot notation — action dispatch", () => {
+  it("discord.sendMessage is blocked, discord.readMessages passes through", async () => {
+    const { nets } = compile("block discord.sendMessage");
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // sendMessage is blocked
+    const r1 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("discord.sendMessage"),
+    });
+
+    // readMessages passes through (net abstains — unknown tool)
+    const r2 = await manager.handleToolCall(
+      makeEvent("discord", { action: "readMessages", channelId: "123" }),
+      makeCtx(),
+    );
+    expect(r2).toBeUndefined();
+  });
+
+  it("require human-approval before discord.sendMessage", async () => {
+    const { nets } = compile(
+      "require human-approval before discord.sendMessage",
+    );
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // sendMessage blocked without approval
+    const noUiCtx: GateContext = {
+      hasUI: false,
+      confirm: async () => false,
+    };
+    const r1 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      noUiCtx,
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("requires UI"),
+    });
+
+    // sendMessage allowed with approval
+    const r2 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      makeCtx(true),
+    );
+    expect(r2).toBeUndefined();
+
+    // react passes through (net abstains)
+    const r3 = await manager.handleToolCall(
+      makeEvent("discord", { action: "react", emoji: "ok" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
+  });
+
+  it("require discord.readMessages before discord.sendMessage", async () => {
+    const { nets } = compile(
+      "require discord.readMessages before discord.sendMessage",
+    );
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // sendMessage blocked without prior readMessages
+    const r1 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("discord.sendMessage"),
+    });
+
+    // readMessages allowed (deferred)
+    const readEvent = makeEvent("discord", {
+      action: "readMessages",
+      channelId: "123",
+    });
+    const r2 = await manager.handleToolCall(readEvent, makeCtx());
+    expect(r2).toBeUndefined();
+
+    // deliver successful result
+    manager.handleToolResult(makeResult(readEvent, false));
+
+    // sendMessage now allowed
+    const r3 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
+  });
+
+  it("limit discord.sendMessage to 2 per session", async () => {
+    const { nets } = compile(
+      "limit discord.sendMessage to 2 per session",
+    );
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // First two sends work
+    for (let i = 0; i < 2; i++) {
+      const r = await manager.handleToolCall(
+        makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+        makeCtx(),
+      );
+      expect(r).toBeUndefined();
+    }
+
+    // Third is blocked
+    const r3 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      makeCtx(),
+    );
+    expect(r3).toEqual({
+      block: true,
+      reason: expect.stringContaining("discord.sendMessage"),
+    });
+
+    // react still passes through
+    const r4 = await manager.handleToolCall(
+      makeEvent("discord", { action: "react", emoji: "ok" }),
+      makeCtx(),
+    );
+    expect(r4).toBeUndefined();
+  });
+
+  it("multiple dotted rules compose correctly", async () => {
+    const { nets } = compile([
+      "require human-approval before discord.sendMessage",
+      "block discord.timeout",
+      "limit discord.sendMessage to 3 per session",
+    ]);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // timeout always blocked
+    const r1 = await manager.handleToolCall(
+      makeEvent("discord", { action: "timeout", guildId: "999" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-discord.timeout"),
+    });
+
+    // sendMessage needs approval (and has budget)
+    const r2 = await manager.handleToolCall(
+      makeEvent("discord", { action: "sendMessage", to: "channel:123" }),
+      makeCtx(true),
+    );
+    expect(r2).toBeUndefined();
+
+    // readMessages passes through all nets
+    const r3 = await manager.handleToolCall(
+      makeEvent("discord", { action: "readMessages", channelId: "123" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
+  });
+
+  it("non-action tool calls pass through dotted nets unchanged", async () => {
+    const { nets } = compile("block discord.sendMessage");
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // A tool called "read" (no action field) should pass through
+    const r = await manager.handleToolCall(
+      makeEvent("read", { path: "/tmp/foo" }),
+      makeCtx(),
+    );
+    expect(r).toBeUndefined();
+  });
+});

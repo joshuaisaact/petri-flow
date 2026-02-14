@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PetriFlow — Provably Safe AI Agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #08080c;
+  --bg-elevated: #0f0f14;
+  --bg-card: rgba(255,255,255,0.03);
+  --bg-card-hover: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.1);
+  --text: #ededf0;
+  --text-secondary: #b4b4c0;
+  --text-muted: #6e6e80;
+  --accent: #8b5cf6;
+  --accent-dim: rgba(139,92,246,0.12);
+  --accent-glow: rgba(139,92,246,0.2);
+  --accent-text: #a78bfa;
+  --green: #34d399;
+  --green-dim: rgba(52,211,153,0.1);
+  --red: #f87171;
+  --red-dim: rgba(248,113,113,0.1);
+  --orange: #fb923c;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+section {
+  padding: 120px 0;
+  position: relative;
+}
+
+/* Nav */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(8,8,12,0.8);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid var(--border);
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+
+.nav-logo {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.nav-logo span { color: var(--accent-text); }
+
+.nav-links {
+  display: flex;
+  gap: 28px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.nav-links a:hover { color: var(--text-secondary); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  font-family: var(--sans);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #9d6ff8;
+  box-shadow: 0 0 32px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+/* ───── HERO ───── */
+.hero {
+  padding: 180px 0 120px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1000px;
+  height: 800px;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(139,92,246,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 30%, rgba(52,211,153,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.hero h1 {
+  font-size: clamp(44px, 6vw, 68px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+  background: linear-gradient(180deg, #fff 30%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--accent-text) 0%, var(--green) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 520px;
+  margin: 0 auto 36px;
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 64px;
+}
+
+/* Hero code showcase */
+.hero-code {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.hero-code-window {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
+}
+
+.hero-code-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero-code-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.hero-code-titlebar span {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.hero-code-body {
+  padding: 20px 24px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 2;
+  color: var(--text-secondary);
+}
+
+.hero-code-body .kw { color: var(--accent-text); }
+.hero-code-body .str { color: var(--green); }
+.hero-code-body .comment { color: var(--text-muted); }
+.hero-code-body .fn { color: var(--orange); }
+
+.hero-code-caption {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.hero-code-caption strong {
+  color: var(--green);
+}
+
+/* ───── SECTIONS ───── */
+.problem, .solution, .real-world, .how-it-works, .rules, .comparison, .integrations, .under-hood {
+  border-top: 1px solid var(--border);
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-text);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+.section-sub {
+  color: var(--text-muted);
+  font-size: 15px;
+  max-width: 560px;
+  line-height: 1.7;
+}
+
+blockquote {
+  border-left: 2px solid var(--accent);
+  padding: 20px 24px;
+  background: var(--bg-card);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin: 32px 0;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+blockquote cite {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.problem-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.problem-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.problem-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.problem-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.problem-card code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: rgba(255,255,255,0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+/* ───── SOLUTION (before/after) ───── */
+
+.solution-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.solution-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+}
+
+.solution-panel.bad { border-color: rgba(248,113,113,0.15); }
+.solution-panel.good { border-color: rgba(52,211,153,0.15); }
+
+.solution-panel-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+.solution-panel.bad .solution-panel-label { color: var(--red); }
+.solution-panel.good .solution-panel-label { color: var(--green); }
+
+.solution-panel .code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-x: auto;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.solution-panel .panel-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.solution-panel.bad .panel-note strong { color: var(--red); }
+.solution-panel.good .panel-note strong { color: var(--green); }
+
+.code-block .kw { color: var(--accent-text); }
+.code-block .str { color: var(--green); }
+.code-block .comment { color: var(--text-muted); }
+.code-block .fn { color: var(--orange); }
+
+/* ───── REAL WORLD EXAMPLE ───── */
+
+.rw-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.rw-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.rw-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rw-panel-header .file-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.rw-panel:first-child .rw-panel-header { color: var(--text-muted); }
+.rw-panel:first-child .file-icon { background: rgba(255,255,255,0.05); }
+.rw-panel:last-child .rw-panel-header { color: var(--accent-text); }
+.rw-panel:last-child .file-icon { background: var(--accent-dim); }
+
+.rw-panel-body {
+  padding: 20px 24px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.rw-panel-body .kw { color: var(--accent-text); }
+.rw-panel-body .str { color: var(--green); }
+.rw-panel-body .comment { color: rgba(255,255,255,0.15); }
+.rw-panel-body .fn { color: var(--orange); }
+.rw-panel-body .dim { color: rgba(255,255,255,0.15); }
+.rw-panel-body .heading { color: var(--text-secondary); font-weight: 600; }
+
+.rw-trace {
+  margin-top: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+}
+
+.rw-trace-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.rw-trace-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.rw-trace-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.rw-trace-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.rw-trace-icon.blocked { background: var(--red-dim); color: var(--red); }
+.rw-trace-icon.ok { background: var(--green-dim); color: var(--green); }
+.rw-trace-icon.wait { background: var(--accent-dim); color: var(--accent-text); }
+
+.rw-trace-text { color: var(--text-muted); }
+.rw-trace-text strong { color: var(--text-secondary); }
+.rw-trace-text .blocked-text { color: var(--red); }
+.rw-trace-text .ok-text { color: var(--green); }
+
+/* ───── HOW IT WORKS (3 layers) ───── */
+
+.layers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.layer {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.layer:hover { border-color: var(--border-hover); }
+
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 28px;
+  cursor: default;
+}
+
+.layer-number {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-text);
+  background: var(--accent-dim);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.layer-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.layer-tag {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.layer:nth-child(1) .layer-tag { color: var(--green); background: var(--green-dim); }
+.layer:nth-child(2) .layer-tag { color: var(--accent-text); background: var(--accent-dim); }
+.layer:nth-child(3) .layer-tag { color: var(--text-muted); background: rgba(255,255,255,0.04); }
+
+.layer-body {
+  padding: 0 28px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.layer-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.layer-desc strong { color: var(--text-secondary); }
+
+.layer-code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--text-muted);
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+/* ───── COMPARISON TABLE ───── */
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  margin-top: 40px;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.comparison-table thead th {
+  text-align: left;
+  padding: 12px 20px;
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.comparison-table thead th:nth-child(2) { color: var(--red); }
+.comparison-table thead th:nth-child(3) { color: var(--green); }
+
+.comparison-table tbody td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.comparison-table tbody tr:last-child td { border-bottom: none; }
+
+.comparison-table tbody td:first-child {
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.comparison-table tbody td:nth-child(2) { color: var(--text-muted); }
+
+.comparison-table code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: rgba(255,255,255,0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.table-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tag-yes { background: var(--green-dim); color: var(--green); }
+.tag-no { background: var(--red-dim); color: var(--red); }
+
+/* ───── RULES SHOWCASE ───── */
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.rule-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.rule-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.rule-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-text);
+  margin-bottom: 6px;
+}
+
+.rule-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.rule-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.rule-guarantee {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--green-dim);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--green);
+}
+
+.rule-guarantee-icon {
+  color: var(--green);
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.rule-example {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.rule-example .blocked { color: var(--red); }
+.rule-example .allowed { color: var(--green); }
+
+/* ───── INTEGRATIONS ───── */
+
+.integrations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.integration-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.integration-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.integration-logo {
+  font-size: 28px;
+  margin-bottom: 14px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.integration-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.integration-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.integration-code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.integration-code .kw { color: var(--accent-text); }
+.integration-code .str { color: var(--green); }
+.integration-code .fn { color: var(--orange); }
+
+.integration-diagram {
+  margin-top: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+}
+
+.integration-diagram-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.diagram-box {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.diagram-box.agent {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.diagram-box.gate {
+  background: var(--accent-dim);
+  border: 1px solid rgba(139,92,246,0.3);
+  color: var(--accent-text);
+}
+
+.diagram-box.tools {
+  background: var(--green-dim);
+  border: 1px solid rgba(52,211,153,0.2);
+  color: var(--green);
+}
+
+.diagram-arrow {
+  color: rgba(255,255,255,0.15);
+  font-size: 16px;
+}
+
+.diagram-caption {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ───── UNDER THE HOOD ───── */
+
+.under-hood-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.under-hood-text p {
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.under-hood-text strong { color: var(--text-secondary); }
+
+.under-hood-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.under-hood-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.under-hood-stat-value {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.under-hood-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.under-hood-visual {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.under-hood-visual .label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+.verify-output {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--text-muted);
+}
+
+.verify-output .fn { color: var(--orange); }
+.verify-output .kw { color: var(--accent-text); }
+.verify-output .str { color: var(--green); }
+.verify-output .pass { color: var(--green); font-weight: 600; }
+.verify-output .dim { color: rgba(255,255,255,0.1); }
+
+/* ───── FOOTER ───── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 0 32px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 48px;
+  margin-bottom: 40px;
+}
+
+.footer-brand {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.footer-brand .nav-logo { margin-bottom: 12px; }
+
+.footer-col h4 {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+  color: var(--text-muted);
+}
+
+.footer-col a {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: color 0.15s;
+}
+
+.footer-col a:hover { color: var(--text-secondary); }
+
+.footer-bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ───── RESPONSIVE ───── */
+@media (max-width: 768px) {
+  section { padding: 80px 0; }
+  .hero { padding: 140px 0 80px; }
+
+  .problem-grid,
+  .solution-compare,
+  .rw-layout,
+  .rules-grid,
+  .integrations-grid,
+  .under-hood-content {
+    grid-template-columns: 1fr;
+  }
+
+  .layer-body {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .nav-links { display: none; }
+
+  .comparison-table { font-size: 12px; }
+  .comparison-table tbody td,
+  .comparison-table thead th { padding: 10px 14px; }
+
+  .under-hood-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <a href="#" class="nav-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <circle cx="6" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+        <circle cx="18" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+        <circle cx="12" cy="19" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+        <circle cx="6" cy="6" r="1.5" fill="#8b5cf6"/>
+        <line x1="9" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+        <line x1="15" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+      </svg>
+      Petri<span>Flow</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#solution">Solution</a></li>
+      <li><a href="#example">Example</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#rules">Safety Rules</a></li>
+      <li><a href="#comparison">Comparison</a></li>
+      <li><a href="#integrations">Integrations</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ───── HERO ───── -->
+<section class="hero">
+  <div class="container">
+    <h1>Provably Safe<br><em>AI Agents.</em></h1>
+    <p class="hero-sub">
+      A safety layer that sits between your agent and its tools.<br>
+      Any framework. Provable rules your agent <strong style="color:var(--text)">literally cannot</strong> break.
+    </p>
+    <div class="hero-buttons">
+      <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
+      <a href="#comparison" class="btn btn-secondary">Compare to Policy Checks</a>
+    </div>
+
+    <div class="hero-code">
+      <div class="hero-code-window">
+        <div class="hero-code-titlebar">
+          <div class="hero-code-dot"></div>
+          <div class="hero-code-dot"></div>
+          <div class="hero-code-dot"></div>
+          <span>safety.rules</span>
+        </div>
+        <div class="hero-code-body">
+          <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span><br>
+          <span class="kw">require</span> <span class="str">slack.readMessages</span> before <span class="str">slack.sendMessage</span><br>
+          <span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span><br>
+          <span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span><br>
+          <span class="comment"><!-- --># that's it. each rule is mathematically verified.</span>
+        </div>
+      </div>
+      <p class="hero-code-caption">
+        4 rules. <strong>Every reachable state checked.</strong> Zero bypasses possible.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ───── PROBLEM ───── -->
+<section class="problem" id="problem">
+  <div class="container">
+    <p class="section-label">The Problem</p>
+    <h2 class="section-title">Your agent's safety net<br>is a <code style="font-family:var(--mono);color:var(--red)">.md</code> file.</h2>
+    <p class="section-sub">
+      Agent skills are markdown files. The model reads them, follows the instructions,
+      and calls tools. There is nothing between "the skill says don't do that" and
+      the model doing it anyway.
+    </p>
+
+    <blockquote>
+      "Most failures are not fancy exploits&thinsp;&mdash;&thinsp;they're someone messaged the bot and the bot did what they asked."
+      <cite>&mdash; OpenClaw safety documentation</cite>
+    </blockquote>
+
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h3>Skills are just prompts</h3>
+        <p>A <code>SKILL.md</code> is natural language instructions the model reads and hopefully follows. "Run tests before deploying" is a suggestion, not a constraint. Nothing enforces it.</p>
+      </div>
+      <div class="problem-card">
+        <h3>Deny-lists are never complete</h3>
+        <p>You block <code>rm -rf</code> but miss <code>find -delete</code>. You block <code>DROP TABLE</code> but miss <code>TRUNCATE</code>. The agent finds the gap you didn't think of.</p>
+      </div>
+      <div class="problem-card">
+        <h3>There's no execution layer</h3>
+        <p>Skills have no runtime. The model reads markdown, decides what to do, and calls tools directly. There's no gate, no interceptor, no enforcement between intent and action.</p>
+      </div>
+      <div class="problem-card">
+        <h3>More skills = more trust</h3>
+        <p>Every new skill hands the model more tools and more instructions to follow correctly. You're scaling capability while scaling risk&thinsp;&mdash;&thinsp;with nothing but the prompt standing between them.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── SOLUTION ───── -->
+<section class="solution" id="solution">
+  <div class="container">
+    <p class="section-label">The Solution</p>
+    <h2 class="section-title">Your skills are prompts.<br>Make them enforceable.</h2>
+    <p class="section-sub">
+      PetriFlow adds an enforcement layer below your skills.
+      The skill tells the agent what to do.
+      The rule makes sure it <strong>can't do it wrong</strong>.
+    </p>
+
+    <div class="solution-compare">
+      <div class="solution-panel bad">
+        <div class="solution-panel-label">Skill alone (hope-based)</div>
+        <div class="code-block"><span class="comment"># SKILL.md</span>
+<span class="comment"># ---</span>
+<span class="comment"># name: cleanup</span>
+<span class="comment"># description: Delete unused files</span>
+<span class="comment"># ---</span>
+
+<span class="comment">## Important</span>
+Always back up files before deleting.
+Never delete without a backup.
+
+<span class="comment">## Usage</span>
+<span class="fn">1.</span> Back up the target directory
+<span class="fn">2.</span> Delete unused files
+<span class="fn">3.</span> Verify cleanup
+
+<span class="comment"># the model reads this.</span>
+<span class="comment"># the model might follow it.</span>
+<span class="comment"># nothing <em>makes</em> it.</span></div>
+        <p class="panel-note">The skill says "always back up first." <strong>The model decides whether to listen.</strong></p>
+      </div>
+
+      <div class="solution-panel good">
+        <div class="solution-panel-label">Skill + PetriFlow rule</div>
+        <div class="code-block"><span class="comment"># same SKILL.md as before</span>
+<span class="comment"># same instructions, same tools</span>
+
+<span class="comment"># but now, add one rule:</span>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+
+<span class="comment"># the model can try to skip the backup.</span>
+<span class="comment"># it doesn't matter.</span>
+<span class="comment"># the delete call is intercepted</span>
+<span class="comment"># and blocked before it reaches</span>
+<span class="comment"># the tool. structurally.</span></div>
+        <p class="panel-note">The skill says what to do. The rule ensures it. <strong>No code path can bypass it.</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── REAL WORLD EXAMPLE ───── -->
+<section class="real-world" id="example">
+  <div class="container">
+    <p class="section-label">Real World</p>
+    <h2 class="section-title">A WhatsApp bot that<br>can't message the wrong person.</h2>
+    <p class="section-sub">
+      A real agent skill for sending WhatsApp messages via CLI.
+      The skill tells the model how to send messages.
+      Three rules make it safe.
+    </p>
+
+    <div class="rw-layout">
+      <!-- Left: the skill -->
+      <div class="rw-panel">
+        <div class="rw-panel-header">
+          <div class="file-icon">S</div>
+          SKILL.md
+        </div>
+        <div class="rw-panel-body"><span class="heading"># WhatsApp CLI</span>
+<span class="dim">---</span>
+<span class="dim">name: whatsapp</span>
+<span class="dim">description: Send WhatsApp messages</span>
+<span class="dim">---</span>
+
+<span class="heading">## Safety</span>
+Require explicit recipient + message text.
+Confirm recipient + message before sending.
+If anything is ambiguous, ask first.
+
+<span class="heading">## Send</span>
+<span class="fn">wacli send text</span> --to <span class="str">"+1415..."</span> --message <span class="str">"..."</span>
+<span class="fn">wacli send file</span> --to <span class="str">"+1415..."</span> --file <span class="str">/path</span>
+
+<span class="comment"># the model reads these instructions.</span>
+<span class="comment"># nothing enforces them.</span></div>
+      </div>
+
+      <!-- Right: the rules -->
+      <div class="rw-panel">
+        <div class="rw-panel-header">
+          <div class="file-icon">R</div>
+          whatsapp.rules
+        </div>
+        <div class="rw-panel-body"><span class="comment"># look up the recipient first.</span>
+<span class="comment"># no guessing phone numbers from memory.</span>
+<span class="kw">require</span>  <span class="str">whatsapp.lookup</span>  before  <span class="str">whatsapp.send</span>
+
+<span class="comment"># human confirms recipient + message.</span>
+<span class="comment"># manual gate &mdash; no auto-bypass possible.</span>
+<span class="kw">require</span>  <span class="str">human-approval</span>  before  <span class="str">whatsapp.send</span>
+
+<span class="comment"># one send per lookup cycle.</span>
+<span class="comment"># no batch-firing after a single lookup.</span>
+<span class="kw">limit</span>    <span class="str">whatsapp.send</span>  to  <span class="str">1</span>  per  <span class="str">whatsapp.lookup</span></div>
+      </div>
+    </div>
+
+    <!-- Trace -->
+    <div class="rw-trace">
+      <div class="rw-trace-label">// what happens when the agent tries to send a message</div>
+      <div class="rw-trace-steps">
+        <div class="rw-trace-step">
+          <div class="rw-trace-icon blocked">&#x2715;</div>
+          <div class="rw-trace-text">
+            Agent calls <strong>whatsapp { action: "send", to: "+1415...", message: "Hey!" }</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; no recipient lookup yet
+          </div>
+        </div>
+        <div class="rw-trace-step">
+          <div class="rw-trace-icon ok">&#x2713;</div>
+          <div class="rw-trace-text">
+            Agent calls <strong>whatsapp { action: "lookup", query: "Sarah" }</strong><br>
+            <span class="ok-text">OK</span> &mdash; resolves to +14155551212
+          </div>
+        </div>
+        <div class="rw-trace-step">
+          <div class="rw-trace-icon blocked">&#x2715;</div>
+          <div class="rw-trace-text">
+            Agent tries <strong>whatsapp { action: "send" }</strong> again<br>
+            <span class="blocked-text">BLOCKED</span> &mdash; human hasn't approved yet
+          </div>
+        </div>
+        <div class="rw-trace-step">
+          <div class="rw-trace-icon wait">?</div>
+          <div class="rw-trace-text">
+            PetriFlow prompts: <strong>"Send 'Hey!' to Sarah (+14155551212)?"</strong><br>
+            Human approves &rarr; manual gate opens
+          </div>
+        </div>
+        <div class="rw-trace-step">
+          <div class="rw-trace-icon ok">&#x2713;</div>
+          <div class="rw-trace-text">
+            Agent calls <strong>whatsapp { action: "send", to: "+14155551212", message: "Hey!" }</strong><br>
+            <span class="ok-text">ALLOWED</span> &mdash; lookup done, human approved, token consumed
+          </div>
+        </div>
+        <div class="rw-trace-step">
+          <div class="rw-trace-icon blocked">&#x2715;</div>
+          <div class="rw-trace-text">
+            Agent tries to send another message<br>
+            <span class="blocked-text">BLOCKED</span> &mdash; budget consumed, must look up again
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── HOW IT WORKS (3 layers) ───── -->
+<section class="how-it-works" id="how-it-works">
+  <div class="container">
+    <p class="section-label">How It Works</p>
+    <h2 class="section-title">Simple by default.<br>Powerful when you need it.</h2>
+    <p class="section-sub">
+      Three layers. Most users never leave the first.
+    </p>
+
+    <div class="layers">
+      <!-- Layer 1: Presets -->
+      <div class="layer">
+        <div class="layer-header">
+          <div class="layer-number">1</div>
+          <div class="layer-title">Pick a preset</div>
+          <div class="layer-tag">most users</div>
+        </div>
+        <div class="layer-body">
+          <div class="layer-desc">
+            <strong>Zero configuration.</strong> Built-in safety patterns for the most common agent risks.
+            Pick a preset, pick your framework adaptor, done. Each preset is already mathematically verified.
+          </div>
+          <div class="layer-code">
+<span class="kw">import</span> { <span class="fn">backupBeforeDelete</span> } <span class="kw">from</span> <span class="str">"petriflow/presets"</span>
+<span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"petriflow/claude-code"</span>
+
+<span class="comment">// or: petriflow/pi-mono, petriflow/openclaw</span>
+
+<span class="fn">claudeCode</span>({
+  rules: [<span class="fn">backupBeforeDelete</span>()]
+})
+</div>
+        </div>
+      </div>
+
+      <!-- Layer 2: Declarative rules -->
+      <div class="layer">
+        <div class="layer-header">
+          <div class="layer-number">2</div>
+          <div class="layer-title">Write declarative rules</div>
+          <div class="layer-tag">power users</div>
+        </div>
+        <div class="layer-body">
+          <div class="layer-desc">
+            <strong>Custom constraints, simple syntax.</strong> Define your own safety rules
+            with a small declarative language. PetriFlow compiles them into verifiable
+            structures and checks every reachable state before your agent runs.
+          </div>
+          <div class="layer-code">
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span>
+<span class="kw">limit</span>  <span class="str">discord.sendMessage</span> to <span class="str">10</span> per session
+<span class="kw">block</span>  <span class="str">discord.timeout</span> <span class="comment"># provably dead</span>
+</div>
+        </div>
+      </div>
+
+      <!-- Layer 3: Raw definitions -->
+      <div class="layer">
+        <div class="layer-header">
+          <div class="layer-number">3</div>
+          <div class="layer-title">Full control</div>
+          <div class="layer-tag">advanced</div>
+        </div>
+        <div class="layer-body">
+          <div class="layer-desc">
+            <strong>Custom state machines with formal verification.</strong> Define places, transitions,
+            tool mappings, and semantic validators. Design any safety topology you need.
+            The same exhaustive verification runs on your custom definitions.
+          </div>
+          <div class="layer-code">
+<span class="fn">defineRule</span>({
+  <span class="kw">places:</span> [<span class="str">"ready"</span>, <span class="str">"backedUp"</span>],
+  <span class="kw">transitions:</span> {
+    <span class="fn">backup</span>:  { <span class="str">ready</span> &rarr; <span class="str">backedUp</span>, <span class="kw">deferred</span> },
+    <span class="fn">destroy</span>: { <span class="str">backedUp</span> &rarr; <span class="str">ready</span> }
+  }
+})
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── SAFETY RULES SHOWCASE ───── -->
+<section class="rules" id="rules">
+  <div class="container">
+    <p class="section-label">Safety Rules</p>
+    <h2 class="section-title">Real agents. Real constraints.<br>Mathematically proven.</h2>
+    <p class="section-sub">
+      Four production safety rules. Three require zero human approval&thinsp;&mdash;&thinsp;safety
+      comes entirely from the rule structure.
+    </p>
+
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="rule-name">observe-before-send</div>
+        <h3>Don't message blindly</h3>
+        <p>The agent must read a channel before it can send a message to it. Each read earns one send. Channel-matched, so reading #general doesn't unlock #production.</p>
+        <div class="rule-guarantee">
+          <span class="rule-guarantee-icon">&#x2713;</span>
+          <span>Impossible to send without reading the channel first. 1:1 ratio enforced structurally.</span>
+        </div>
+        <div class="rule-example">
+          <span class="allowed">read #deploys</span> &rarr; <span class="allowed">send #deploys</span> &rarr; <span class="blocked">send #deploys BLOCKED</span> (must read again)
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="rule-name">test-before-deploy</div>
+        <h3>Don't ship broken code</h3>
+        <p>Can't deploy to staging without passing tests. Can't go to production without staging. Production requires a human to approve.</p>
+        <div class="rule-guarantee">
+          <span class="rule-guarantee-icon">&#x2713;</span>
+          <span>Production deploy is a manual action. No amount of prompt injection can auto-ship.</span>
+        </div>
+        <div class="rule-example">
+          <span class="allowed">test</span> &rarr; <span class="allowed">build</span> &rarr; <span class="allowed">stage</span> &rarr; <span class="blocked">ship BLOCKED</span> (needs human)
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="rule-name">research-before-share</div>
+        <h3>Don't share fabrications</h3>
+        <p>Each web fetch earns one share token. Each share consumes one. The agent can't broadcast "findings" without having actually fetched real sources.</p>
+        <div class="rule-guarantee">
+          <span class="rule-guarantee-icon">&#x2713;</span>
+          <span>1:1 fetch-to-share ratio. No research means no sharing is possible.</span>
+        </div>
+        <div class="rule-example">
+          <span class="blocked">share BLOCKED</span> &rarr; <span class="allowed">fetch url</span> &rarr; <span class="allowed">share</span> &rarr; <span class="blocked">share BLOCKED</span> (must fetch again)
+        </div>
+      </div>
+
+      <div class="rule-card">
+        <div class="rule-name">backup-before-delete</div>
+        <h3>Don't destroy without a safety net</h3>
+        <p>Every destructive command is blocked until a backup covers the target path. <code style="font-family:var(--mono);font-size:12px">git stash</code> covers everything. <code style="font-family:var(--mono);font-size:12px">cp src/ bak/</code> covers <code style="font-family:var(--mono);font-size:12px">src/</code>.</p>
+        <div class="rule-guarantee">
+          <span class="rule-guarantee-icon">&#x2713;</span>
+          <span>Backup must actually succeed (deferred check). Path coverage validated semantically.</span>
+        </div>
+        <div class="rule-example">
+          <span class="blocked">rm -rf data/ BLOCKED</span> &rarr; <span class="allowed">cp -r data/ /tmp/bak</span> &rarr; <span class="allowed">rm -rf data/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── COMPARISON TABLE ───── -->
+<section class="comparison" id="comparison">
+  <div class="container">
+    <p class="section-label">Head to Head</p>
+    <h2 class="section-title">Policy checks vs. safety rules.</h2>
+    <p class="section-sub">
+      Four scenarios. Same requirements. Two fundamentally different approaches.
+    </p>
+
+    <div class="table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Policy checks</th>
+            <th>PetriFlow rules</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Tool approval</td>
+            <td>
+              <code>if (!approved) deny()</code><br>
+              <span class="table-tag tag-no">Bypassable</span> &mdash; skipped check, expired token race
+            </td>
+            <td>
+              <code>require human-approval before shell</code><br>
+              <span class="table-tag tag-yes">Proven safe</span> &mdash; no code path to bypass
+            </td>
+          </tr>
+          <tr>
+            <td>Message gating</td>
+            <td>
+              Runtime DB check against allowlist<br>
+              <span class="table-tag tag-no">Bypassable</span> &mdash; DB misconfiguration, unchecked new path
+            </td>
+            <td>
+              <code>require read-channel before send</code><br>
+              <span class="table-tag tag-yes">Proven safe</span> &mdash; structurally enforced pipeline
+            </td>
+          </tr>
+          <tr>
+            <td>Privilege escalation</td>
+            <td>
+              Tool deny-lists block privileged calls<br>
+              <span class="table-tag tag-no">Bypassable</span> &mdash; incomplete list, prompt injection
+            </td>
+            <td>
+              <code>block privilege-escalation</code><br>
+              <span class="table-tag tag-yes">Proven safe</span> &mdash; provably dead in all reachable states
+            </td>
+          </tr>
+          <tr>
+            <td>Sandbox escape</td>
+            <td>
+              Docker sandbox + escape hatch + gate<br>
+              <span class="table-tag tag-no">Bypassable</span> &mdash; container escape, misconfigured mount
+            </td>
+            <td>
+              <code>require human-approval before host-access</code><br>
+              <span class="table-tag tag-yes">Proven safe</span> &mdash; only manual action unlocks it
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ───── INTEGRATIONS ───── -->
+<section class="integrations" id="integrations">
+  <div class="container">
+    <p class="section-label">Integrations</p>
+    <h2 class="section-title">One safety layer.<br>Any agent framework.</h2>
+    <p class="section-sub">
+      PetriFlow is a standalone gate that sits between your agent and its tools.
+      Thin adaptors connect it to whatever framework you already use.
+    </p>
+
+    <div class="integration-diagram">
+      <div class="integration-diagram-flow">
+        <div class="diagram-box agent">Your Agent</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box gate">PetriFlow Gate</div>
+        <div class="diagram-arrow">&rarr;</div>
+        <div class="diagram-box tools">Tools</div>
+      </div>
+      <p class="diagram-caption">
+        Every tool call passes through PetriFlow. The adaptor is just the wiring&thinsp;&mdash;&thinsp;the safety engine is the same.
+      </p>
+    </div>
+
+    <div class="integrations-grid">
+      <div class="integration-card">
+        <div class="integration-logo">&gt;_</div>
+        <h3>Claude Code</h3>
+        <p>Hook into Claude Code's tool pipeline. Gate bash, file operations, and MCP tools.</p>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"petriflow/claude-code"</span>
+
+<span class="fn">claudeCode</span>({
+  rules: [<span class="fn">backupBeforeDelete</span>()]
+})</div>
+      </div>
+
+      <div class="integration-card">
+        <div class="integration-logo">&pi;</div>
+        <h3>pi-mono</h3>
+        <p>Native extension for pi-mono agents. Full access to skill nets and tool mapping.</p>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">piMono</span> } <span class="kw">from</span> <span class="str">"petriflow/pi-mono"</span>
+
+<span class="fn">piMono</span>({
+  rules: [<span class="fn">testBeforeDeploy</span>()]
+})</div>
+      </div>
+
+      <div class="integration-card">
+        <div class="integration-logo">&#x1f980;</div>
+        <h3>OpenClaw</h3>
+        <p>Replace policy checks with structural rules. Drop-in safety upgrade for ClawdBot agents.</p>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">openClaw</span> } <span class="kw">from</span> <span class="str">"petriflow/openclaw"</span>
+
+<span class="fn">openClaw</span>({
+  rules: [<span class="fn">observeBeforeSend</span>()]
+})</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── UNDER THE HOOD ───── -->
+<section class="under-hood" id="under-hood">
+  <div class="container">
+    <p class="section-label">Under the Hood</p>
+    <h2 class="section-title">Formal verification.<br>Not just testing.</h2>
+
+    <div class="under-hood-content">
+      <div class="under-hood-text">
+        <p>
+          Every safety rule compiles down to a <strong>formally verifiable state machine</strong>.
+          Before your agent runs, PetriFlow enumerates every reachable state and
+          checks your invariants across all of them.
+        </p>
+        <p>
+          This isn't sampling. It's not fuzzing. It's <strong>exhaustive proof</strong>.
+          If the verifier says "safe," it means safe in every possible execution,
+          not just the ones you tested.
+        </p>
+
+        <div class="under-hood-stats">
+          <div class="under-hood-stat">
+            <div class="under-hood-stat-value">196</div>
+            <div class="under-hood-stat-label">Reachable states verified</div>
+          </div>
+          <div class="under-hood-stat">
+            <div class="under-hood-stat-value">81.8%</div>
+            <div class="under-hood-stat-label">Fewer LLM calls vs ReAct</div>
+          </div>
+          <div class="under-hood-stat">
+            <div class="under-hood-stat-value">4/4</div>
+            <div class="under-hood-stat-label">Terminal states valid</div>
+          </div>
+          <div class="under-hood-stat">
+            <div class="under-hood-stat-value">0</div>
+            <div class="under-hood-stat-label">Bypassable checks</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="under-hood-visual">
+        <div class="label">$ petriflow verify</div>
+        <div class="verify-output">
+          <span class="fn">Verifying</span> backup-before-delete<br>
+          <span class="dim">&nbsp;&nbsp;</span>states: <span class="str">196</span> &middot; terminal: <span class="str">4</span> &middot; deadlocks: <span class="str">0</span><br>
+          <br>
+          <span class="dim">&nbsp;&nbsp;</span><span class="kw">invariant</span> "no unguarded delete"<br>
+          <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; holds in all reachable states<br>
+          <br>
+          <span class="dim">&nbsp;&nbsp;</span><span class="kw">invariant</span> "privilege escalation impossible"<br>
+          <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; transition provably dead<br>
+          <br>
+          <span class="dim">&nbsp;&nbsp;</span><span class="kw">invariant</span> "human gate required for prod"<br>
+          <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; no auto path exists<br>
+          <br>
+          <span class="pass">All invariants verified.</span><br>
+          <span class="dim">0 violations across 196 states.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── FOOTER ───── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="6" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+            <circle cx="18" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+            <circle cx="12" cy="19" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+            <circle cx="6" cy="6" r="1.5" fill="#8b5cf6"/>
+            <line x1="9" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+            <line x1="15" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+          </svg>
+          Petri<span>Flow</span>
+        </a>
+        <p style="margin-top:12px;">
+          Safety rules for AI agents.<br>
+          Formally verified. Structurally enforced.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#rules">Safety Rules</a>
+        <a href="#comparison">Comparison</a>
+        <a href="#">Documentation</a>
+      </div>
+      <div class="footer-col">
+        <h4>Community</h4>
+        <a href="#">GitHub</a>
+        <a href="#">Discord</a>
+        <a href="#">Blog</a>
+        <a href="#">Twitter</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2025 PetriFlow. Open source under MIT.</span>
+      <span style="font-family:var(--mono);font-size:12px;color:#333">formally verified, obviously</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

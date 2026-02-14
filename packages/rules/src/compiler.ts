@@ -229,17 +229,63 @@ function compileLimit(rule: LimitRule): SkillNet<string> {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Tool mapper for dot notation (e.g., discord.sendMessage)
+// ---------------------------------------------------------------------------
+
+/**
+ * Collect base tool names from dotted references in transitions.
+ * e.g., "discord.sendMessage" → base "discord"
+ */
+function collectDottedBases(net: SkillNet<string>): Set<string> {
+  const bases = new Set<string>();
+  for (const t of net.transitions) {
+    for (const tool of t.tools ?? []) {
+      const dotIdx = tool.indexOf(".");
+      if (dotIdx !== -1) {
+        bases.add(tool.slice(0, dotIdx));
+      }
+    }
+  }
+  return bases;
+}
+
+/**
+ * If any transition references a dotted tool (e.g., discord.sendMessage),
+ * attach a toolMapper that resolves tool calls by combining toolName + input.action.
+ */
+function attachToolMapper(net: SkillNet<string>): SkillNet<string> {
+  const bases = collectDottedBases(net);
+  if (bases.size === 0) return net;
+
+  return {
+    ...net,
+    toolMapper: ({ toolName, input }) => {
+      if (bases.has(toolName) && typeof input.action === "string") {
+        return `${toolName}.${input.action}`;
+      }
+      return toolName;
+    },
+  };
+}
+
 function compileRule(rule: ParsedRule): SkillNet<string> {
+  let net: SkillNet<string>;
   switch (rule.kind) {
     case "sequence":
-      return compileSequence(rule);
+      net = compileSequence(rule);
+      break;
     case "approval":
-      return compileApproval(rule);
+      net = compileApproval(rule);
+      break;
     case "block":
-      return compileBlock(rule);
+      net = compileBlock(rule);
+      break;
     case "limit":
-      return compileLimit(rule);
+      net = compileLimit(rule);
+      break;
   }
+  return attachToolMapper(net);
 }
 
 // ---------------------------------------------------------------------------

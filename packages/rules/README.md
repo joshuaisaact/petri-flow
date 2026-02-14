@@ -51,11 +51,27 @@ const manager = createGateManager(nets, { mode: "enforce" });
 
 **`limit A to N per action`** — A can fire N times, budget refills when action fires.
 
+### Dot notation for action-dispatch tools
+
+Many tools (Discord, Slack, WhatsApp) use a single tool name with an `action` field in the input. Use dot notation to gate specific actions:
+
+```typescript
+const { nets } = compile(`
+  require discord.readMessages before discord.sendMessage
+  require human-approval before discord.sendMessage
+  block discord.timeout
+  limit discord.sendMessage to 5 per session
+`);
+```
+
+`discord.sendMessage` means: tool name is `discord`, input has `action: "sendMessage"`. The compiler generates a `toolMapper` automatically. Actions not mentioned in any rule pass through freely — `discord.react`, `discord.readMessages`, etc. are ungated.
+
 ### Syntax
 
 - One rule per line
 - `#` starts a comment (to end of line)
 - Blank lines are ignored
+- Tool names support dot notation (`tool.action`) for action-dispatch tools
 - Accepts a multiline string or an array of strings
 
 ## Layer 3: Full control
