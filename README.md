@@ -35,9 +35,9 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | `order-checkout` | Cannot oversell inventory. `reserve_stock` consumes from a shared `inventory` place. Every order terminates. |
 | `agent-benchmark` | Termination, human approval gate, no orphaned work, bounded iterations. See [BENCHMARK.md](./BENCHMARK.md). |
 
-## Agent Safety (pi-extension + pi-assistant)
+## Agent Safety (gate + pi-extension + pi-assistant)
 
-Petri nets aren't just for orchestrating workflows — they can **enforce safety properties on AI agents**. The `pi-extension` package intercepts tool calls in [pi-mono](https://github.com/nicholasgasior/pi-mono) and gates them through a Petri net. The agent can only use a tool if an enabled transition allows it. No enabled transition = tool blocked.
+Petri nets aren't just for orchestrating workflows — they can **enforce safety properties on AI agents**. The `gate` package provides the framework-agnostic core — skill net definitions, a 4-phase gating protocol (structural check → manual approval → semantic validation → commit), deferred transitions, tool mapping, and multi-net composition. Adapter packages wire it into specific agent runtimes: `pi-extension` for [pi-mono](https://github.com/nicholasgasior/pi-mono), `openclaw` for [OpenClaw](https://github.com/nicholasgasior/openclaw). The agent can only use a tool if an enabled transition allows it. No enabled transition = tool blocked.
 
 `pi-assistant` builds on this with four skill nets for personal assistants:
 
