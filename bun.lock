@@ -57,6 +57,20 @@
         "@types/bun": "^1",
       },
     },
+    "packages/claude-code": {
+      "name": "@petriflow/claude-code",
+      "version": "0.1.0",
+      "bin": {
+        "petriflow-hook": "src/hook.ts",
+      },
+      "dependencies": {
+        "@petriflow/gate": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1",
+        "typescript": "^5.7",
+      },
+    },
     "packages/cli": {
       "name": "@petriflow/cli",
       "version": "0.1.0",
@@ -761,6 +775,8 @@
     "@oxlint/binding-win32-ia32-msvc": ["@oxlint/binding-win32-ia32-msvc@1.47.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-VpFOSzvTnld77/Edje3ZdHgZWnlTb5nVWXyTgjD3/DKF/6t5bRRbwn3z77zOdnGy44xAMvbyAwDNOSeOdVUmRA=="],
 
     "@oxlint/binding-win32-x64-msvc": ["@oxlint/binding-win32-x64-msvc@1.47.0", "", { "os": "win32", "cpu": "x64" }, "sha512-+q8IWptxXx2HMTM6JluR67284t0h8X/oHJgqpxH1siowxPMqZeIpAcWCUq+tY+Rv2iQK8TUugjZnSBQAVV5CmA=="],
+
+    "@petriflow/claude-code": ["@petriflow/claude-code@workspace:packages/claude-code"],
 
     "@petriflow/cli": ["@petriflow/cli@workspace:packages/cli"],
 

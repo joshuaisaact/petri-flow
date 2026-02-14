@@ -1,0 +1,44 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /Users/joshtuddenham/Documents/petri-flow/packages/claude-code/src/hook.ts"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /Users/joshtuddenham/Documents/petri-flow/packages/claude-code/src/hook.ts"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /Users/joshtuddenham/Documents/petri-flow/packages/claude-code/src/hook.ts"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /Users/joshtuddenham/Documents/petri-flow/packages/claude-code/src/hook.ts"
+          }
+        ]
+      }
+    ]
+  }
+}
