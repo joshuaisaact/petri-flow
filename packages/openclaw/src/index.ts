@@ -62,8 +62,12 @@ function wireHooks(api: OpenClawPluginApi, manager: GateManager): void {
     });
   });
 
-  // System prompt injection skipped — the net enforces structurally
-  // regardless of whether the agent knows about it.
+  // --- Inject net status into system prompt ---
+  api.on("before_agent_start", () => {
+    const prompt = manager.formatSystemPrompt();
+    if (!prompt) return;
+    return { prependContext: prompt };
+  });
 }
 
 function wireCommands(api: OpenClawPluginApi, manager: GateManager): void {

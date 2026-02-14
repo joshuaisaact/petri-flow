@@ -95,13 +95,14 @@ const blockingNet = defineSkillNet({
 // ---------------------------------------------------------------------------
 
 describe("createPetriGatePlugin — hook registration", () => {
-  it("registers before_tool_call and after_tool_call hooks", () => {
+  it("registers before_tool_call, after_tool_call, before_agent_start hooks", () => {
     const { api, hooks } = createMockApi();
     const plugin = createPetriGatePlugin([simpleNet]);
     plugin.register!(api);
 
     expect(hooks.has("before_tool_call")).toBe(true);
     expect(hooks.has("after_tool_call")).toBe(true);
+    expect(hooks.has("before_agent_start")).toBe(true);
   });
 
   it("has correct plugin metadata", () => {
@@ -213,11 +214,14 @@ describe("createPetriGatePlugin — deferred correlation", () => {
 });
 
 describe("createPetriGatePlugin — system prompt injection", () => {
-  it("does not inject system prompt (structural enforcement only)", () => {
-    const { api, hooks } = createMockApi();
+  it("before_agent_start returns prependContext with net status", async () => {
+    const { api, callHook } = createMockApi();
     createPetriGatePlugin([simpleNet]).register!(api);
 
-    expect(hooks.has("before_agent_start")).toBe(false);
+    const result = await callHook("before_agent_start", { prompt: "system" }, {});
+    expect(result).toBeDefined();
+    expect(result.prependContext).toContain("simple");
+    expect(result.prependContext).toContain("Active Petri Nets");
   });
 });
 
