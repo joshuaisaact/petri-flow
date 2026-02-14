@@ -16,10 +16,12 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | Package | Description |
 |---|---|
 | `@petriflow/engine` | Core types, engine, scheduler, pluggable persistence (SQLite adapter included), analysis |
+| `@petriflow/gate` | Framework-agnostic tool gating — skill nets, deferred transitions, tool mapping, multi-net composition |
 | `@petriflow/server` | HTTP server — run workflows as a service, inject tokens via REST, observe via SSE |
 | `@petriflow/cli` | `petriflow analyse <workflow.ts>` CLI tool |
 | `@petriflow/viewer` | Interactive Petri net viewer — click to fire transitions, live analysis |
 | `@petriflow/pi-extension` | Petri net gating for [pi-mono](https://github.com/nicholasgasior/pi-mono) agent tools — intercepts tool calls and enforces workflow structure |
+| `@petriflow/openclaw` | Petri net gating for [OpenClaw](https://github.com/nicholasgasior/openclaw) — plugin adapter mapping gate concepts to OpenClaw hooks |
 | `@petriflow/pi-assistant` | Personal assistant skill nets — safe messaging, deployment pipelines, research-before-share, backup-before-destroy |
 
 ## Workflows
