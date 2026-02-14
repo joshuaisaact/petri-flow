@@ -24,8 +24,8 @@ export type GateManager = {
 };
 
 export type GateManagerOptions = {
-  /** "enforce" blocks disallowed tools (default). "shadow" logs but never blocks. */
-  mode?: "enforce" | "shadow";
+  /** "enforce" blocks disallowed tools. "shadow" logs but never blocks. */
+  mode: "enforce" | "shadow";
   /** Called after every gating decision. Use for logging, metrics, debugging. */
   onDecision?: (event: GateToolCall, decision: GateDecision) => void;
 };
@@ -33,7 +33,7 @@ export type GateManagerOptions = {
 export function createGateManager(input: SkillNet<string>[] | ComposeConfig, opts?: GateManagerOptions): GateManager {
   const manager = Array.isArray(input) ? createArrayManager(input) : createRegistryManager(input);
 
-  if (opts?.mode === "shadow" || opts?.onDecision) {
+  if (opts) {
     const original = manager.handleToolCall;
     manager.handleToolCall = async (event, ctx) => {
       const decision = await original.call(manager, event, ctx);
