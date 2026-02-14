@@ -893,7 +893,7 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 
 .under-hood-text p {
   font-size: 15px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   line-height: 1.7;
   margin-bottom: 16px;
 }
@@ -1321,8 +1321,7 @@ If anything is ambiguous, ask first.
             <strong>Zero configuration.</strong> Built-in safety patterns for the most common agent risks.
             Pick a preset, pick your framework adaptor, done. Each preset is already mathematically verified.
           </div>
-          <div class="layer-code">
-<span class="kw">import</span> { <span class="fn">backupBeforeDelete</span>,
+          <div class="layer-code"><span class="kw">import</span> { <span class="fn">backupBeforeDelete</span>,
   <span class="fn">createGateManager</span> } <span class="kw">from</span> <span class="str">"@petriflow/rules"</span>
 
 <span class="kw">const</span> manager = <span class="fn">createGateManager</span>(
@@ -1346,8 +1345,7 @@ If anything is ambiguous, ask first.
             with a small declarative language. PetriFlow compiles them into verifiable
             structures and checks every reachable state before your agent runs.
           </div>
-          <div class="layer-code">
-<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+          <div class="layer-code"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
 <span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span>
 <span class="kw">limit</span>  <span class="str">discord.sendMessage</span> to <span class="str">10</span> per session
 <span class="kw">block</span>  <span class="str">discord.timeout</span> <span class="comment"># provably dead</span>
@@ -1368,8 +1366,7 @@ If anything is ambiguous, ask first.
             tool mappings, and semantic validators. Design any safety topology you need.
             The same exhaustive verification runs on your custom definitions.
           </div>
-          <div class="layer-code">
-<span class="fn">defineSkillNet</span>({
+          <div class="layer-code"><span class="fn">defineSkillNet</span>({
   <span class="kw">places:</span> [<span class="str">"ready"</span>, <span class="str">"backedUp"</span>],
   <span class="kw">transitions:</span> {
     <span class="fn">backup</span>:  { <span class="str">ready</span> &rarr; <span class="str">backedUp</span>, <span class="kw">deferred</span> },
