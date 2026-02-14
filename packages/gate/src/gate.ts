@@ -1,14 +1,11 @@
 import { canFire, fire } from "@petriflow/engine";
 import type { Marking } from "@petriflow/engine";
-import type { ExtensionContext, ToolCallEvent, ToolResultEvent } from "@mariozechner/pi-coding-agent";
-
-/** Matches pi-mono's ToolCallEventResult (not re-exported from root) */
-type ToolCallEventResult = { block?: boolean; reason?: string };
+import type { GateToolCall, GateToolResult, GateContext, GateDecision } from "./events.js";
 import type { GatedTransition, SkillNet } from "./types.js";
 import { autoAdvance } from "./advance.js";
 
 /** Resolve the virtual tool name for a tool call event */
-function resolveTool<P extends string>(
+export function resolveTool<P extends string>(
   net: SkillNet<P>,
   event: { toolName: string; input: Record<string, unknown> },
 ): string {
@@ -72,11 +69,11 @@ export function createGateState<P extends string>(marking: Marking<P>): GateStat
  * For deferred transitions, records pending and fires on tool_result.
  */
 export async function handleToolCall<P extends string>(
-  event: ToolCallEvent,
-  ctx: ExtensionContext,
+  event: GateToolCall,
+  ctx: GateContext,
   net: SkillNet<P>,
   state: GateState<P>,
-): Promise<ToolCallEventResult | void> {
+): Promise<GateDecision> {
   const resolvedTool = resolveTool(net, event);
 
   // Free tools always pass
@@ -99,7 +96,7 @@ export async function handleToolCall<P extends string>(
   // Skill-specific validation (e.g. path coverage)
   if (net.validateToolCall) {
     const rejection = net.validateToolCall(
-      { toolName: event.toolName, input: event.input as Record<string, unknown> },
+      { toolName: event.toolName, input: event.input },
       resolvedTool,
       transition,
       state,
@@ -111,7 +108,7 @@ export async function handleToolCall<P extends string>(
     if (!ctx.hasUI) {
       return { block: true, reason: `Manual transition '${transition.name}' requires UI approval` };
     }
-    const approved = await ctx.ui.confirm(
+    const approved = await ctx.confirm(
       `Approve: ${transition.name}`,
       `Allow '${resolvedTool}' via transition '${transition.name}'?`,
     );
@@ -138,7 +135,7 @@ export async function handleToolCall<P extends string>(
  * Returns void (tool_result handler doesn't block).
  */
 export function handleToolResult<P extends string>(
-  event: ToolResultEvent,
+  event: GateToolResult,
   net: SkillNet<P>,
   state: GateState<P>,
 ): void {

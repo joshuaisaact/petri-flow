@@ -1,11 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { canFire } from "@petriflow/engine";
 import type { Marking } from "@petriflow/engine";
-import type {
-  ToolCallEvent,
-  ToolResultEvent,
-  ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
+import type { GateToolCall, GateToolResult, GateContext } from "../events.js";
 import { autoAdvance } from "../advance.js";
 import {
   handleToolCall,
@@ -16,56 +11,49 @@ import {
 } from "../gate.js";
 import type { GateState } from "../gate.js";
 import { defineSkillNet } from "../types.js";
-import { toolApprovalNet } from "../nets/tool-approval.js";
-import { implementNet } from "../nets/implement.js";
+import { toolApprovalNet } from "../../../pi-extension/src/nets/tool-approval.js";
+import { implementNet } from "../../../pi-extension/src/nets/implement.js";
 import {
   nukeNet,
   extractBackupTarget,
   extractDestructiveTarget,
   pathCovers,
-} from "../nets/nuke.js";
+} from "../../../pi-extension/src/nets/nuke.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 let callIdCounter = 0;
-function makeEvent(toolName: string, input: Record<string, unknown> = {}): ToolCallEvent {
+function makeEvent(toolName: string, input: Record<string, unknown> = {}): GateToolCall {
   return {
-    type: "tool_call",
     toolCallId: `call-${++callIdCounter}`,
     toolName,
     input,
-  } as ToolCallEvent;
+  };
 }
 
-function makeBashEvent(command: string): ToolCallEvent {
+function makeBashEvent(command: string): GateToolCall {
   return makeEvent("bash", { command });
 }
 
 function makeResult(
-  callEvent: ToolCallEvent,
+  callEvent: GateToolCall,
   isError: boolean,
-): ToolResultEvent {
+): GateToolResult {
   return {
-    type: "tool_result",
     toolCallId: callEvent.toolCallId,
     toolName: callEvent.toolName,
     input: callEvent.input,
-    content: [],
     isError,
-    details: undefined,
-  } as unknown as ToolResultEvent;
+  };
 }
 
-function makeCtx(confirmResult = true): ExtensionContext {
+function makeCtx(confirmResult = true): GateContext {
   return {
     hasUI: true,
-    ui: {
-      confirm: async () => confirmResult,
-      notify: () => {},
-    },
-  } as unknown as ExtensionContext;
+    confirm: async () => confirmResult,
+  };
 }
 
 function gs<P extends string>(marking: Marking<P>): GateState<P> {
@@ -203,7 +191,7 @@ describe("handleToolCall", () => {
 
   it("blocks manual transition when no UI available", async () => {
     const state = gs<P>({ a: 0, b: 0, c: 0, d: 1, e: 0 });
-    const noUiCtx = { hasUI: false, ui: {} } as unknown as ExtensionContext;
+    const noUiCtx: GateContext = { hasUI: false, confirm: async () => false };
     const result = await handleToolCall(makeEvent("write"), noUiCtx, simpleNet, state);
     expect(result).toEqual({ block: true, reason: expect.stringContaining("requires UI") });
   });

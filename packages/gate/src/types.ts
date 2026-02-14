@@ -1,6 +1,6 @@
 import type { Marking } from "@petriflow/engine";
 
-/** A transition that optionally gates pi-mono tool access */
+/** A transition that optionally gates tool access */
 export type GatedTransition<Place extends string> = {
   name: string;
   type: "auto" | "manual";

@@ -6,7 +6,7 @@ import {
   createGateState,
   autoAdvance,
   formatMarking,
-} from "@petriflow/pi-extension";
+} from "@petriflow/gate";
 
 // -----------------------------------------------------------------------
 // Helpers

@@ -1,12 +1,11 @@
 {
-  "name": "@petriflow/pi-extension",
+  "name": "@petriflow/gate",
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./nets/tool-approval": "./src/nets/tool-approval.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "test": "bun test",
@@ -14,11 +13,9 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@petriflow/gate": "workspace:*",
     "@petriflow/engine": "workspace:*"
   },
   "devDependencies": {
-    "@mariozechner/pi-coding-agent": "^0.52",
     "@types/bun": "^1",
     "typescript": "^5.7"
   }

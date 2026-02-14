@@ -5,7 +5,7 @@ import {
   handleToolResult,
   createGateState,
   autoAdvance,
-} from "@petriflow/pi-extension";
+} from "@petriflow/gate";
 
 // -----------------------------------------------------------------------
 // Helpers
@@ -20,7 +20,7 @@ function gs() {
 const noCtx = { hasUI: false } as any;
 const uiCtx = {
   hasUI: true,
-  ui: { confirm: async () => true },
+  confirm: async () => true,
 } as any;
 
 function bash(command: string, toolCallId = "tc-1") {

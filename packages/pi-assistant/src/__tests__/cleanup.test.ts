@@ -10,7 +10,7 @@ import {
   handleToolResult,
   createGateState,
   autoAdvance,
-} from "@petriflow/pi-extension";
+} from "@petriflow/gate";
 
 // -----------------------------------------------------------------------
 // Helpers

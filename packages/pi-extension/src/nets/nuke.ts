@@ -1,6 +1,6 @@
 import type { Marking } from "@petriflow/engine";
-import { defineSkillNet } from "../types.js";
-import type { ToolEvent, GatedTransition } from "../types.js";
+import { defineSkillNet } from "@petriflow/gate";
+import type { ToolEvent, GatedTransition } from "@petriflow/gate";
 import { resolve, normalize } from "node:path";
 
 // -----------------------------------------------------------------------

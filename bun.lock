@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "petriflow",
@@ -82,14 +83,25 @@
         "typescript": "^5.7",
       },
     },
+    "packages/gate": {
+      "name": "@petriflow/gate",
+      "version": "0.1.0",
+      "dependencies": {
+        "@petriflow/engine": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1",
+        "typescript": "^5.7",
+      },
+    },
     "packages/pi-assistant": {
       "name": "@petriflow/pi-assistant",
       "version": "0.1.0",
       "dependencies": {
+        "@petriflow/gate": "workspace:*",
         "@petriflow/pi-extension": "workspace:*",
       },
       "devDependencies": {
-        "@mariozechner/pi-coding-agent": "^0.52",
         "@types/bun": "^1",
         "typescript": "^5.7",
       },
@@ -99,6 +111,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@petriflow/engine": "workspace:*",
+        "@petriflow/gate": "workspace:*",
       },
       "devDependencies": {
         "@mariozechner/pi-coding-agent": "^0.52",
@@ -420,6 +433,8 @@
     "@petriflow/comparison-openclaw-safety": ["@petriflow/comparison-openclaw-safety@workspace:comparisons/openclaw-safety"],
 
     "@petriflow/engine": ["@petriflow/engine@workspace:packages/engine"],
+
+    "@petriflow/gate": ["@petriflow/gate@workspace:packages/gate"],
 
     "@petriflow/pi-assistant": ["@petriflow/pi-assistant@workspace:packages/pi-assistant"],
 

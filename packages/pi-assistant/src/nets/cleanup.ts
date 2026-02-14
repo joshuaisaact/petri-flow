@@ -1,6 +1,6 @@
 import type { Marking } from "@petriflow/engine";
-import { defineSkillNet } from "@petriflow/pi-extension";
-import type { ToolEvent } from "@petriflow/pi-extension";
+import { defineSkillNet } from "@petriflow/gate";
+import type { ToolEvent } from "@petriflow/gate";
 import { normalize } from "node:path";
 
 // -----------------------------------------------------------------------

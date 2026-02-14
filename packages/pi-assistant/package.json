@@ -14,10 +14,10 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
+    "@petriflow/gate": "workspace:*",
     "@petriflow/pi-extension": "workspace:*"
   },
   "devDependencies": {
-    "@mariozechner/pi-coding-agent": "^0.52",
     "@types/bun": "^1",
     "typescript": "^5.7"
   }

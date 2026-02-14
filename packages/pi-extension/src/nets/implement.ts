@@ -1,6 +1,6 @@
 import type { Marking } from "@petriflow/engine";
-import { defineSkillNet } from "../types.js";
-import type { ToolEvent } from "../types.js";
+import { defineSkillNet } from "@petriflow/gate";
+import type { ToolEvent } from "@petriflow/gate";
 
 const places = ["idle", "working", "committed"] as const;
 type Place = (typeof places)[number];
