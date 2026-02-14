@@ -1,0 +1,8 @@
+{
+  "id": "petriflow-gate",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
