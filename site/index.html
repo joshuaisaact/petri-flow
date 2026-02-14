@@ -37,6 +37,8 @@
 
 html { scroll-behavior: smooth; }
 
+::selection { background: rgba(139,92,246,0.3); }
+
 body {
   font-family: var(--sans);
   background: var(--bg);
@@ -228,8 +230,11 @@ nav .container {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
 }
+
+.hero-code-dot:nth-child(1) { background: #f87171; opacity: 0.6; }
+.hero-code-dot:nth-child(2) { background: #fbbf24; opacity: 0.6; }
+.hero-code-dot:nth-child(3) { background: #34d399; opacity: 0.6; }
 
 .hero-code-titlebar span {
   font-family: var(--mono);
@@ -325,12 +330,13 @@ blockquote cite {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
 .problem-card:hover {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
 }
 
 .problem-card h3 {
@@ -468,7 +474,7 @@ blockquote cite {
 
 .rw-panel-body .kw { color: var(--accent-text); }
 .rw-panel-body .str { color: var(--green); }
-.rw-panel-body .comment { color: rgba(255,255,255,0.15); }
+.rw-panel-body .comment { color: rgba(255,255,255,0.3); }
 .rw-panel-body .fn { color: var(--orange); }
 .rw-panel-body .dim { color: rgba(255,255,255,0.15); }
 .rw-panel-body .heading { color: var(--text-secondary); font-weight: 600; }
@@ -540,10 +546,10 @@ blockquote cite {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.layer:hover { border-color: var(--border-hover); }
+.layer:hover { border-color: var(--border-hover); box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
 
 .layer-header {
   display: flex;
@@ -706,12 +712,13 @@ blockquote cite {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 28px;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
 .rule-card:hover {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
 }
 
 .rule-name {
@@ -784,12 +791,13 @@ blockquote cite {
   border-radius: var(--radius-lg);
   padding: 28px;
   text-align: center;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
 .integration-card:hover {
   border-color: var(--border-hover);
   background: var(--bg-card-hover);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
 }
 
 .integration-logo {
@@ -1008,6 +1016,18 @@ footer {
   align-items: center;
 }
 
+/* ───── FADE IN ON SCROLL ───── */
+[data-animate] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+[data-animate].visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ───── RESPONSIVE ───── */
 @media (max-width: 768px) {
   section { padding: 80px 0; }
@@ -1108,7 +1128,7 @@ footer {
 </section>
 
 <!-- ───── PROBLEM ───── -->
-<section class="problem" id="problem">
+<section class="problem" id="problem" data-animate>
   <div class="container">
     <h2 class="section-title">Your agent's safety net<br>is a <code style="font-family:var(--mono);color:var(--red)">.md</code> file.</h2>
     <p class="section-sub">
@@ -1144,7 +1164,7 @@ footer {
 </section>
 
 <!-- ───── SOLUTION ───── -->
-<section class="solution" id="solution">
+<section class="solution" id="solution" data-animate>
   <div class="container">
     <h2 class="section-title">Your skills are prompts.<br>Make them enforceable.</h2>
     <p class="section-sub">
@@ -1197,9 +1217,9 @@ Never delete without a backup.
 </section>
 
 <!-- ───── REAL WORLD EXAMPLE ───── -->
-<section class="real-world" id="example">
+<section class="real-world" id="example" data-animate>
   <div class="container">
-    <h2 class="section-title">A WhatsApp bot that<br>can't message the wrong person.</h2>
+    <h2 class="section-title">A <span style="background:linear-gradient(135deg,#25D366,#128C7E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">WhatsApp</span> bot that<br>can't message the wrong person.</h2>
     <p class="section-sub">
       A real agent skill for sending WhatsApp messages via CLI.
       The skill tells the model how to send messages.
@@ -1304,7 +1324,7 @@ If anything is ambiguous, ask first.
 </section>
 
 <!-- ───── HOW IT WORKS (3 layers) ───── -->
-<section class="how-it-works" id="how-it-works">
+<section class="how-it-works" id="how-it-works" data-animate>
   <div class="container">
     <h2 class="section-title">Simple by default.<br>Powerful when you need it.</h2>
     <p class="section-sub">
@@ -1387,7 +1407,7 @@ If anything is ambiguous, ask first.
 </section>
 
 <!-- ───── SAFETY RULES SHOWCASE ───── -->
-<section class="rules" id="rules">
+<section class="rules" id="rules" data-animate>
   <div class="container">
     <h2 class="section-title">Real agents. Real constraints.<br>Mathematically proven.</h2>
     <p class="section-sub">
@@ -1452,7 +1472,7 @@ If anything is ambiguous, ask first.
 </section>
 
 <!-- ───── COMPARISON TABLE ───── -->
-<section class="comparison" id="comparison">
+<section class="comparison" id="comparison" data-animate>
   <div class="container">
     <h2 class="section-title">Policy checks vs. safety rules.</h2>
     <p class="section-sub">
@@ -1520,7 +1540,7 @@ If anything is ambiguous, ask first.
 </section>
 
 <!-- ───── INTEGRATIONS ───── -->
-<section class="integrations" id="integrations">
+<section class="integrations" id="integrations" data-animate>
   <div class="container">
     <h2 class="section-title">One safety layer.<br>Any agent framework.</h2>
     <p class="section-sub">
@@ -1582,7 +1602,7 @@ If anything is ambiguous, ask first.
 </section>
 
 <!-- ───── UNDER THE HOOD ───── -->
-<section class="under-hood" id="under-hood">
+<section class="under-hood" id="under-hood" data-animate>
   <div class="container">
     <h2 class="section-title">Formal verification.<br>Not just testing.</h2>
 
@@ -1679,11 +1699,19 @@ If anything is ambiguous, ask first.
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; 2025 PetriFlow. Open source under MIT.</span>
+      <span>&copy; 2026 PetriFlow. Open source under MIT.</span>
       <span style="font-family:var(--mono);font-size:12px;color:#333">formally verified, obviously</span>
     </div>
   </div>
 </footer>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('[data-animate]').forEach(el => observer.observe(el));
+});
+</script>
 </body>
 </html>

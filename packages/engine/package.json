@@ -2,18 +2,34 @@
   "name": "@petriflow/engine",
   "version": "0.1.0",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./analyse": "./src/analyse.ts",
-    "./workflow": "./src/workflow.ts",
-    "./types": "./src/types.ts",
-    "./decision": "./src/decision.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./analyse": {
+      "types": "./dist/analyse.d.ts",
+      "default": "./dist/analyse.js"
+    },
+    "./workflow": {
+      "types": "./dist/workflow.d.ts",
+      "default": "./dist/workflow.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./decision": {
+      "types": "./dist/decision.d.ts",
+      "default": "./dist/decision.js"
+    }
   },
+  "files": ["dist", "README.md"],
   "scripts": {
     "test": "bun test",
-    "build": "bun build src/index.ts --outdir dist --target node",
+    "build": "tsc -p tsconfig.build.json",
     "check": "tsc --noEmit"
   },
   "dependencies": {

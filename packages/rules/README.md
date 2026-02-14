@@ -1,29 +1,10 @@
 # @petriflow/rules
 
-Declarative rules DSL and presets for PetriFlow tool gating. Three layers of control, from zero-config to full power.
+Declarative rules DSL for PetriFlow tool gating.
 
-## Layer 1: Presets (zero config)
+## Declarative DSL
 
-Drop-in safety nets for common patterns:
-
-```typescript
-import { backupBeforeDelete, createGateManager } from "@petriflow/rules";
-
-const manager = createGateManager([backupBeforeDelete()], { mode: "enforce" });
-```
-
-Available presets:
-
-| Preset | Description |
-|---|---|
-| `backupBeforeDelete()` | Require a backup before destructive operations |
-| `observeBeforeSend()` | Read messages before sending |
-| `testBeforeDeploy()` | Run tests before deploying |
-| `researchBeforeShare()` | Fetch sources before sharing |
-
-## Layer 2: Declarative DSL
-
-Write rules as plain strings. The compiler turns each rule into a SkillNet.
+Write rules as plain strings. The compiler turns each rule into a verified SkillNet.
 
 ```typescript
 import { compile, createGateManager } from "@petriflow/rules";
@@ -110,9 +91,9 @@ Syntax: `map <tool>.<field> <keyword> as <name>`
 
 `compile()` automatically verifies every net by enumerating all reachable states. This catches unbounded nets, structural errors, and confirms each rule compiles to a finite, well-formed state machine. Verification runs at compile time — before your agent starts.
 
-## Layer 3: Full control
+## Custom SkillNets
 
-Build custom SkillNets with `defineSkillNet` for complete control over places, transitions, tool mapping, and validation.
+For complete control, build custom SkillNets with `defineSkillNet`:
 
 ```typescript
 import { defineSkillNet, createGateManager } from "@petriflow/rules";
@@ -132,16 +113,15 @@ const myNet = defineSkillNet({
 const manager = createGateManager([myNet], { mode: "enforce" });
 ```
 
-## Mixing layers
+## Composing rules and custom nets
 
-All three layers produce SkillNets and compose naturally:
+DSL rules and custom SkillNets compose naturally:
 
 ```typescript
-import { compile, backupBeforeDelete, defineSkillNet, createGateManager } from "@petriflow/rules";
+import { compile, defineSkillNet, createGateManager } from "@petriflow/rules";
 
 const { nets: dslNets } = compile("block rm");
-const preset = backupBeforeDelete();
 const custom = defineSkillNet({ /* ... */ });
 
-const manager = createGateManager([...dslNets, preset, custom], { mode: "enforce" });
+const manager = createGateManager([...dslNets, custom], { mode: "enforce" });
 ```
