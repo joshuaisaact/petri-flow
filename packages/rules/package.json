@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "@petriflow/gate": "workspace:*",
-    "@petriflow/pi-assistant": "workspace:*"
+    "@petriflow/pi-assistant": "workspace:*",
+    "petri-ts": "^0.1.5"
   },
   "devDependencies": {
     "@types/bun": "^1",

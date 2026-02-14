@@ -1,5 +1,7 @@
 import { defineSkillNet } from "@petriflow/gate";
 import type { SkillNet } from "@petriflow/gate";
+import { analyse } from "petri-ts";
+import type { PetriNet } from "petri-ts";
 
 // ---------------------------------------------------------------------------
 // Parsed types
@@ -264,21 +266,21 @@ function compileLimit(rule: LimitRule): SkillNet<string> {
   const action = rule.scope.action;
   return defineSkillNet({
     name: `limit-${rule.a}-${rule.n}-per-${action}`,
-    places: ["idle", "ready", "budget"],
-    initialMarking: { idle: 1, ready: 0, budget: rule.n },
+    places: ["idle", "ready", "budget", "spent"],
+    initialMarking: { idle: 1, ready: 0, budget: rule.n, spent: 0 },
     transitions: [
       { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
       {
         name: `do-${rule.a}`,
         type: "auto",
         inputs: ["ready", "budget"],
-        outputs: ["ready"],
+        outputs: ["ready", "spent"],
         tools: [rule.a],
       },
       {
         name: "refill",
         type: "auto",
-        inputs: ["ready"],
+        inputs: ["ready", "spent"],
         outputs: ["ready", "budget"],
         tools: [action],
       },
@@ -358,12 +360,46 @@ function compileRule(rule: ParsedRule): SkillNet<string> {
 }
 
 // ---------------------------------------------------------------------------
+// Verification
+// ---------------------------------------------------------------------------
+
+/** Convert a SkillNet to a plain PetriNet for analysis. */
+function toPetriNet(net: SkillNet<string>): PetriNet<string> {
+  return {
+    transitions: net.transitions.map((t) => ({
+      name: t.name,
+      inputs: t.inputs,
+      outputs: t.outputs,
+    })),
+    initialMarking: net.initialMarking,
+  };
+}
+
+export type NetVerification = {
+  name: string;
+  reachableStates: number;
+};
+
+function verifyNets(nets: SkillNet<string>[]): NetVerification[] {
+  return nets.map((net) => {
+    const result = analyse(toPetriNet(net));
+    return {
+      name: net.name,
+      reachableStates: result.reachableStateCount,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-export type CompiledRules = { nets: SkillNet<string>[] };
+export type CompiledRules = {
+  nets: SkillNet<string>[];
+  verification: NetVerification[];
+};
 
-/** Compile rule strings into skill nets. */
+/** Compile rule strings into skill nets. Verifies each net automatically. */
 export function compile(rules: string | string[]): CompiledRules {
   const lines =
     typeof rules === "string"
@@ -386,6 +422,7 @@ export function compile(rules: string | string[]): CompiledRules {
   }
 
   const nets = parsedRules.map((rule) => buildToolMapper(compileRule(rule), maps));
+  const verification = verifyNets(nets);
 
-  return { nets };
+  return { nets, verification };
 }

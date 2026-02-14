@@ -28,13 +28,23 @@ Write rules as plain strings. The compiler turns each rule into a SkillNet.
 ```typescript
 import { compile, createGateManager } from "@petriflow/rules";
 
-const { nets } = compile(`
+const { nets, verification } = compile(`
   require backup before delete
   require human-approval before deploy
   block rm
   limit push to 3 per session
   limit push to 1 per test    # refill budget after each test
 `);
+
+// Every net is verified at compile time
+console.log(verification);
+// [
+//   { name: "require-backup-before-delete", reachableStates: 3 },
+//   { name: "approve-before-deploy",        reachableStates: 2 },
+//   { name: "block-rm",                     reachableStates: 2 },
+//   { name: "limit-push-3",                 reachableStates: 5 },
+//   { name: "limit-push-1-per-test",        reachableStates: 3 },
+// ]
 
 const manager = createGateManager(nets, { mode: "enforce" });
 ```
@@ -95,6 +105,10 @@ Syntax: `map <tool>.<field> <keyword> as <name>`
 - Tool names support dot notation (`tool.action`) for action-dispatch tools
 - `map` statements define virtual tool names via regex pattern matching
 - Accepts a multiline string or an array of strings
+
+### Verification
+
+`compile()` automatically verifies every net by enumerating all reachable states. This catches unbounded nets, structural errors, and confirms each rule compiles to a finite, well-formed state machine. Verification runs at compile time — before your agent starts.
 
 ## Layer 3: Full control
 

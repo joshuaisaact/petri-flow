@@ -978,6 +978,24 @@ describe("map with bare word patterns", () => {
     });
   });
 
+  it("bare word matches at start of command", async () => {
+    const { nets } = compile(`
+      map bash.command rm as delete
+      block delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // "rm" at the start of the command
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm old-file.txt" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-delete"),
+    });
+  });
+
   it("bare word does not match partial words", async () => {
     const { nets } = compile(`
       map bash.command rm as delete
@@ -1092,5 +1110,53 @@ describe("map with bare word patterns", () => {
       makeCtx(),
     );
     expect(r3).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Verification — compile() analyses each net
+// ---------------------------------------------------------------------------
+
+describe("compile — verification", () => {
+  it("returns verification for each compiled net", () => {
+    const { verification } = compile(`
+      require backup before delete
+      block rm
+      limit deploy to 3 per session
+    `);
+    expect(verification).toHaveLength(3);
+    expect(verification[0]!.name).toBe("require-backup-before-delete");
+    expect(verification[1]!.name).toBe("block-rm");
+    expect(verification[2]!.name).toBe("limit-deploy-3");
+  });
+
+  it("reports reachable states for sequence rule", () => {
+    const { verification } = compile("require backup before delete");
+    expect(verification[0]!.reachableStates).toBeGreaterThan(0);
+  });
+
+  it("reports reachable states for block rule", () => {
+    const { verification } = compile("block rm");
+    // block net: idle=1 → start → ready=1. Two states total.
+    expect(verification[0]!.reachableStates).toBe(2);
+  });
+
+  it("reports reachable states for limit rule", () => {
+    const { verification } = compile("limit deploy to 3 per session");
+    // idle → ready,budget=3 → ready,budget=2 → ready,budget=1 → ready,budget=0
+    // 5 states: initial + 4
+    expect(verification[0]!.reachableStates).toBe(5);
+  });
+
+  it("reports reachable states for approval rule", () => {
+    const { verification } = compile(
+      "require human-approval before deploy",
+    );
+    expect(verification[0]!.reachableStates).toBeGreaterThan(0);
+  });
+
+  it("empty rules produce empty verification", () => {
+    const { verification } = compile("# just a comment");
+    expect(verification).toHaveLength(0);
   });
 });

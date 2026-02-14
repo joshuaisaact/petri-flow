@@ -1,5 +1,5 @@
 export { compile } from "./compiler.js";
-export type { CompiledRules } from "./compiler.js";
+export type { CompiledRules, NetVerification } from "./compiler.js";
 
 export {
   backupBeforeDelete,

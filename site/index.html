@@ -1320,10 +1320,10 @@ If anything is ambiguous, ask first.
             Pick a preset, pick your framework adaptor, done. Each preset is already mathematically verified.
           </div>
           <div class="layer-code">
-<span class="kw">import</span> { <span class="fn">backupBeforeDelete</span> } <span class="kw">from</span> <span class="str">"petriflow/presets"</span>
-<span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"petriflow/claude-code"</span>
+<span class="kw">import</span> { <span class="fn">backupBeforeDelete</span> } <span class="kw">from</span> <span class="str">"@petriflow/rules"</span>
+<span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"@petriflow/claude-code"</span>
 
-<span class="comment">// or: petriflow/pi-mono, petriflow/openclaw</span>
+<span class="comment">// or: @petriflow/pi-mono, @petriflow/openclaw</span>
 
 <span class="fn">claudeCode</span>({
   rules: [<span class="fn">backupBeforeDelete</span>()]
@@ -1368,7 +1368,7 @@ If anything is ambiguous, ask first.
             The same exhaustive verification runs on your custom definitions.
           </div>
           <div class="layer-code">
-<span class="fn">defineRule</span>({
+<span class="fn">defineSkillNet</span>({
   <span class="kw">places:</span> [<span class="str">"ready"</span>, <span class="str">"backedUp"</span>],
   <span class="kw">transitions:</span> {
     <span class="fn">backup</span>:  { <span class="str">ready</span> &rarr; <span class="str">backedUp</span>, <span class="kw">deferred</span> },
@@ -1542,7 +1542,7 @@ If anything is ambiguous, ask first.
         <div class="integration-logo">&gt;_</div>
         <h3>Claude Code</h3>
         <p>Hook into Claude Code's tool pipeline. Gate bash, file operations, and MCP tools.</p>
-        <div class="integration-code"><span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"petriflow/claude-code"</span>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"@petriflow/claude-code"</span>
 
 <span class="fn">claudeCode</span>({
   rules: [<span class="fn">backupBeforeDelete</span>()]
@@ -1553,7 +1553,7 @@ If anything is ambiguous, ask first.
         <div class="integration-logo">&pi;</div>
         <h3>pi-mono</h3>
         <p>Native extension for pi-mono agents. Full access to skill nets and tool mapping.</p>
-        <div class="integration-code"><span class="kw">import</span> { <span class="fn">piMono</span> } <span class="kw">from</span> <span class="str">"petriflow/pi-mono"</span>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">piMono</span> } <span class="kw">from</span> <span class="str">"@petriflow/pi-mono"</span>
 
 <span class="fn">piMono</span>({
   rules: [<span class="fn">testBeforeDeploy</span>()]
@@ -1564,7 +1564,7 @@ If anything is ambiguous, ask first.
         <div class="integration-logo">&#x1f980;</div>
         <h3>OpenClaw</h3>
         <p>Replace policy checks with structural rules. Drop-in safety upgrade for ClawdBot agents.</p>
-        <div class="integration-code"><span class="kw">import</span> { <span class="fn">openClaw</span> } <span class="kw">from</span> <span class="str">"petriflow/openclaw"</span>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">openClaw</span> } <span class="kw">from</span> <span class="str">"@petriflow/openclaw"</span>
 
 <span class="fn">openClaw</span>({
   rules: [<span class="fn">observeBeforeSend</span>()]
