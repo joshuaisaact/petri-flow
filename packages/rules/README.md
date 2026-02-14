@@ -66,12 +66,33 @@ const { nets } = compile(`
 
 `discord.sendMessage` means: tool name is `discord`, input has `action: "sendMessage"`. The compiler generates a `toolMapper` automatically. Actions not mentioned in any rule pass through freely — `discord.react`, `discord.readMessages`, etc. are ungated.
 
+### Tool mapping with `map`
+
+For tools where discrimination requires pattern matching (like `bash` commands), use `map` to define virtual tool names:
+
+```
+map bash.command /\brm\s/ as delete
+map bash.command /\bcp\s+-r/ as backup
+map bash.command /\bgit\s+push\b/ as git-push
+
+require backup before delete
+require human-approval before git-push
+```
+
+Syntax: `map <tool>.<field> /<regex>/ as <name>`
+
+- `bash.command` means: match against `input.command` of the `bash` tool
+- The regex is matched against the field value
+- Unmatched bash commands pass through freely (nets abstain)
+- Works with any tool and field, not just bash: `map slack.action /sendMessage/ as slack-send`
+
 ### Syntax
 
 - One rule per line
 - `#` starts a comment (to end of line)
 - Blank lines are ignored
 - Tool names support dot notation (`tool.action`) for action-dispatch tools
+- `map` statements define virtual tool names via regex pattern matching
 - Accepts a multiline string or an array of strings
 
 ## Layer 3: Full control

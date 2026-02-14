@@ -1105,7 +1105,6 @@ footer {
 <!-- ───── PROBLEM ───── -->
 <section class="problem" id="problem">
   <div class="container">
-    <p class="section-label">The Problem</p>
     <h2 class="section-title">Your agent's safety net<br>is a <code style="font-family:var(--mono);color:var(--red)">.md</code> file.</h2>
     <p class="section-sub">
       Agent skills are markdown files. The model reads them, follows the instructions,
@@ -1142,7 +1141,6 @@ footer {
 <!-- ───── SOLUTION ───── -->
 <section class="solution" id="solution">
   <div class="container">
-    <p class="section-label">The Solution</p>
     <h2 class="section-title">Your skills are prompts.<br>Make them enforceable.</h2>
     <p class="section-sub">
       PetriFlow adds an enforcement layer below your skills.
@@ -1179,14 +1177,14 @@ Never delete without a backup.
         <div class="code-block"><span class="comment"># same SKILL.md as before</span>
 <span class="comment"># same instructions, same tools</span>
 
-<span class="comment"># but now, add one rule:</span>
+<span class="comment"># but now, add rules:</span>
+<span class="kw">map</span> bash.command <span class="str">/\bcp\s+-r/</span> as <span class="fn">backup</span>
+<span class="kw">map</span> bash.command <span class="str">/\brm\s/</span> as <span class="fn">delete</span>
 <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
 
 <span class="comment"># the model can try to skip the backup.</span>
-<span class="comment"># it doesn't matter.</span>
-<span class="comment"># the delete call is intercepted</span>
-<span class="comment"># and blocked before it reaches</span>
-<span class="comment"># the tool. structurally.</span></div>
+<span class="comment"># the rm call is intercepted and blocked</span>
+<span class="comment"># before it reaches the shell.</span></div>
         <p class="panel-note">The skill says what to do. The rule ensures it. <strong>No code path can bypass it.</strong></p>
       </div>
     </div>
@@ -1196,7 +1194,6 @@ Never delete without a backup.
 <!-- ───── REAL WORLD EXAMPLE ───── -->
 <section class="real-world" id="example">
   <div class="container">
-    <p class="section-label">Real World</p>
     <h2 class="section-title">A WhatsApp bot that<br>can't message the wrong person.</h2>
     <p class="section-sub">
       A real agent skill for sending WhatsApp messages via CLI.
@@ -1304,7 +1301,6 @@ If anything is ambiguous, ask first.
 <!-- ───── HOW IT WORKS (3 layers) ───── -->
 <section class="how-it-works" id="how-it-works">
   <div class="container">
-    <p class="section-label">How It Works</p>
     <h2 class="section-title">Simple by default.<br>Powerful when you need it.</h2>
     <p class="section-sub">
       Three layers. Most users never leave the first.
@@ -1389,7 +1385,6 @@ If anything is ambiguous, ask first.
 <!-- ───── SAFETY RULES SHOWCASE ───── -->
 <section class="rules" id="rules">
   <div class="container">
-    <p class="section-label">Safety Rules</p>
     <h2 class="section-title">Real agents. Real constraints.<br>Mathematically proven.</h2>
     <p class="section-sub">
       Four production safety rules. Three require zero human approval&thinsp;&mdash;&thinsp;safety
@@ -1455,7 +1450,6 @@ If anything is ambiguous, ask first.
 <!-- ───── COMPARISON TABLE ───── -->
 <section class="comparison" id="comparison">
   <div class="container">
-    <p class="section-label">Head to Head</p>
     <h2 class="section-title">Policy checks vs. safety rules.</h2>
     <p class="section-sub">
       Four scenarios. Same requirements. Two fundamentally different approaches.
@@ -1524,7 +1518,6 @@ If anything is ambiguous, ask first.
 <!-- ───── INTEGRATIONS ───── -->
 <section class="integrations" id="integrations">
   <div class="container">
-    <p class="section-label">Integrations</p>
     <h2 class="section-title">One safety layer.<br>Any agent framework.</h2>
     <p class="section-sub">
       PetriFlow is a standalone gate that sits between your agent and its tools.
@@ -1584,7 +1577,6 @@ If anything is ambiguous, ask first.
 <!-- ───── UNDER THE HOOD ───── -->
 <section class="under-hood" id="under-hood">
   <div class="container">
-    <p class="section-label">Under the Hood</p>
     <h2 class="section-title">Formal verification.<br>Not just testing.</h2>
 
     <div class="under-hood-content">

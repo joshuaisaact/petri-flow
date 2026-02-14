@@ -2,7 +2,7 @@ import { defineSkillNet } from "@petriflow/gate";
 import type { SkillNet } from "@petriflow/gate";
 
 // ---------------------------------------------------------------------------
-// Parsed rule types
+// Parsed types
 // ---------------------------------------------------------------------------
 
 type SequenceRule = { kind: "sequence"; a: string; b: string };
@@ -17,6 +17,16 @@ type LimitRule = {
 
 type ParsedRule = SequenceRule | ApprovalRule | BlockRule | LimitRule;
 
+type ToolMap = {
+  kind: "map";
+  tool: string;
+  field: string;
+  pattern: RegExp;
+  virtualName: string;
+};
+
+type ParsedLine = ParsedRule | ToolMap;
+
 // ---------------------------------------------------------------------------
 // Parser
 // ---------------------------------------------------------------------------
@@ -26,7 +36,20 @@ function stripComments(line: string): string {
   return idx === -1 ? line : line.slice(0, idx);
 }
 
-function parseRule(raw: string, lineNum: number): ParsedRule {
+function parseRegex(token: string, lineNum: number): RegExp {
+  if (!token.startsWith("/") || !token.endsWith("/")) {
+    throw new Error(
+      `Line ${lineNum}: expected regex between / delimiters, got '${token}'`,
+    );
+  }
+  const body = token.slice(1, -1);
+  if (body === "") {
+    throw new Error(`Line ${lineNum}: empty regex pattern`);
+  }
+  return new RegExp(body);
+}
+
+function parseLine(raw: string, lineNum: number): ParsedLine {
   const cleaned = stripComments(raw).trim();
   const tokens = cleaned.split(/\s+/);
 
@@ -36,9 +59,38 @@ function parseRule(raw: string, lineNum: number): ParsedRule {
 
   const keyword = tokens[0]!;
 
+  // map <tool>.<field> /<pattern>/ as <virtual-name>
+  if (keyword === "map") {
+    if (tokens.length !== 5) {
+      throw new Error(
+        `Line ${lineNum}: 'map <tool>.<field> /<pattern>/ as <name>' expects 5 tokens, got ${tokens.length}`,
+      );
+    }
+    const toolField = tokens[1]!;
+    const dotIdx = toolField.indexOf(".");
+    if (dotIdx === -1) {
+      throw new Error(
+        `Line ${lineNum}: expected <tool>.<field> (e.g., bash.command), got '${toolField}'`,
+      );
+    }
+    const tool = toolField.slice(0, dotIdx);
+    const field = toolField.slice(dotIdx + 1);
+    if (tool === "" || field === "") {
+      throw new Error(
+        `Line ${lineNum}: tool and field must be non-empty in '${toolField}'`,
+      );
+    }
+    const pattern = parseRegex(tokens[2]!, lineNum);
+    if (tokens[3] !== "as") {
+      throw new Error(
+        `Line ${lineNum}: expected 'as' at position 4, got '${tokens[3]}'`,
+      );
+    }
+    return { kind: "map", tool, field, pattern, virtualName: tokens[4]! };
+  }
+
   if (keyword === "require") {
     if (tokens[1] === "human-approval") {
-      // require human-approval before <B>
       if (tokens.length !== 4) {
         throw new Error(
           `Line ${lineNum}: 'require human-approval before <tool>' expects 4 tokens, got ${tokens.length}`,
@@ -52,7 +104,6 @@ function parseRule(raw: string, lineNum: number): ParsedRule {
       return { kind: "approval", b: tokens[3]! };
     }
 
-    // require <A> before <B>
     if (tokens.length !== 4) {
       throw new Error(
         `Line ${lineNum}: 'require <tool> before <tool>' expects 4 tokens, got ${tokens.length}`,
@@ -67,7 +118,6 @@ function parseRule(raw: string, lineNum: number): ParsedRule {
   }
 
   if (keyword === "limit") {
-    // limit <A> to <N> per <scope>
     if (tokens.length !== 6) {
       throw new Error(
         `Line ${lineNum}: 'limit <tool> to <N> per <scope>' expects 6 tokens, got ${tokens.length}`,
@@ -105,7 +155,7 @@ function parseRule(raw: string, lineNum: number): ParsedRule {
   }
 
   throw new Error(
-    `Line ${lineNum}: unknown keyword '${keyword}'. Expected 'require', 'limit', or 'block'`,
+    `Line ${lineNum}: unknown keyword '${keyword}'. Expected 'map', 'require', 'limit', or 'block'`,
   );
 }
 
@@ -230,7 +280,7 @@ function compileLimit(rule: LimitRule): SkillNet<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Tool mapper for dot notation (e.g., discord.sendMessage)
+// Tool mapper generation
 // ---------------------------------------------------------------------------
 
 /**
@@ -251,41 +301,51 @@ function collectDottedBases(net: SkillNet<string>): Set<string> {
 }
 
 /**
- * If any transition references a dotted tool (e.g., discord.sendMessage),
- * attach a toolMapper that resolves tool calls by combining toolName + input.action.
+ * Build a toolMapper function that handles both:
+ * - Dot notation: discord + input.action → discord.sendMessage
+ * - Map statements: bash + input.command matches /rm/ → delete
  */
-function attachToolMapper(net: SkillNet<string>): SkillNet<string> {
-  const bases = collectDottedBases(net);
-  if (bases.size === 0) return net;
+function buildToolMapper(
+  net: SkillNet<string>,
+  maps: ToolMap[],
+): SkillNet<string> {
+  const dottedBases = collectDottedBases(net);
+  if (dottedBases.size === 0 && maps.length === 0) return net;
 
   return {
     ...net,
     toolMapper: ({ toolName, input }) => {
-      if (bases.has(toolName) && typeof input.action === "string") {
+      // Map statements take priority (more specific)
+      for (const m of maps) {
+        if (toolName === m.tool) {
+          const fieldValue = input[m.field];
+          if (typeof fieldValue === "string" && m.pattern.test(fieldValue)) {
+            return m.virtualName;
+          }
+        }
+      }
+
+      // Dot notation: tool + input.action
+      if (dottedBases.has(toolName) && typeof input.action === "string") {
         return `${toolName}.${input.action}`;
       }
+
       return toolName;
     },
   };
 }
 
 function compileRule(rule: ParsedRule): SkillNet<string> {
-  let net: SkillNet<string>;
   switch (rule.kind) {
     case "sequence":
-      net = compileSequence(rule);
-      break;
+      return compileSequence(rule);
     case "approval":
-      net = compileApproval(rule);
-      break;
+      return compileApproval(rule);
     case "block":
-      net = compileBlock(rule);
-      break;
+      return compileBlock(rule);
     case "limit":
-      net = compileLimit(rule);
-      break;
+      return compileLimit(rule);
   }
-  return attachToolMapper(net);
 }
 
 // ---------------------------------------------------------------------------
@@ -301,15 +361,22 @@ export function compile(rules: string | string[]): CompiledRules {
       ? rules.split("\n")
       : rules.flatMap((r) => r.split("\n"));
 
-  const nets: SkillNet<string>[] = [];
+  const maps: ToolMap[] = [];
+  const parsedRules: ParsedRule[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const cleaned = stripComments(lines[i]!).trim();
     if (cleaned === "") continue;
 
-    const parsed = parseRule(cleaned, i + 1);
-    nets.push(compileRule(parsed));
+    const parsed = parseLine(cleaned, i + 1);
+    if (parsed.kind === "map") {
+      maps.push(parsed);
+    } else {
+      parsedRules.push(parsed);
+    }
   }
+
+  const nets = parsedRules.map((rule) => buildToolMapper(compileRule(rule), maps));
 
   return { nets };
 }

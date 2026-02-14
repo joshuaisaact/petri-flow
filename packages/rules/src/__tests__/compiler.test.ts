@@ -680,3 +680,274 @@ describe("dot notation — action dispatch", () => {
     expect(r).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Map statements — parser tests
+// ---------------------------------------------------------------------------
+
+describe("compile — map statement parser", () => {
+  it("parses 'map bash.command /pattern/ as name'", () => {
+    const { nets } = compile(`
+      map bash.command /rm\\s/ as delete
+      block delete
+    `);
+    expect(nets).toHaveLength(1);
+    expect(nets[0]!.toolMapper).toBeDefined();
+  });
+
+  it("rejects map without dot in tool.field", () => {
+    expect(() => compile("map bash /rm/ as delete")).toThrow(
+      /expected <tool>\.<field>/,
+    );
+  });
+
+  it("rejects map with missing 'as' keyword", () => {
+    expect(() =>
+      compile("map bash.command /rm/ to delete"),
+    ).toThrow(/expected 'as' at position 4/);
+  });
+
+  it("rejects map with empty regex", () => {
+    expect(() => compile("map bash.command // as delete")).toThrow(
+      /empty regex/,
+    );
+  });
+
+  it("rejects map with missing regex delimiters", () => {
+    expect(() => compile("map bash.command rm as delete")).toThrow(
+      /expected regex between \/ delimiters/,
+    );
+  });
+
+  it("rejects map with wrong token count", () => {
+    expect(() => compile("map bash.command /rm/")).toThrow(
+      /expects 5 tokens/,
+    );
+  });
+
+  it("map statements don't produce nets by themselves", () => {
+    const { nets } = compile("map bash.command /rm/ as delete");
+    expect(nets).toHaveLength(0);
+  });
+
+  it("no toolMapper when no maps and no dots", () => {
+    const net = compile("block rm").nets[0]!;
+    expect(net.toolMapper).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Map statements — semantic tests via GateManager
+// ---------------------------------------------------------------------------
+
+describe("map statements — bash command gating", () => {
+  it("require backup before delete (bash commands)", async () => {
+    const { nets } = compile(`
+      map bash.command /\\bcp\\s+-r\\b/ as backup
+      map bash.command /\\brm\\s/ as delete
+      require backup before delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // rm is blocked (no backup yet)
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf build/" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("delete"),
+    });
+
+    // cp -r is allowed (deferred backup)
+    const cpEvent = makeEvent("bash", {
+      command: "cp -r build/ /tmp/build-bak",
+    });
+    const r2 = await manager.handleToolCall(cpEvent, makeCtx());
+    expect(r2).toBeUndefined();
+
+    // backup succeeds
+    manager.handleToolResult(makeResult(cpEvent, false));
+
+    // rm now allowed
+    const r3 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf build/" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
+  });
+
+  it("block destructive commands", async () => {
+    const { nets } = compile(`
+      map bash.command /\\brm\\s/ as delete
+      map bash.command /DROP\\s+TABLE/ as drop-table
+      block delete
+      block drop-table
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // rm blocked
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf /" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-delete"),
+    });
+
+    // DROP TABLE blocked
+    const r2 = await manager.handleToolCall(
+      makeEvent("bash", { command: "psql -c 'DROP TABLE users'" }),
+      makeCtx(),
+    );
+    expect(r2).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-drop-table"),
+    });
+
+    // ls passes through (no map matches, all nets abstain)
+    const r3 = await manager.handleToolCall(
+      makeEvent("bash", { command: "ls -la" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
+  });
+
+  it("require human-approval before mapped tool", async () => {
+    const { nets } = compile(`
+      map bash.command /\\bgit\\s+push\\b/ as git-push
+      require human-approval before git-push
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // git push needs approval
+    const noUiCtx: GateContext = {
+      hasUI: false,
+      confirm: async () => false,
+    };
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "git push origin main" }),
+      noUiCtx,
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("requires UI"),
+    });
+
+    // git status passes through (no map matches)
+    const r2 = await manager.handleToolCall(
+      makeEvent("bash", { command: "git status" }),
+      makeCtx(),
+    );
+    expect(r2).toBeUndefined();
+  });
+
+  it("limit mapped tool per session", async () => {
+    const { nets } = compile(`
+      map bash.command /\\bdeploy\\b/ as deploy
+      limit deploy to 2 per session
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // Two deploys work
+    for (let i = 0; i < 2; i++) {
+      const r = await manager.handleToolCall(
+        makeEvent("bash", { command: "deploy --env staging" }),
+        makeCtx(),
+      );
+      expect(r).toBeUndefined();
+    }
+
+    // Third blocked
+    const r3 = await manager.handleToolCall(
+      makeEvent("bash", { command: "deploy --env prod" }),
+      makeCtx(),
+    );
+    expect(r3).toEqual({
+      block: true,
+      reason: expect.stringContaining("deploy"),
+    });
+  });
+
+  it("map on non-command field works", async () => {
+    const { nets } = compile(`
+      map slack.action /sendMessage/ as slack-send
+      block slack-send
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // sendMessage blocked
+    const r1 = await manager.handleToolCall(
+      makeEvent("slack", { action: "sendMessage", to: "channel:C123" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-slack-send"),
+    });
+
+    // readMessages passes through
+    const r2 = await manager.handleToolCall(
+      makeEvent("slack", { action: "readMessages", channelId: "C123" }),
+      makeCtx(),
+    );
+    expect(r2).toBeUndefined();
+  });
+
+  it("maps and dot notation coexist", async () => {
+    const { nets } = compile(`
+      map bash.command /\\brm\\s/ as delete
+      map bash.command /\\bcp\\s+-r/ as backup
+      require backup before delete
+      block discord.timeout
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // bash rm blocked (no backup)
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf build/" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("delete"),
+    });
+
+    // discord timeout blocked
+    const r2 = await manager.handleToolCall(
+      makeEvent("discord", { action: "timeout", guildId: "999" }),
+      makeCtx(),
+    );
+    expect(r2).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-discord.timeout"),
+    });
+
+    // discord react passes through
+    const r3 = await manager.handleToolCall(
+      makeEvent("discord", { action: "react", emoji: "ok" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
+  });
+
+  it("map takes priority over dot notation for same tool", async () => {
+    // If bash has both a map and could be dotted, map wins
+    const { nets } = compile(`
+      map bash.command /\\brm\\s/ as delete
+      block delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // bash with command matching the map → resolves to "delete"
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf /", action: "something" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-delete"),
+    });
+  });
+});
