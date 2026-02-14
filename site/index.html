@@ -617,6 +617,11 @@ blockquote cite {
   white-space: pre-wrap;
 }
 
+.layer-code .kw { color: var(--accent-text); }
+.layer-code .str { color: var(--green); }
+.layer-code .fn { color: var(--orange); }
+.layer-code .comment { color: var(--text-muted); }
+
 /* ───── COMPARISON TABLE ───── */
 
 .table-wrapper {
@@ -1320,14 +1325,13 @@ If anything is ambiguous, ask first.
             Pick a preset, pick your framework adaptor, done. Each preset is already mathematically verified.
           </div>
           <div class="layer-code">
-<span class="kw">import</span> { <span class="fn">backupBeforeDelete</span> } <span class="kw">from</span> <span class="str">"@petriflow/rules"</span>
-<span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"@petriflow/claude-code"</span>
+<span class="kw">import</span> { <span class="fn">backupBeforeDelete</span>,
+  <span class="fn">createGateManager</span> } <span class="kw">from</span> <span class="str">"@petriflow/rules"</span>
 
-<span class="comment">// or: @petriflow/pi-mono, @petriflow/openclaw</span>
-
-<span class="fn">claudeCode</span>({
-  rules: [<span class="fn">backupBeforeDelete</span>()]
-})
+<span class="kw">const</span> manager = <span class="fn">createGateManager</span>(
+  [<span class="fn">backupBeforeDelete</span>()],
+  { mode: <span class="str">"enforce"</span> }
+)
 </div>
         </div>
       </div>
@@ -1542,33 +1546,36 @@ If anything is ambiguous, ask first.
         <div class="integration-logo">&gt;_</div>
         <h3>Claude Code</h3>
         <p>Hook into Claude Code's tool pipeline. Gate bash, file operations, and MCP tools.</p>
-        <div class="integration-code"><span class="kw">import</span> { <span class="fn">claudeCode</span> } <span class="kw">from</span> <span class="str">"@petriflow/claude-code"</span>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">configure</span> } <span class="kw">from</span> <span class="str">"@petriflow/claude-code"</span>
 
-<span class="fn">claudeCode</span>({
-  rules: [<span class="fn">backupBeforeDelete</span>()]
-})</div>
+<span class="comment">// generates hooks config for</span>
+<span class="comment">// .claude/settings.json</span>
+<span class="fn">configure</span>(<span class="str">"."</span>)</div>
       </div>
 
       <div class="integration-card">
         <div class="integration-logo">&pi;</div>
-        <h3>pi-mono</h3>
-        <p>Native extension for pi-mono agents. Full access to skill nets and tool mapping.</p>
-        <div class="integration-code"><span class="kw">import</span> { <span class="fn">piMono</span> } <span class="kw">from</span> <span class="str">"@petriflow/pi-mono"</span>
+        <h3>pi-coding-agent</h3>
+        <p>Native extension for pi-coding-agent. Full access to skill nets and tool mapping.</p>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">composeGates</span> } <span class="kw">from</span> <span class="str">"@petriflow/pi-extension"</span>
 
-<span class="fn">piMono</span>({
-  rules: [<span class="fn">testBeforeDeploy</span>()]
-})</div>
+<span class="fn">composeGates</span>(
+  [<span class="fn">testBeforeDeploy</span>()],
+  { mode: <span class="str">"enforce"</span> }
+)</div>
       </div>
 
       <div class="integration-card">
         <div class="integration-logo">&#x1f980;</div>
         <h3>OpenClaw</h3>
-        <p>Replace policy checks with structural rules. Drop-in safety upgrade for ClawdBot agents.</p>
-        <div class="integration-code"><span class="kw">import</span> { <span class="fn">openClaw</span> } <span class="kw">from</span> <span class="str">"@petriflow/openclaw"</span>
+        <p>Replace policy checks with structural rules. Drop-in safety upgrade for OpenClaw agents.</p>
+        <div class="integration-code"><span class="kw">import</span> { <span class="fn">createPetriGatePlugin</span> }
+  <span class="kw">from</span> <span class="str">"@petriflow/openclaw"</span>
 
-<span class="fn">openClaw</span>({
-  rules: [<span class="fn">observeBeforeSend</span>()]
-})</div>
+<span class="fn">createPetriGatePlugin</span>(
+  [<span class="fn">observeBeforeSend</span>()],
+  { mode: <span class="str">"enforce"</span> }
+)</div>
       </div>
     </div>
   </div>
