@@ -1140,8 +1140,8 @@ footer {
         <p>You block <code>rm -rf</code> but miss <code>find -delete</code>. You block <code>DROP TABLE</code> but miss <code>TRUNCATE</code>. The agent finds the gap you didn't think of.</p>
       </div>
       <div class="problem-card">
-        <h3>There's no execution layer</h3>
-        <p>Skills have no runtime. The model reads markdown, decides what to do, and calls tools directly. There's no gate, no interceptor, no enforcement between intent and action.</p>
+        <h3>Nothing between intent and action</h3>
+        <p>Skills have no runtime. The model reads markdown, decides what to do, and calls tools directly. There's no gate between what the agent wants to do and doing it.</p>
       </div>
       <div class="problem-card">
         <h3>More skills = more trust</h3>
@@ -1156,9 +1156,7 @@ footer {
   <div class="container">
     <h2 class="section-title">Your skills are prompts.<br>Make them enforceable.</h2>
     <p class="section-sub">
-      PetriFlow adds an enforcement layer below your skills.
-      The skill tells the agent what to do.
-      The rule makes sure it <strong>can't do it wrong</strong>.
+      Skills make your agent powerful. Rules make it <strong style="color:var(--accent-text)">safe</strong>.
     </p>
 
     <div class="solution-compare">
