@@ -1178,8 +1178,8 @@ Never delete without a backup.
 <span class="comment"># same instructions, same tools</span>
 
 <span class="comment"># but now, add rules:</span>
-<span class="kw">map</span> bash.command <span class="str">/\bcp\s+-r/</span> as <span class="fn">backup</span>
-<span class="kw">map</span> bash.command <span class="str">/\brm\s/</span> as <span class="fn">delete</span>
+<span class="kw">map</span> bash.command <span class="str">cp</span> as <span class="fn">backup</span>
+<span class="kw">map</span> bash.command <span class="str">rm</span> as <span class="fn">delete</span>
 <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
 
 <span class="comment"># the model can try to skip the backup.</span>

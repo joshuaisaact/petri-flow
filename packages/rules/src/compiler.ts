@@ -36,17 +36,26 @@ function stripComments(line: string): string {
   return idx === -1 ? line : line.slice(0, idx);
 }
 
-function parseRegex(token: string, lineNum: number): RegExp {
-  if (!token.startsWith("/") || !token.endsWith("/")) {
-    throw new Error(
-      `Line ${lineNum}: expected regex between / delimiters, got '${token}'`,
-    );
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Parse a pattern token into a RegExp.
+ * - /pattern/ → raw regex (escape hatch)
+ * - bareWord  → word-boundary keyword match (\bbareWord\b)
+ */
+function parsePattern(token: string, lineNum: number): RegExp {
+  if (token.startsWith("/") && token.endsWith("/") && token.length > 1) {
+    const body = token.slice(1, -1);
+    if (body === "") {
+      throw new Error(`Line ${lineNum}: empty regex pattern`);
+    }
+    return new RegExp(body);
   }
-  const body = token.slice(1, -1);
-  if (body === "") {
-    throw new Error(`Line ${lineNum}: empty regex pattern`);
-  }
-  return new RegExp(body);
+
+  // Bare word → automatic word-boundary match
+  return new RegExp(`\\b${escapeRegex(token)}\\b`);
 }
 
 function parseLine(raw: string, lineNum: number): ParsedLine {
@@ -59,11 +68,11 @@ function parseLine(raw: string, lineNum: number): ParsedLine {
 
   const keyword = tokens[0]!;
 
-  // map <tool>.<field> /<pattern>/ as <virtual-name>
+  // map <tool>.<field> <pattern> as <virtual-name>
   if (keyword === "map") {
     if (tokens.length !== 5) {
       throw new Error(
-        `Line ${lineNum}: 'map <tool>.<field> /<pattern>/ as <name>' expects 5 tokens, got ${tokens.length}`,
+        `Line ${lineNum}: 'map <tool>.<field> <pattern> as <name>' expects 5 tokens, got ${tokens.length}`,
       );
     }
     const toolField = tokens[1]!;
@@ -80,7 +89,7 @@ function parseLine(raw: string, lineNum: number): ParsedLine {
         `Line ${lineNum}: tool and field must be non-empty in '${toolField}'`,
       );
     }
-    const pattern = parseRegex(tokens[2]!, lineNum);
+    const pattern = parsePattern(tokens[2]!, lineNum);
     if (tokens[3] !== "as") {
       throw new Error(
         `Line ${lineNum}: expected 'as' at position 4, got '${tokens[3]}'`,

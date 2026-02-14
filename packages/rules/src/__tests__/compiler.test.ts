@@ -713,10 +713,13 @@ describe("compile — map statement parser", () => {
     );
   });
 
-  it("rejects map with missing regex delimiters", () => {
-    expect(() => compile("map bash.command rm as delete")).toThrow(
-      /expected regex between \/ delimiters/,
-    );
+  it("bare word pattern compiles to word-boundary regex", () => {
+    const { nets } = compile(`
+      map bash.command rm as delete
+      block delete
+    `);
+    expect(nets).toHaveLength(1);
+    expect(nets[0]!.toolMapper).toBeDefined();
   });
 
   it("rejects map with wrong token count", () => {
@@ -949,5 +952,145 @@ describe("map statements — bash command gating", () => {
       block: true,
       reason: expect.stringContaining("block-delete"),
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bare word patterns (no regex needed)
+// ---------------------------------------------------------------------------
+
+describe("map with bare word patterns", () => {
+  it("bare word matches the command keyword", async () => {
+    const { nets } = compile(`
+      map bash.command rm as delete
+      block delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // "rm -rf build/" matches word "rm"
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf build/" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-delete"),
+    });
+  });
+
+  it("bare word does not match partial words", async () => {
+    const { nets } = compile(`
+      map bash.command rm as delete
+      block delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // "format" contains "rm" but not as a word → should pass
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "format disk" }),
+      makeCtx(),
+    );
+    expect(r1).toBeUndefined();
+
+    // "mkdir" contains "rm" backwards but not as a word → should pass
+    const r2 = await manager.handleToolCall(
+      makeEvent("bash", { command: "mkdir /tmp/foo" }),
+      makeCtx(),
+    );
+    expect(r2).toBeUndefined();
+  });
+
+  it("bare word with special regex chars is escaped", async () => {
+    const { nets } = compile(`
+      map bash.command node.js as run-node
+      block run-node
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // "node.js" matches literally (dot is escaped)
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "run node.js script" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("block-run-node"),
+    });
+
+    // "nodejs" should not match (no dot)
+    const r2 = await manager.handleToolCall(
+      makeEvent("bash", { command: "nodejs server.js" }),
+      makeCtx(),
+    );
+    expect(r2).toBeUndefined();
+  });
+
+  it("require backup before delete with bare words", async () => {
+    const { nets } = compile(`
+      map bash.command cp as backup
+      map bash.command rm as delete
+      require backup before delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // rm blocked
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm old-file.txt" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("delete"),
+    });
+
+    // cp allowed (deferred)
+    const cpEvent = makeEvent("bash", { command: "cp old-file.txt backup/" });
+    await manager.handleToolCall(cpEvent, makeCtx());
+    manager.handleToolResult(makeResult(cpEvent, false));
+
+    // rm now allowed
+    const r2 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm old-file.txt" }),
+      makeCtx(),
+    );
+    expect(r2).toBeUndefined();
+  });
+
+  it("regex escape hatch still works alongside bare words", async () => {
+    const { nets } = compile(`
+      map bash.command rm as delete
+      map bash.command /cp\\s+-r/ as backup
+      require backup before delete
+    `);
+    const manager = createGateManager(nets, { mode: "enforce" });
+
+    // rm blocked
+    const r1 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf build/" }),
+      makeCtx(),
+    );
+    expect(r1).toEqual({
+      block: true,
+      reason: expect.stringContaining("delete"),
+    });
+
+    // cp (without -r) does NOT match the regex pattern → net abstains
+    const cpEvent = makeEvent("bash", { command: "cp file.txt /tmp/" });
+    const r2 = await manager.handleToolCall(cpEvent, makeCtx());
+    expect(r2).toBeUndefined();
+
+    // cp -r DOES match
+    const cprEvent = makeEvent("bash", {
+      command: "cp -r build/ /tmp/build-bak",
+    });
+    await manager.handleToolCall(cprEvent, makeCtx());
+    manager.handleToolResult(makeResult(cprEvent, false));
+
+    // rm now allowed
+    const r3 = await manager.handleToolCall(
+      makeEvent("bash", { command: "rm -rf build/" }),
+      makeCtx(),
+    );
+    expect(r3).toBeUndefined();
   });
 });

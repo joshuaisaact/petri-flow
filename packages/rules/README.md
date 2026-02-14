@@ -71,20 +71,21 @@ const { nets } = compile(`
 For tools where discrimination requires pattern matching (like `bash` commands), use `map` to define virtual tool names:
 
 ```
-map bash.command /\brm\s/ as delete
-map bash.command /\bcp\s+-r/ as backup
-map bash.command /\bgit\s+push\b/ as git-push
+map bash.command rm as delete
+map bash.command cp as backup
+map bash.command deploy as deploy-cmd
 
 require backup before delete
-require human-approval before git-push
+require human-approval before deploy-cmd
 ```
 
-Syntax: `map <tool>.<field> /<regex>/ as <name>`
+Syntax: `map <tool>.<field> <keyword> as <name>`
 
 - `bash.command` means: match against `input.command` of the `bash` tool
-- The regex is matched against the field value
+- Bare words use word-boundary matching — `rm` matches `rm -rf build/` but not `format` or `mkdir`
 - Unmatched bash commands pass through freely (nets abstain)
-- Works with any tool and field, not just bash: `map slack.action /sendMessage/ as slack-send`
+- Works with any tool and field, not just bash: `map slack.action sendMessage as slack-send`
+- For complex patterns, use regex with `/` delimiters: `map bash.command /cp\s+-r/ as backup`
 
 ### Syntax
 
