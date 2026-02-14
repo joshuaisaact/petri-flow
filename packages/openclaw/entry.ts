@@ -1,18 +1,17 @@
 /**
  * OpenClaw plugin entry point.
  *
- * Loads petriflow-gate in shadow mode with the tool-approval net.
- * Shadow mode logs every gating decision but never blocks — safe for evaluation.
- *
- * To switch to enforce mode, change mode: "shadow" → mode: "enforce".
+ * Loads petriflow-gate in enforce mode with the WhatsApp safety net.
+ * Enforce mode blocks dangerous tools structurally — no prompt injection
+ * can bypass Petri net token requirements.
  */
 import { createPetriGatePlugin } from "./src/index.js";
-import { openclawToolApprovalNet } from "./src/nets/tool-approval.js";
+import { whatsappSafetyNet } from "./src/nets/whatsapp-safety.js";
 
-export default createPetriGatePlugin([openclawToolApprovalNet], {
-  mode: "shadow",
+export default createPetriGatePlugin([whatsappSafetyNet], {
+  mode: "enforce",
   onDecision: (event, decision) => {
-    const action = decision?.block ? `WOULD_BLOCK: ${decision.reason}` : "allow";
+    const action = decision?.block ? `BLOCKED: ${decision.reason}` : "allow";
     console.error(`[petriflow-gate] ${event.toolName} → ${action}`);
   },
 });

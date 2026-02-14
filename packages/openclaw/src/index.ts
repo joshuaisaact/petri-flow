@@ -62,12 +62,8 @@ function wireHooks(api: OpenClawPluginApi, manager: GateManager): void {
     });
   });
 
-  // --- Inject net status into system prompt ---
-  api.on("before_agent_start", () => {
-    const prompt = manager.formatSystemPrompt();
-    if (!prompt) return;
-    return { prependContext: prompt };
-  });
+  // System prompt injection skipped — the net enforces structurally
+  // regardless of whether the agent knows about it.
 }
 
 function wireCommands(api: OpenClawPluginApi, manager: GateManager): void {
@@ -116,3 +112,4 @@ export { defineSkillNet, createGateManager } from "@petriflow/gate";
 
 // Re-export bundled nets
 export { openclawToolApprovalNet } from "./nets/tool-approval.js";
+export { whatsappSafetyNet } from "./nets/whatsapp-safety.js";
