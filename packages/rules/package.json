@@ -1,0 +1,17 @@
+{
+  "name": "@petriflow/rules",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@petriflow/gate": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1",
+    "typescript": "^5.7"
+  }
+}

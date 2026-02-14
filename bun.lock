@@ -145,6 +145,17 @@
         "typescript": "^5.7",
       },
     },
+    "packages/rules": {
+      "name": "@petriflow/rules",
+      "version": "0.1.0",
+      "dependencies": {
+        "@petriflow/gate": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1",
+        "typescript": "^5.7",
+      },
+    },
     "packages/server": {
       "name": "@petriflow/server",
       "version": "0.1.0",
@@ -793,6 +804,8 @@
     "@petriflow/pi-assistant": ["@petriflow/pi-assistant@workspace:packages/pi-assistant"],
 
     "@petriflow/pi-extension": ["@petriflow/pi-extension@workspace:packages/pi-extension"],
+
+    "@petriflow/rules": ["@petriflow/rules@workspace:packages/rules"],
 
     "@petriflow/server": ["@petriflow/server@workspace:packages/server"],
 
