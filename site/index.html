@@ -156,9 +156,8 @@ nav .container {
   content: '';
   position: absolute;
   top: -200px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1000px;
+  left: 0;
+  right: 0;
   height: 800px;
   background:
     radial-gradient(ellipse at 30% 50%, rgba(139,92,246,0.08) 0%, transparent 50%),
@@ -299,7 +298,7 @@ nav .container {
 }
 
 blockquote {
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid #D97757;
   padding: 20px 24px;
   background: var(--bg-card);
   border-radius: 0 var(--radius) var(--radius) 0;
@@ -315,7 +314,7 @@ blockquote cite {
   margin-top: 12px;
   font-size: 12px;
   font-style: normal;
-  color: var(--text-muted);
+  color: #D97757;
 }
 
 .problem-grid {
@@ -476,7 +475,7 @@ blockquote cite {
 .rw-panel-body .str { color: var(--green); }
 .rw-panel-body .comment { color: rgba(255,255,255,0.3); }
 .rw-panel-body .fn { color: var(--orange); }
-.rw-panel-body .dim { color: rgba(255,255,255,0.15); }
+.rw-panel-body .dim { color: rgba(255,255,255,0.3); }
 .rw-panel-body .heading { color: var(--text-secondary); font-weight: 600; }
 
 .rw-trace {
@@ -707,12 +706,15 @@ blockquote cite {
   margin-top: 40px;
 }
 
+a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
+
 .rule-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 28px;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  display: block;
 }
 
 .rule-card:hover {
@@ -742,24 +744,11 @@ blockquote cite {
   margin-bottom: 14px;
 }
 
-.rule-guarantee {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  background: var(--green-dim);
-  border-radius: 8px;
+.rule-commentary {
+  margin-top: 12px;
   font-size: 13px;
+  color: var(--text-muted);
   line-height: 1.5;
-  color: var(--green);
-}
-
-.rule-guarantee-icon {
-  color: var(--green);
-  flex-shrink: 0;
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 1.4;
 }
 
 .rule-example {
@@ -925,10 +914,11 @@ blockquote cite {
 }
 
 .under-hood-stat-value {
-  font-family: var(--mono);
-  font-size: 24px;
+  font-family: var(--sans);
+  font-size: 28px;
   font-weight: 700;
-  color: var(--accent-text);
+  letter-spacing: -0.03em;
+  color: var(--text);
 }
 
 .under-hood-stat-label {
@@ -1080,13 +1070,11 @@ footer {
       Petri<span>Flow</span>
     </a>
     <ul class="nav-links">
-      <li><a href="#problem">Problem</a></li>
-      <li><a href="#solution">Solution</a></li>
-      <li><a href="#example">Example</a></li>
       <li><a href="#how-it-works">How It Works</a></li>
-      <li><a href="#rules">Safety Rules</a></li>
-      <li><a href="#comparison">Comparison</a></li>
+      <li><a href="#rules">Rules</a></li>
+      <li><a href="examples.html">Examples</a></li>
       <li><a href="#integrations">Integrations</a></li>
+      <li><a href="https://github.com" class="btn btn-secondary" style="padding:6px 14px;font-size:12px">GitHub</a></li>
     </ul>
   </div>
 </nav>
@@ -1130,7 +1118,7 @@ footer {
 <!-- ───── PROBLEM ───── -->
 <section class="problem" id="problem" data-animate>
   <div class="container">
-    <h2 class="section-title">Your agent's safety net<br>is a <code style="font-family:var(--mono);color:var(--red)">.md</code> file.</h2>
+    <h2 class="section-title">Your agent's safety net<br>is a <code style="font-family:var(--mono);color:var(--orange)">.md</code> file.</h2>
     <p class="section-sub">
       Agent skills are markdown files. The model reads them, follows the instructions,
       and calls tools. There is nothing between "the skill says don't do that" and
@@ -1175,9 +1163,8 @@ footer {
 
     <div class="solution-compare">
       <div class="solution-panel bad">
-        <div class="solution-panel-label">Skill alone (hope-based)</div>
-        <div class="code-block"><span class="comment"># SKILL.md</span>
-<span class="comment"># ---</span>
+        <div class="solution-panel-label">Skill alone</div>
+        <div class="code-block"><span class="comment"># ---</span>
 <span class="comment"># name: cleanup</span>
 <span class="comment"># description: Delete unused files</span>
 <span class="comment"># ---</span>
@@ -1189,12 +1176,8 @@ Never delete without a backup.
 <span class="comment">## Usage</span>
 <span class="fn">1.</span> Back up the target directory
 <span class="fn">2.</span> Delete unused files
-<span class="fn">3.</span> Verify cleanup
-
-<span class="comment"># the model reads this.</span>
-<span class="comment"># the model might follow it.</span>
-<span class="comment"># nothing <em>makes</em> it.</span></div>
-        <p class="panel-note">The skill says "always back up first." <strong>The model decides whether to listen.</strong></p>
+<span class="fn">3.</span> Verify cleanup</div>
+        <p class="panel-note">The model reads this. The model might follow it.<br><br><strong>Nothing <em>makes</em> it.</strong></p>
       </div>
 
       <div class="solution-panel good">
@@ -1205,12 +1188,8 @@ Never delete without a backup.
 <span class="comment"># but now, add rules:</span>
 <span class="kw">map</span> bash.command <span class="str">cp</span> as <span class="fn">backup</span>
 <span class="kw">map</span> bash.command <span class="str">rm</span> as <span class="fn">delete</span>
-<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
-
-<span class="comment"># the model can try to skip the backup.</span>
-<span class="comment"># the rm call is intercepted and blocked</span>
-<span class="comment"># before it reaches the shell.</span></div>
-        <p class="panel-note">The skill says what to do. The rule ensures it. <strong>No code path can bypass it.</strong></p>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span></div>
+        <p class="panel-note">The model can try to skip the backup. The <code style="font-family:var(--mono);font-size:12px">rm</code> call is intercepted and blocked before it reaches the shell.<br><br><strong>No code path can bypass it.</strong></p>
       </div>
     </div>
   </div>
@@ -1409,64 +1388,35 @@ If anything is ambiguous, ask first.
 <!-- ───── SAFETY RULES SHOWCASE ───── -->
 <section class="rules" id="rules" data-animate>
   <div class="container">
-    <h2 class="section-title">Real agents. Real constraints.<br>Mathematically proven.</h2>
+    <h2 class="section-title">Rules you can build.<br>Guarantees you can prove.</h2>
     <p class="section-sub">
-      Four production safety rules. Three require zero human approval&thinsp;&mdash;&thinsp;safety
-      comes entirely from the rule structure.
+      Examples of safety patterns PetriFlow can enforce. Each is verified exhaustively before your agent starts.
     </p>
 
     <div class="rules-grid">
-      <div class="rule-card">
+      <a href="examples.html#observe-before-send" class="rule-card">
         <div class="rule-name">observe-before-send</div>
         <h3>Don't message blindly</h3>
-        <p>The agent must read a channel before it can send a message to it. Each read earns one send. Channel-matched, so reading #general doesn't unlock #production.</p>
-        <div class="rule-guarantee">
-          <span class="rule-guarantee-icon">&#x2713;</span>
-          <span>Impossible to send without reading the channel first. 1:1 ratio enforced structurally.</span>
-        </div>
-        <div class="rule-example">
-          <span class="allowed">read #deploys</span> &rarr; <span class="allowed">send #deploys</span> &rarr; <span class="blocked">send #deploys BLOCKED</span> (must read again)
-        </div>
-      </div>
+        <p>Read a channel before you can send to it. One read, one send. Channel-matched&thinsp;&mdash;&thinsp;reading #general doesn't unlock #production.</p>
+      </a>
 
-      <div class="rule-card">
+      <a href="examples.html#test-before-deploy" class="rule-card">
         <div class="rule-name">test-before-deploy</div>
         <h3>Don't ship broken code</h3>
-        <p>Can't deploy to staging without passing tests. Can't go to production without staging. Production requires a human to approve.</p>
-        <div class="rule-guarantee">
-          <span class="rule-guarantee-icon">&#x2713;</span>
-          <span>Production deploy is a manual action. No amount of prompt injection can auto-ship.</span>
-        </div>
-        <div class="rule-example">
-          <span class="allowed">test</span> &rarr; <span class="allowed">build</span> &rarr; <span class="allowed">stage</span> &rarr; <span class="blocked">ship BLOCKED</span> (needs human)
-        </div>
-      </div>
+        <p>Tests gate staging. Staging gates production. Production requires a human.</p>
+      </a>
 
-      <div class="rule-card">
+      <a href="examples.html#research-before-share" class="rule-card">
         <div class="rule-name">research-before-share</div>
         <h3>Don't share fabrications</h3>
-        <p>Each web fetch earns one share token. Each share consumes one. The agent can't broadcast "findings" without having actually fetched real sources.</p>
-        <div class="rule-guarantee">
-          <span class="rule-guarantee-icon">&#x2713;</span>
-          <span>1:1 fetch-to-share ratio. No research means no sharing is possible.</span>
-        </div>
-        <div class="rule-example">
-          <span class="blocked">share BLOCKED</span> &rarr; <span class="allowed">fetch url</span> &rarr; <span class="allowed">share</span> &rarr; <span class="blocked">share BLOCKED</span> (must fetch again)
-        </div>
-      </div>
+        <p>Each fetch earns one share. Each share consumes one. No sources fetched, no sharing possible.</p>
+      </a>
 
-      <div class="rule-card">
+      <a href="examples.html#backup-before-delete" class="rule-card">
         <div class="rule-name">backup-before-delete</div>
         <h3>Don't destroy without a safety net</h3>
-        <p>Every destructive command is blocked until a backup covers the target path. <code style="font-family:var(--mono);font-size:12px">git stash</code> covers everything. <code style="font-family:var(--mono);font-size:12px">cp src/ bak/</code> covers <code style="font-family:var(--mono);font-size:12px">src/</code>.</p>
-        <div class="rule-guarantee">
-          <span class="rule-guarantee-icon">&#x2713;</span>
-          <span>Backup must actually succeed (deferred check). Path coverage validated semantically.</span>
-        </div>
-        <div class="rule-example">
-          <span class="blocked">rm -rf data/ BLOCKED</span> &rarr; <span class="allowed">cp -r data/ /tmp/bak</span> &rarr; <span class="allowed">rm -rf data/</span>
-        </div>
-      </div>
+        <p>Destructive commands blocked until a backup covers the target path. The backup must actually succeed.</p>
+      </a>
     </div>
   </div>
 </section>
@@ -1609,12 +1559,12 @@ If anything is ambiguous, ask first.
     <div class="under-hood-content">
       <div class="under-hood-text">
         <p>
-          Every safety rule compiles down to a <strong>formally verifiable state machine</strong>.
+          Every safety rule compiles down to a <strong style="color:var(--accent-text)">verifiable state machine</strong>.
           Before your agent runs, PetriFlow enumerates every reachable state and
           checks your invariants across all of them.
         </p>
         <p>
-          This isn't sampling. It's not fuzzing. It's <strong>exhaustive proof</strong>.
+          This isn't sampling. It's not fuzzing. It's <strong style="color:var(--accent-text)">exhaustive proof</strong>.
           If the verifier says "safe," it means safe in every possible execution,
           not just the ones you tested.
         </p>
@@ -1655,7 +1605,7 @@ If anything is ambiguous, ask first.
           <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; no auto path exists<br>
           <br>
           <span class="pass">All invariants verified.</span><br>
-          <span class="dim">0 violations across 196 states.</span>
+          <span style="color:var(--accent-text);font-weight:600">0 violations across 196 states.</span>
         </div>
       </div>
     </div>
