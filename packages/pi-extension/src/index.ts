@@ -1,16 +1,16 @@
 import type { ExtensionAPI, ExtensionContext, ToolCallEvent, ToolResultEvent } from "@mariozechner/pi-coding-agent";
 import { createGateManager, formatMarking } from "@petriflow/gate";
-import type { ComposeConfig, SkillNet } from "@petriflow/gate";
+import type { ComposeConfig, GateManagerOptions, SkillNet } from "@petriflow/gate";
 
-export function createPetriGate<P extends string>(net: SkillNet<P>) {
-  return composeGates([net as SkillNet<string>]);
+export function createPetriGate<P extends string>(net: SkillNet<P>, opts?: GateManagerOptions) {
+  return composeGates([net as SkillNet<string>], opts);
 }
 
-export function composeGates(nets: SkillNet<string>[]): (pi: ExtensionAPI) => void;
-export function composeGates(config: ComposeConfig): (pi: ExtensionAPI) => void;
-export function composeGates(input: SkillNet<string>[] | ComposeConfig): (pi: ExtensionAPI) => void {
+export function composeGates(nets: SkillNet<string>[], opts?: GateManagerOptions): (pi: ExtensionAPI) => void;
+export function composeGates(config: ComposeConfig, opts?: GateManagerOptions): (pi: ExtensionAPI) => void;
+export function composeGates(input: SkillNet<string>[] | ComposeConfig, opts?: GateManagerOptions): (pi: ExtensionAPI) => void {
   return (pi: ExtensionAPI) => {
-    const manager = createGateManager(input);
+    const manager = createGateManager(input, opts);
 
     // Gate tool calls — 4-phase protocol (active nets only)
     pi.on("tool_call", async (event: ToolCallEvent, ctx: ExtensionContext) => {

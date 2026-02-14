@@ -23,11 +23,29 @@ export type GateManager = {
   isDynamic: boolean;
 };
 
-export function createGateManager(input: SkillNet<string>[] | ComposeConfig): GateManager {
-  if (Array.isArray(input)) {
-    return createArrayManager(input);
+export type GateManagerOptions = {
+  /** "enforce" blocks disallowed tools (default). "shadow" logs but never blocks. */
+  mode?: "enforce" | "shadow";
+  /** Called after every gating decision. Use for logging, metrics, debugging. */
+  onDecision?: (event: GateToolCall, decision: GateDecision) => void;
+};
+
+export function createGateManager(input: SkillNet<string>[] | ComposeConfig, opts?: GateManagerOptions): GateManager {
+  const manager = Array.isArray(input) ? createArrayManager(input) : createRegistryManager(input);
+
+  if (opts?.mode === "shadow" || opts?.onDecision) {
+    const original = manager.handleToolCall;
+    manager.handleToolCall = async (event, ctx) => {
+      const decision = await original.call(manager, event, ctx);
+      opts.onDecision?.(event, decision);
+      if (opts.mode === "shadow" && decision?.block) {
+        return undefined;
+      }
+      return decision;
+    };
   }
-  return createRegistryManager(input);
+
+  return manager;
 }
 
 function createArrayManager(nets: SkillNet<string>[]): GateManager {

@@ -548,3 +548,71 @@ describe("createGateManager — dynamic management", () => {
     expect(manager.removeNet("netA").ok).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// createGateManager — shadow mode
+// ---------------------------------------------------------------------------
+
+describe("createGateManager — shadow mode", () => {
+  it("shadow mode allows tools that would be blocked", async () => {
+    const manager = createGateManager([netA, netE], { mode: "shadow" });
+    const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
+    expect(result).toBeUndefined();
+  });
+
+  it("shadow mode still allows free tools", async () => {
+    const manager = createGateManager([netA], { mode: "shadow" });
+    const result = await manager.handleToolCall(makeEvent("safe"), makeCtx());
+    expect(result).toBeUndefined();
+  });
+
+  it("shadow mode still allows normally-allowed gated tools", async () => {
+    const manager = createGateManager([netA], { mode: "shadow" });
+    const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
+    expect(result).toBeUndefined();
+  });
+
+  it("onDecision callback fires for every decision", async () => {
+    const decisions: Array<{ toolName: string; blocked: boolean }> = [];
+    const manager = createGateManager([netA, netE], {
+      onDecision: (event, decision) => {
+        decisions.push({ toolName: event.toolName, blocked: !!decision?.block });
+      },
+    });
+
+    await manager.handleToolCall(makeEvent("safe"), makeCtx());
+    await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
+
+    expect(decisions).toEqual([
+      { toolName: "safe", blocked: false },
+      { toolName: "dangerous", blocked: true },
+    ]);
+  });
+
+  it("shadow mode + onDecision: callback sees block, caller sees allow", async () => {
+    const decisions: Array<{ toolName: string; blocked: boolean }> = [];
+    const manager = createGateManager([netA, netE], {
+      mode: "shadow",
+      onDecision: (event, decision) => {
+        decisions.push({ toolName: event.toolName, blocked: !!decision?.block });
+      },
+    });
+
+    const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
+    expect(result).toBeUndefined(); // shadow: allowed
+    expect(decisions).toEqual([{ toolName: "dangerous", blocked: true }]); // callback: saw block
+  });
+
+  it("onDecision without shadow mode still blocks", async () => {
+    const decisions: Array<{ toolName: string; blocked: boolean }> = [];
+    const manager = createGateManager([netA, netE], {
+      onDecision: (event, decision) => {
+        decisions.push({ toolName: event.toolName, blocked: !!decision?.block });
+      },
+    });
+
+    const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("netE") });
+    expect(decisions).toEqual([{ toolName: "dangerous", blocked: true }]);
+  });
+});

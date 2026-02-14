@@ -1,18 +1,18 @@
 import { createGateManager } from "@petriflow/gate";
-import type { ComposeConfig, GateManager, SkillNet } from "@petriflow/gate";
+import type { ComposeConfig, GateManager, GateManagerOptions, SkillNet } from "@petriflow/gate";
 
 // Import OpenClaw types (dev dependency — used for type checking only)
 import type { OpenClawPluginDefinition, OpenClawPluginApi } from "openclaw/plugin-sdk";
 
-export function createPetriGatePlugin(nets: SkillNet<string>[]): OpenClawPluginDefinition;
-export function createPetriGatePlugin(config: ComposeConfig): OpenClawPluginDefinition;
-export function createPetriGatePlugin(input: SkillNet<string>[] | ComposeConfig): OpenClawPluginDefinition {
+export function createPetriGatePlugin(nets: SkillNet<string>[], opts?: GateManagerOptions): OpenClawPluginDefinition;
+export function createPetriGatePlugin(config: ComposeConfig, opts?: GateManagerOptions): OpenClawPluginDefinition;
+export function createPetriGatePlugin(input: SkillNet<string>[] | ComposeConfig, opts?: GateManagerOptions): OpenClawPluginDefinition {
   return {
     id: "petriflow-gate",
     name: "PetriFlow Gate",
     description: "Petri net gating for tool access control",
     register(api) {
-      const manager = createGateManager(input);
+      const manager = createGateManager(input, opts);
       wireHooks(api, manager);
       wireCommands(api, manager);
     },
@@ -111,5 +111,5 @@ function wireCommands(api: OpenClawPluginApi, manager: GateManager): void {
 }
 
 // Re-export gate types for convenience
-export type { SkillNet, ComposeConfig, GateManager } from "@petriflow/gate";
+export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions } from "@petriflow/gate";
 export { defineSkillNet, createGateManager } from "@petriflow/gate";
