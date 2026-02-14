@@ -8,7 +8,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@petriflow/gate": "workspace:*"
+    "@petriflow/gate": "workspace:*",
+    "@petriflow/pi-assistant": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1",
