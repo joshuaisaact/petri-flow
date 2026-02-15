@@ -770,7 +770,7 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 
 .integrations-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-top: 40px;
 }
