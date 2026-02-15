@@ -37,9 +37,9 @@ import Trace from "../components/Trace.astro";
       <h2>Don't ship broken code</h2>
       <p>Tests gate staging. Staging gates production. Production requires a human to approve &mdash; no amount of prompt injection can auto-ship.</p>
 
-      <div class="example-rule"><span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span>
+      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span>
 <span class="kw">require</span> <span class="str">deploy-staging</span> before <span class="str">deploy-prod</span>
-<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span></div>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span>`} />
 
       <Trace label="// agent tries to deploy to production" steps={[
         { icon: "blocked", html: `Agent calls <strong>bash({ command: "deploy --env production" })</strong><br><span class="blocked-text">BLOCKED</span> staging hasn't passed, human hasn't approved` },
