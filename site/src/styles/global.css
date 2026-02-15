@@ -1248,8 +1248,14 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
     grid-template-columns: 1fr;
   }
 
+  .layer {
+    display: flex;
+    flex-direction: column;
+  }
+
   .layer-body {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   .footer-grid {
