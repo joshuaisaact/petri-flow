@@ -377,8 +377,8 @@ blockquote cite {
   padding: 28px;
 }
 
-.solution-panel.bad { border-color: rgba(248,113,113,0.15); }
-.solution-panel.good { border-color: rgba(52,211,153,0.15); }
+.solution-panel.bad { border-color: rgba(248,113,113,0.15); opacity: 0.55; }
+.solution-panel.good { border-color: rgba(52,211,153,0.15); box-shadow: 0 0 40px rgba(52,211,153,0.06), 0 4px 24px rgba(0,0,0,0.2); }
 
 .solution-panel-label {
   font-size: 15px;
@@ -752,7 +752,8 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
   border-radius: var(--radius-lg);
   padding: 28px;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 .rule-card:hover {
@@ -781,6 +782,20 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
   line-height: 1.6;
   margin-bottom: 14px;
 }
+
+.rule-preview {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-top: auto;
+}
+
+.rule-preview .kw { color: var(--accent-text); }
+.rule-preview .str { color: var(--green); }
 
 .rule-commentary {
   margin-top: 12px;
@@ -948,7 +963,7 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 
 .under-hood-stats {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
   margin-top: 24px;
 }
@@ -991,7 +1006,7 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 
 .verify-output {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.9;
   color: var(--text-muted);
 }

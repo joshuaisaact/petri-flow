@@ -13,11 +13,11 @@ import { Code } from "astro:components";
     <div class="container">
       <h1>Provably Safe<br /><em>AI Agents.</em></h1>
       <p class="hero-sub">
-        <strong style="color:var(--text)">Petri<span style="color:var(--accent-text)">Flow</span></strong> is a safety layer between your agent and the outside world. Any framework. Rules your agent <strong style="color:var(--text)">cannot</strong> break.
+        Rules your agent <strong style="color:var(--text)">cannot</strong> break. Any framework. One safety layer from <strong style="color:var(--text)">Petri<span style="color:var(--accent-text)">Flow</span></strong>.
       </p>
       <div class="hero-buttons">
         <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
-        <a href="#comparison" class="btn btn-secondary">Compare to Policy Checks</a>
+        <a href="https://github.com/joshuaisaact/petri-flow" class="btn btn-secondary"><img src="/icons/github.svg" width="16" height="16" alt="" class="invert opacity-60" />Star on GitHub</a>
       </div>
 
       <div class="hero-code">
@@ -262,10 +262,10 @@ const manager = createGateManager(
               with a small declarative language. PetriFlow compiles them into verifiable
               structures and checks every reachable state before your agent runs.
             </div>
-            <pre class="layer-code"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+            <pre class="layer-code"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send-message</span>
 <span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span>
 
-<span class="kw">limit</span>  <span class="str">discord.sendMessage</span> to <span class="str">10</span> per session
+<span class="kw">limit</span>  <span class="str">discord.sendMessage</span> to <span class="str">5</span> per session
 <span class="kw">block</span>  <span class="str">discord.timeout</span> <span class="comment"># provably dead</span></pre>
           </div>
         </div>
@@ -284,10 +284,14 @@ const manager = createGateManager(
             </div>
             <Code code={`defineSkillNet({
   places: ["ready", "backedUp"],
-  transitions: {
-    backup:  { ready → backedUp, deferred },
-    destroy: { backedUp → ready }
-  }
+  transitions: [
+    { name: "backup",
+      inputs: ["ready"], outputs: ["backedUp"],
+      tools: ["backup"], deferred: true },
+    { name: "destroy",
+      inputs: ["backedUp"], outputs: ["ready"],
+      tools: ["destructive"] },
+  ]
 })`} lang="ts" theme="github-dark" />
           </div>
         </div>
@@ -308,24 +312,28 @@ const manager = createGateManager(
           <div class="rule-name">observe-before-send</div>
           <h3>Don't message blindly</h3>
           <p>Read a channel before you can send to it. One read, one send. Channel-matched&thinsp;&mdash;&thinsp;reading #general doesn't unlock #production.</p>
+          <div class="rule-preview"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send</span></div>
         </a>
 
         <a href="/examples/#test-before-deploy" class="rule-card">
           <div class="rule-name">test-before-deploy</div>
           <h3>Don't ship broken code</h3>
           <p>Tests gate staging. Staging gates production. Production requires a human.</p>
+          <div class="rule-preview"><span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span></div>
         </a>
 
         <a href="/examples/#research-before-share" class="rule-card">
           <div class="rule-name">research-before-share</div>
           <h3>Don't share fabrications</h3>
           <p>Each fetch earns one share. Each share consumes one. No sources fetched, no sharing possible.</p>
+          <div class="rule-preview"><span class="kw">limit</span> <span class="str">share</span> to <span class="str">1</span> per <span class="str">fetch</span></div>
         </a>
 
         <a href="/examples/#backup-before-delete" class="rule-card">
           <div class="rule-name">backup-before-delete</div>
           <h3>Don't destroy without a safety net</h3>
           <p>Destructive commands blocked until a backup covers the target path. The backup must actually succeed.</p>
+          <div class="rule-preview"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span></div>
         </a>
       </div>
     </div>
@@ -405,23 +413,9 @@ const manager = createGateManager(
       <h2 class="section-title">One safety layer.<br />Any agent framework.</h2>
       <p class="section-sub">
         PetriFlow is a standalone gate that sits between your agent and its tools.
+        In-memory state machine checks, no network calls, sub-millisecond overhead.
         Thin adaptors connect it to whatever framework you already use.
       </p>
-
-      <div class="integration-diagram">
-        <div class="integration-diagram-flow">
-          <span class="diagram-label">Your Agent</span>
-          <div class="diagram-arrow">&rarr;</div>
-          <span class="diagram-gate nav-logo flex items-center gap-2">
-            <Logo size={18} />
-          </span>
-          <div class="diagram-arrow">&rarr;</div>
-          <span class="diagram-label">Tools</span>
-        </div>
-        <p class="diagram-caption">
-          Same safety engine, different framework. Adaptors are thin and easy to build. Contributions welcome.
-        </p>
-      </div>
 
       <div class="integrations-grid">
         <div class="integration-card">
@@ -504,10 +498,6 @@ const gates = composeGates(
             <div class="under-hood-stat">
               <div class="under-hood-stat-value">196</div>
               <div class="under-hood-stat-label">Reachable states verified</div>
-            </div>
-            <div class="under-hood-stat">
-              <div class="under-hood-stat-value">81.8%</div>
-              <div class="under-hood-stat-label">Fewer LLM calls vs ReAct</div>
             </div>
             <div class="under-hood-stat">
               <div class="under-hood-stat-value">4/4</div>
