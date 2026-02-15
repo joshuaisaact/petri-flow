@@ -437,11 +437,14 @@ If anything is ambiguous, ask first.
           <div class="integration-logo"><svg width="28" height="28" viewBox="0 0 76 65" fill="white"><path d="M37.5274 0L75.0548 65H0L37.5274 0Z"/></svg></div>
           <h3>Vercel AI SDK</h3>
           <p>Wrap tool definitions with gate logic. Works with generateText, streamText, and any model provider.</p>
-          <div class="integration-code" set:html={`<span class="kw">import</span> { <span class="fn">createPetriflowGate</span> }
-  <span class="kw">from</span> <span class="str">"@petriflow/vercel-ai"</span>
+          <div class="integration-code" set:html={`<span class="kw">import</span> { <span class="fn">createPetriflowGate</span> } <span class="kw">from</span> <span class="str">"@petriflow/vercel-ai"</span>
 
 <span class="kw">const</span> gate = <span class="fn">createPetriflowGate</span>([safetyNet])
-tools: gate.<span class="fn">wrapTools</span>({ bash, write })`} />
+
+<span class="kw">await</span> <span class="fn">generateText</span>({
+  tools: gate.<span class="fn">wrapTools</span>({ bash, write }),
+  system: gate.<span class="fn">systemPrompt</span>(),
+})`} />
         </div>
 
         <div class="integration-card">
