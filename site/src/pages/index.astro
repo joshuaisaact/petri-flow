@@ -323,10 +323,13 @@ const manager = createGateManager(
   places: ["ready", "backedUp"],
   transitions: [
     { name: "backup",
-      inputs: ["ready"], outputs: ["backedUp"],
-      tools: ["backup"], deferred: true },
+      inputs: ["ready"],
+      outputs: ["backedUp"],
+      tools: ["backup"],
+      deferred: true },
     { name: "destroy",
-      inputs: ["backedUp"], outputs: ["ready"],
+      inputs: ["backedUp"],
+      outputs: ["ready"],
       tools: ["destructive"] },
   ]
 })`} lang="ts" theme="github-dark" />
