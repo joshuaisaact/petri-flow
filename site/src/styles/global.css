@@ -105,6 +105,12 @@ nav .container {
 
 .nav-links a:hover { color: var(--text-secondary); }
 
+.nav-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ───── BUTTONS ───── */
 .btn {
   display: inline-flex;
