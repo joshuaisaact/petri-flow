@@ -115,6 +115,7 @@ nav .container {
   filter: invert(1);
   opacity: 0.45;
   transition: opacity 0.15s;
+  vertical-align: middle;
 }
 
 .nav-github:hover img {
