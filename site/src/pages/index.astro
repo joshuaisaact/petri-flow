@@ -428,9 +428,11 @@ If anything is ambiguous, ask first.
           <p>Hook into Claude Code's tool pipeline. Gate bash, file operations, and MCP tools.</p>
           <div class="integration-code" set:html={`<span class="kw">import</span> { <span class="fn">configure</span> } <span class="kw">from</span> <span class="str">"@petriflow/claude-code"</span>
 
-<span class="comment">// generates hooks config for</span>
-<span class="comment">// .claude/settings.json</span>
-<span class="fn">configure</span>(<span class="str">"."</span>)`} />
+<span class="kw">const</span> config = <span class="fn">configure</span>(<span class="str">"."</span>)
+
+<span class="comment">// merge into .claude/settings.json</span>
+<span class="comment">// hooks: SessionStart, PreToolUse,</span>
+<span class="comment">//   PostToolUse, PostToolUseFailure</span>`} />
         </div>
 
         <div class="integration-card">
