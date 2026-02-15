@@ -1,0 +1,235 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+---
+<Layout title="Examples — PetriFlow">
+  <Nav currentPage="examples" />
+
+  <div class="container-narrow">
+    <div class="page-header">
+      <h1>Examples</h1>
+      <p>Step-by-step execution traces showing how each rule gates tool calls. Every blocked action here is <strong style="color:var(--text-secondary)">structurally impossible</strong> &mdash; not a policy check that might fail. <a href="/">&larr; Back to overview</a></p>
+    </div>
+
+    <!-- observe-before-send -->
+    <div class="example" id="observe-before-send">
+      <div class="example-name">observe-before-send</div>
+      <h2>Don't message blindly</h2>
+      <p>The agent must read a channel before it can send to it. Each read earns one send. Channel-matched &mdash; reading #general doesn't unlock #production.</p>
+
+      <div class="example-rule"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send-message</span></div>
+
+      <div class="example-trace">
+        <div class="example-trace-label">// agent tries to send without reading first</div>
+        <div class="trace-steps">
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.sendMessage({ channel: "#deploys", text: "Deployed v2.1" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; no read token for #deploys`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.readMessages({ channel: "#deploys", limit: 10 })</strong><br>
+            <span class="ok-text">OK</span> &mdash; earns one send token for #deploys`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.sendMessage({ channel: "#deploys", text: "Deployed v2.1" })</strong><br>
+            <span class="ok-text">ALLOWED</span> &mdash; send token consumed`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.sendMessage({ channel: "#deploys", text: "Also bumped deps" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; token already consumed, must read again`} />
+          </div>
+        </div>
+      </div>
+
+      <p class="example-note"><strong>1:1 read-to-send ratio, structurally enforced.</strong> The agent can't spam a channel &mdash; every send requires a fresh read. And reading #general doesn't unlock #production.</p>
+    </div>
+
+    <!-- test-before-deploy -->
+    <div class="example" id="test-before-deploy">
+      <div class="example-name">test-before-deploy</div>
+      <h2>Don't ship broken code</h2>
+      <p>Tests gate staging. Staging gates production. Production requires a human to approve &mdash; no amount of prompt injection can auto-ship.</p>
+
+      <div class="example-rule"><span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span>
+<span class="kw">require</span> <span class="str">deploy-staging</span> before <span class="str">deploy-prod</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span></div>
+
+      <div class="example-trace">
+        <div class="example-trace-label">// agent tries to deploy to production</div>
+        <div class="trace-steps">
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "deploy --env production" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; staging hasn't passed, human hasn't approved`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "npm test" })</strong><br>
+            <span class="ok-text">OK</span> &mdash; tests pass, staging unlocked`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "deploy --env staging" })</strong><br>
+            <span class="ok-text">OK</span> &mdash; staging deployed`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "deploy --env production" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; human hasn't approved`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon wait">?</div>
+            <div class="trace-text">
+              PetriFlow prompts: <strong>"Deploy to production?"</strong><br />
+              Human approves &rarr; manual gate opens
+            </div>
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "deploy --env production" })</strong><br>
+            <span class="ok-text">ALLOWED</span> &mdash; tests passed, staging done, human approved`} />
+          </div>
+        </div>
+      </div>
+
+      <p class="example-note"><strong>Production is a manual gate.</strong> Even if the agent is prompt-injected into believing it should ship immediately, the deploy call is structurally blocked until a human approves.</p>
+    </div>
+
+    <!-- research-before-share -->
+    <div class="example" id="research-before-share">
+      <div class="example-name">research-before-share</div>
+      <h2>Don't share fabrications</h2>
+      <p>Each fetch earns one share token. Each share consumes one. The agent can't broadcast "findings" it never actually fetched.</p>
+
+      <div class="example-rule"><span class="kw">require</span> <span class="str">web-fetch</span> before <span class="str">share-result</span></div>
+
+      <div class="example-trace">
+        <div class="example-trace-label">// agent tries to share a research summary</div>
+        <div class="trace-steps">
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.sendMessage({ text: "Research summary: React 20 is out..." })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; no fetch has been done`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>webFetch({ url: "https://react.dev/blog" })</strong><br>
+            <span class="ok-text">OK</span> &mdash; earns one share token`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.sendMessage({ text: "React blog says..." })</strong><br>
+            <span class="ok-text">ALLOWED</span> &mdash; share token consumed`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>slack.sendMessage({ text: "Also, Vue 5 is..." })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; no token left, must fetch again`} />
+          </div>
+        </div>
+      </div>
+
+      <p class="example-note"><strong>1:1 fetch-to-share ratio.</strong> The agent can't hallucinate research results and share them &mdash; every share must be backed by an actual web fetch.</p>
+    </div>
+
+    <!-- backup-before-delete -->
+    <div class="example" id="backup-before-delete">
+      <div class="example-name">backup-before-delete</div>
+      <h2>Don't destroy without a safety net</h2>
+      <p>Every destructive command is blocked until a backup covers the target path. The backup must actually succeed (deferred check).</p>
+
+      <div class="example-rule"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span></div>
+
+      <div class="example-trace">
+        <div class="example-trace-label">// agent tries to clean up a data directory</div>
+        <div class="trace-steps">
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; no backup covers data/`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "cp -r data/ /tmp/data-backup" })</strong><br>
+            <span class="ok-text">OK</span> &mdash; backup covers data/, deferred until confirmed`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br>
+            <span class="ok-text">ALLOWED</span> &mdash; backup verified, delete permitted`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>bash({ command: "rm -rf logs/" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; backup covered data/, not logs/`} />
+          </div>
+        </div>
+      </div>
+
+      <p class="example-note"><strong>Path coverage is validated semantically.</strong> <code style="font-family:var(--mono);font-size:12px">git stash</code> covers everything. <code style="font-family:var(--mono);font-size:12px">cp data/ bak/</code> only covers <code style="font-family:var(--mono);font-size:12px">data/</code>. The agent can't back up one directory and delete another.</p>
+    </div>
+
+    <!-- whatsapp (bonus) -->
+    <div class="example" id="whatsapp">
+      <div class="example-name">whatsapp messaging</div>
+      <h2>Don't message the wrong person</h2>
+      <p>Three rules compose to create a safe messaging flow: lookup before send, human approval, and rate limiting.</p>
+
+      <div class="example-rule" set:html={`<span class="comment"># look up the recipient first</span>
+<span class="kw">require</span>  <span class="str">whatsapp.lookup</span>  before  <span class="str">whatsapp.send</span>
+
+<span class="comment"># human confirms recipient + message</span>
+<span class="kw">require</span>  <span class="str">human-approval</span>  before  <span class="str">whatsapp.send</span>
+
+<span class="comment"># one send per lookup cycle</span>
+<span class="kw">limit</span>    <span class="str">whatsapp.send</span>  to  <span class="str">1</span>  per  <span class="str">whatsapp.lookup</span>`} />
+
+      <div class="example-trace">
+        <div class="example-trace-label">// agent tries to send a WhatsApp message</div>
+        <div class="trace-steps">
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>whatsapp({ action: "send", to: "+1415...", message: "Hey!" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; no recipient lookup yet`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>whatsapp({ action: "lookup", query: "Sarah" })</strong><br>
+            <span class="ok-text">OK</span> &mdash; resolves to +14155551212`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>whatsapp({ action: "send" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; human hasn't approved yet`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon wait">?</div>
+            <div class="trace-text">
+              PetriFlow prompts: <strong>"Send 'Hey!' to Sarah (+14155551212)?"</strong><br />
+              Human approves &rarr; manual gate opens
+            </div>
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon ok">&#x2713;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>whatsapp({ action: "send", to: "+14155551212", message: "Hey!" })</strong><br>
+            <span class="ok-text">ALLOWED</span> &mdash; lookup done, human approved, token consumed`} />
+          </div>
+          <div class="trace-step">
+            <div class="trace-icon blocked">&#x2715;</div>
+            <div class="trace-text" set:html={`Agent calls <strong>whatsapp({ action: "send", message: "One more thing" })</strong><br>
+            <span class="blocked-text">BLOCKED</span> &mdash; budget consumed, must look up again`} />
+          </div>
+        </div>
+      </div>
+
+      <p class="example-note"><strong>Three rules compose into one safe flow.</strong> The agent can't guess phone numbers, can't send without human confirmation, and can't batch-fire messages after a single lookup.</p>
+    </div>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

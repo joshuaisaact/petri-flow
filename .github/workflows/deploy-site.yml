@@ -23,9 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: cd site && bun install && bun run build
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: site/dist
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -1,0 +1,15 @@
+---
+interface Props {
+  size?: number;
+}
+const { size = 24 } = Astro.props;
+---
+<svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+  <circle cx="6" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="18" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="12" cy="19" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="6" cy="6" r="1.5" fill="#8b5cf6"/>
+  <line x1="9" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+  <line x1="15" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
+</svg>
+Petri<span>Flow</span>

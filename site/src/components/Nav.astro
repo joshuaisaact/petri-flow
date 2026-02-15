@@ -1,0 +1,23 @@
+---
+import Logo from "./Logo.astro";
+
+interface Props {
+  currentPage?: "index" | "examples";
+}
+const { currentPage = "index" } = Astro.props;
+const prefix = currentPage === "index" ? "" : "/";
+---
+<nav>
+  <div class="container">
+    <a href="/" class="nav-logo">
+      <Logo />
+    </a>
+    <ul class="nav-links">
+      <li><a href={`${prefix}#how-it-works`}>How It Works</a></li>
+      <li><a href={`${prefix}#rules`}>Rules</a></li>
+      <li><a href="/examples/">Examples</a></li>
+      <li><a href={`${prefix}#integrations`}>Integrations</a></li>
+      <li><a href="https://github.com" class="btn btn-secondary" style="padding:6px 14px;font-size:12px">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
