@@ -684,10 +684,8 @@ blockquote cite {
 .comparison-table thead th {
   text-align: left;
   padding: 12px 20px;
-  font-weight: 500;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  font-size: 13px;
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
 }
@@ -714,26 +712,22 @@ blockquote cite {
 
 .comparison-table code {
   font-family: var(--mono);
-  font-size: 11px;
-  background: rgba(255,255,255,0.04);
-  padding: 2px 6px;
+  font-size: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
   border-radius: 4px;
-  color: var(--text-secondary);
-}
-
-.table-tag {
+  color: var(--text-muted);
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  margin-bottom: 8px;
 }
 
-.tag-yes { background: var(--green-dim); color: var(--green); }
-.tag-no { background: var(--red-dim); color: var(--red); }
+.comparison-table code .kw { color: var(--accent-text); }
+.comparison-table code .str { color: var(--green); }
+.comparison-table code .fn { color: var(--orange); }
+
+.tag-yes { color: var(--green); font-weight: 600; }
+.tag-no { color: var(--red); font-weight: 600; }
 
 /* ───── RULES SHOWCASE ───── */
 

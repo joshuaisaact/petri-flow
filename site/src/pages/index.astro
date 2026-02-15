@@ -121,6 +121,74 @@ Never delete without a backup.
     </div>
   </section>
 
+  <!-- COMPARISON TABLE -->
+  <section class="comparison" id="comparison" data-animate>
+    <div class="container">
+      <h2 class="section-title">Policy checks vs. safety rules.</h2>
+      <p class="section-sub">
+        Four scenarios. Same requirements. Two fundamentally different approaches.
+      </p>
+
+      <div class="table-wrapper">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Policy checks</th>
+              <th><span style="color:var(--text)">Petri</span><span style="color:var(--accent-text)">Flow</span> rules</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tool approval</td>
+              <td>
+                <code><span class="kw">if</span> (!approved) <span class="fn">deny</span>()</code><br />
+                <span class="tag-no">Bypassable</span> check can be skipped, token can expire between check and use
+              </td>
+              <td>
+                <code><span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">shell</span></code><br />
+                <span class="tag-yes">Proven safe</span> no code path reaches shell without approval token
+              </td>
+            </tr>
+            <tr>
+              <td>Message gating</td>
+              <td>
+                <code><span class="kw">if</span> (!allowlist.<span class="fn">has</span>(channel)) <span class="fn">deny</span>()</code><br />
+                <span class="tag-no">Bypassable</span> allowlist stale, new channel added without check
+              </td>
+              <td>
+                <code><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send</span></code><br />
+                <span class="tag-yes">Proven safe</span> send is structurally unreachable without prior read
+              </td>
+            </tr>
+            <tr>
+              <td>Privilege escalation</td>
+              <td>
+                <code><span class="kw">if</span> (BLOCKED.<span class="fn">includes</span>(tool)) <span class="fn">deny</span>()</code><br />
+                <span class="tag-no">Bypassable</span> list incomplete, agent finds unlisted equivalent
+              </td>
+              <td>
+                <code><span class="kw">block</span> <span class="str">privilege-escalation</span></code><br />
+                <span class="tag-yes">Proven safe</span> transition provably dead in all reachable states
+              </td>
+            </tr>
+            <tr>
+              <td>Sandbox escape</td>
+              <td>
+                <code><span class="kw">if</span> (!<span class="fn">inSandbox</span>()) <span class="fn">deny</span>()</code><br />
+                <span class="tag-no">Bypassable</span> misconfigured mount, container escape, race condition
+              </td>
+              <td>
+                <code><span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">host-access</span></code><br />
+                <span class="tag-yes">Proven safe</span> only a manual gate can unlock host access
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- REAL WORLD EXAMPLE -->
   <section class="real-world" id="example" data-animate>
     <div class="container">
@@ -335,74 +403,6 @@ const manager = createGateManager(
           <p>Destructive commands blocked until a backup covers the target path. The backup must actually succeed.</p>
           <div class="rule-preview"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span></div>
         </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- COMPARISON TABLE -->
-  <section class="comparison" id="comparison" data-animate>
-    <div class="container">
-      <h2 class="section-title">Policy checks vs. safety rules.</h2>
-      <p class="section-sub">
-        Four scenarios. Same requirements. Two fundamentally different approaches.
-      </p>
-
-      <div class="table-wrapper">
-        <table class="comparison-table">
-          <thead>
-            <tr>
-              <th>Scenario</th>
-              <th>Policy checks</th>
-              <th>PetriFlow rules</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Tool approval</td>
-              <td>
-                <code>if (!approved) deny()</code><br />
-                <span class="table-tag tag-no">Bypassable</span> &mdash; skipped check, expired token race
-              </td>
-              <td>
-                <code>require human-approval before shell</code><br />
-                <span class="table-tag tag-yes">Proven safe</span> &mdash; no code path to bypass
-              </td>
-            </tr>
-            <tr>
-              <td>Message gating</td>
-              <td>
-                Runtime DB check against allowlist<br />
-                <span class="table-tag tag-no">Bypassable</span> &mdash; DB misconfiguration, unchecked new path
-              </td>
-              <td>
-                <code>require read-channel before send</code><br />
-                <span class="table-tag tag-yes">Proven safe</span> &mdash; structurally enforced pipeline
-              </td>
-            </tr>
-            <tr>
-              <td>Privilege escalation</td>
-              <td>
-                Tool deny-lists block privileged calls<br />
-                <span class="table-tag tag-no">Bypassable</span> &mdash; incomplete list, prompt injection
-              </td>
-              <td>
-                <code>block privilege-escalation</code><br />
-                <span class="table-tag tag-yes">Proven safe</span> &mdash; provably dead in all reachable states
-              </td>
-            </tr>
-            <tr>
-              <td>Sandbox escape</td>
-              <td>
-                Docker sandbox + escape hatch + gate<br />
-                <span class="table-tag tag-no">Bypassable</span> &mdash; container escape, misconfigured mount
-              </td>
-              <td>
-                <code>require human-approval before host-access</code><br />
-                <span class="table-tag tag-yes">Proven safe</span> &mdash; only manual action unlocks it
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   </section>
