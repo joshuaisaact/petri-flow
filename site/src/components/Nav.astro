@@ -7,17 +7,17 @@ interface Props {
 const { currentPage = "index" } = Astro.props;
 const prefix = currentPage === "index" ? "" : "/";
 ---
-<nav>
+<nav aria-label="Main navigation">
   <div class="container">
     <a href="/" class="nav-logo">
       <Logo />
     </a>
-    <div class="nav-links">
-      <a href={`${prefix}#how-it-works`}>How It Works</a>
-      <a href={`${prefix}#rules`}>Rules</a>
-      <a href="/examples/">Examples</a>
-      <a href={`${prefix}#integrations`}>Integrations</a>
-      <a href="https://github.com/joshuaisaact/petri-flow" class="flex items-center gap-1.5"><img src="/icons/github.svg" width="14" height="14" alt="GitHub" class="invert opacity-45" />GitHub</a>
-    </div>
+    <ul class="nav-links">
+      <li><a href={`${prefix}#how-it-works`}>How It Works</a></li>
+      <li><a href={`${prefix}#rules`}>Rules</a></li>
+      <li><a href="/examples/">Examples</a></li>
+      <li><a href={`${prefix}#integrations`}>Integrations</a></li>
+      <li><a href="https://github.com/joshuaisaact/petri-flow" class="flex items-center gap-1.5"><img src="/icons/github.svg" width="14" height="14" alt="" class="invert opacity-45" />GitHub</a></li>
+    </ul>
   </div>
 </nav>

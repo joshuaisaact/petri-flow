@@ -4,7 +4,7 @@ interface Props {
 }
 const { size = 24 } = Astro.props;
 ---
-<svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+<svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
   <defs>
     <marker id="arrow" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto">
       <path d="M0,0.5 L5,3 L0,5.5" fill="rgba(139,92,246,0.6)" />

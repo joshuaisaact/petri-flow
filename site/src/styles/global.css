@@ -29,6 +29,37 @@
 
 html { scroll-behavior: smooth; }
 
+/* ───── ACCESSIBILITY ───── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 0 0 8px 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 200;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 ::selection { background: rgba(139,92,246,0.3); }
 
 body {
@@ -94,6 +125,12 @@ nav .container {
   gap: 28px;
   list-style: none;
   align-items: center;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-links li {
+  list-style: none;
 }
 
 .nav-links a {
@@ -178,8 +215,7 @@ nav .container {
   background-clip: text;
 }
 
-.hero h1 em {
-  font-style: normal;
+.hero h1 .hero-accent {
   background: linear-gradient(135deg, var(--accent-text) 0%, var(--green) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -249,6 +285,13 @@ nav .container {
   font-size: 13px;
   line-height: 2;
   color: var(--text-secondary);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.hero-code-body code {
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .hero-code-body .kw { color: var(--accent-text); }
@@ -1225,6 +1268,16 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
 [data-animate].visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-animate] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  html { scroll-behavior: auto; }
 }
 
 /* ───── RESPONSIVE ───── */
