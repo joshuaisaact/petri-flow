@@ -1,168 +1,133 @@
 # PetriFlow
 
-A workflow orchestration engine built on [petri-ts](https://github.com/joshuaisaact/petri-net). Extends Petri net semantics with guard functions, side-effect execution, timeouts, pluggable persistence, a polling scheduler, and a CLI analyser.
+Provably safe AI agents. Rules your agent **cannot** break — any framework, one safety layer.
 
-## Why
+PetriFlow compiles declarative safety rules into Petri nets that gate every tool call. Each rule is verified exhaustively before your agent starts. If the verifier says "safe," it means safe in every possible execution — not just the ones you tested.
 
-DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synchronization, resource contention, or pre-deployment reachability analysis. Petri nets can. PetriFlow makes them practical.
-
-- **Guards** route workflows based on runtime context (contract value, confidence score, inventory level)
-- **Execute functions** run side effects and merge context between steps
-- **The scheduler** polls active instances, fires enabled transitions, and persists state via a pluggable adapter (SQLite included)
-- **The analyser** proves properties about your workflow before it runs — deadlock freedom, token conservation, reachable states
-
-## Packages
-
-| Package | Description |
-|---|---|
-| `@petriflow/engine` | Core types, engine, scheduler, pluggable persistence (SQLite adapter included), analysis |
-| `@petriflow/gate` | Framework-agnostic tool gating — skill nets, deferred transitions, tool mapping, multi-net composition |
-| `@petriflow/server` | HTTP server — run workflows as a service, inject tokens via REST, observe via SSE |
-| `@petriflow/cli` | `petriflow analyse <workflow.ts>` CLI tool |
-| `@petriflow/viewer` | Interactive Petri net viewer — click to fire transitions, live analysis |
-| `@petriflow/pi-extension` | Petri net gating for [pi-mono](https://github.com/nicholasgasior/pi-mono) agent tools — intercepts tool calls and enforces workflow structure |
-| `@petriflow/openclaw` | Petri net gating for [OpenClaw](https://github.com/nicholasgasior/openclaw) — plugin adapter mapping gate concepts to OpenClaw hooks |
-| `@petriflow/rules` | Declarative rules DSL — compiles one-liner safety policies into verified skill nets |
-| `@petriflow/vercel-ai` | Vercel AI SDK adapter — wraps tool `execute` methods with Petri net gating |
-| `@petriflow/pi-assistant` | Personal assistant skill nets — safe messaging, deployment pipelines, research-before-share, backup-before-destroy |
-
-## Workflows
-
-| Workflow | What it proves |
-|---|---|
-| `coffee` | Concurrency and synchronisation. `heatWater` and `grindBeans` fire independently, `pourOver` joins them with a temperature guard. |
-| `github-lookup` | Real HTTP calls as Petri net transitions. Fetches a GitHub user and their repos via the public API. |
-| `contract-approval` | Parallel approval gates. Finance and legal review independently, both must complete before execution. |
-| `simple-agent` | Iteration loop with budget tokens. Agent is structurally forced to respond when budget is exhausted. |
-| `order-checkout` | Cannot oversell inventory. `reserve_stock` consumes from a shared `inventory` place. Every order terminates. |
-| `agent-benchmark` | Termination, human approval gate, no orphaned work, bounded iterations. See [BENCHMARK.md](./BENCHMARK.md). |
-
-## Agent Safety (gate + pi-extension + pi-assistant)
-
-Petri nets aren't just for orchestrating workflows — they can **enforce safety properties on AI agents**. The `gate` package provides the framework-agnostic core — skill net definitions, a 4-phase gating protocol (structural check → manual approval → semantic validation → commit), deferred transitions, tool mapping, and multi-net composition. Adapter packages wire it into specific agent runtimes: `pi-extension` for [pi-mono](https://github.com/nicholasgasior/pi-mono), `openclaw` for [OpenClaw](https://github.com/nicholasgasior/openclaw). The agent can only use a tool if an enabled transition allows it. No enabled transition = tool blocked.
-
-`pi-assistant` builds on this with four skill nets for personal assistants:
-
-| Skill | Safety property | Human approval? |
-|---|---|---|
-| **communicate** | Can't send a message without reading the channel first. Channel-matched, 1:1 read:send ratio. | No |
-| **deploy** | Can't deploy to staging without passing tests. Can't deploy to prod without staging. | Prod only |
-| **research** | Can't share findings without having done actual web research. Each fetch earns one share token. | No |
-| **cleanup** | Can't delete without a successful backup covering the same path. `git stash` covers everything. | No |
-
-Three of four skills have **zero human approval** — safety comes entirely from the Petri net structure. The net is the only thing between the agent and destructive actions.
-
-Key mechanisms:
-- **Deferred transitions** — allow the tool call but only advance the net when the tool succeeds (e.g. backup must actually work)
-- **Tool mapping** — split one tool (e.g. `bash`) into virtual tools based on command content (e.g. `backup` vs `destructive`)
-- **Semantic validation** — hooks check domain-specific properties (path coverage, channel matching) beyond what net structure alone enforces
-
-Rules compose without coordination. Each skill net is an independent constraint — a tool call must satisfy **all** nets to fire. Write `require lint before test` and `require test before deploy` as two separate rules: the first blocks `test` until `lint` has run, the second blocks `deploy` until `test` has run, and the chain `lint → test → deploy` emerges from their intersection. No net knows about any other. Each is small enough to verify exhaustively in isolation, but their combined enforcement covers complex multi-step policies.
-
-```bash
-# Run the tests
-bun test packages/pi-extension
-bun test packages/pi-assistant
+```
+# safety.rules
+require backup before delete
+require human-approval before deploy
+limit discord.sendMessage to 5 per session
+block rm
 ```
 
-## Comparisons
+```ts
+import { loadRules } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
 
-| Comparison | Description |
-|---|---|
-| `comparisons/openclaw-safety` | Four OpenClaw safety scenarios (tool approval, message gating, budget escalation, sandbox isolation) modeled as PetriFlow workflows |
+const { nets } = await loadRules("./safety.rules");
+const gate = createPetriflowGate(nets);
 
-## Viewer
-
-An interactive React app for exploring and editing Petri nets. Two modes:
-
-- **Simulate** (default) — instant token movement, no side effects. Great for exploring the state space.
-- **Execute** — runs actual executors (HTTP calls, delays, context updates). Guards are evaluated against context, and the context panel shows data flowing between transitions.
-
-```bash
-# Full stack (API server + viewer)
-bun dev
-
-# Viewer only (no save/load)
-bun run --filter=@petriflow/viewer dev
+await generateText({
+  tools: gate.wrapTools({ bash, delete, backup }),
+  system: gate.systemPrompt(),
+});
 ```
-
-Ten nets tell a progressive story:
-
-| Net | Places | Transitions | What it teaches |
-|---|---|---|---|
-| **Making Coffee** | 6 | 3 | Concurrency and synchronisation — `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
-| **GitHub Lookup** | 4 | 2 | Real HTTP executors — fetches a GitHub user and repos via the public API, results visible in context |
-| **Contract Approval** | 7 | 5 | Parallel approval gates — finance and legal review independently, both must complete |
-| **Order Checkout** | 6 | 3 | Resource contention — `reserve_stock` consumes from a shared `inventory` place with token count > 1 |
-| **Simple Agent** | 6 | 5 | Iteration loop with budget — watch the budget deplete, agent forced to respond when spent |
-| **Agent Benchmark** | 16 | 17 | Everything together — context-driven tool dispatch, human approval gate, join semantics, four safety proofs |
-| **OpenClaw: Tool Approval** | 13 | 11 | Fan-out/join with shell approval gate and budget tokens |
-| **OpenClaw: Message Gating** | 9 | 10 | Guard-based sender verification with pairing flow |
-| **OpenClaw: Budget Escalation** | 8 | 5 | Budget-limited tool use with privilege escalation (structurally impossible) |
-| **OpenClaw: Sandbox Isolation** | 11 | 12 | Sandbox-first execution with manual elevation to host |
-
-Features:
-
-- **Click to fire** — click any enabled transition, watch marking update in real-time
-- **Simulate / Execute** — toggle between instant token movement and real executor runs with context tracking
-- **Auto-play** — random firing with adjustable speed, stops at terminal state
-- **Live analysis** — reachable states, terminal states, deadlock-free status, safety properties and invariants
-- **Context panel** — see workflow data flow between transitions in execute mode
-- **Token display** — toggle between numbers and traditional Petri net dot notation
-- **Visual editor** — create places and transitions, edit properties in a modal, connect arcs via dropdowns or drag
-- **Light/dark theme** — toggle in the header
-
-Built with React 19, React Flow, dagre layout, framer-motion, and Tailwind CSS v4. Uses `@petriflow/engine/analyse` for workflow-aware analysis (distinguishes valid terminal states from true deadlocks).
 
 ## Quick start
 
 ```bash
 bun install
-
-# Start the viewer + API server
-bun dev
-```
-
-Run a workflow end-to-end:
-
-```bash
-bun run workflows/coffee/index.ts
-bun run workflows/simple-agent/index.ts
-bun run workflows/order-checkout/index.ts
-bun run workflows/agent-benchmark/index.ts
-```
-
-Run with LLM decision-making (requires an Anthropic API key):
-
-```bash
-ANTHROPIC_API_KEY=sk-... bun run workflows/simple-agent/run-llm.ts
-```
-
-Analyse a workflow:
-
-```bash
-bun packages/cli/src/cli.ts analyse workflows/agent-benchmark/index.ts
-```
-
-With `--strict` (exits 1 on unexpected terminal states or invariant violations — use in CI):
-
-```bash
-bun packages/cli/src/cli.ts analyse workflows/order-checkout/index.ts --strict
-```
-
-Run all tests:
-
-```bash
 bun test
 ```
 
-## How it works
+Run an example agent (requires an API key for the model provider):
 
-`WorkflowTransition` is an intersection type with petri-ts's `Transition`, adding `type` (classification string), `guard` (filtrex expression or null), and optional `timeout`. Transitions are pure serializable data. Runtime functions — compiled guards and execute handlers — live in separate maps on `WorkflowDefinition` (`guards`, `executors`), populated by `defineWorkflow`.
+```bash
+bun run examples/01-file-management/agent.ts
+```
 
-Transition types (`automatic`, `manual`, `timer`, `script`, `http`, `ai`) are metadata — they have no runtime behavior yet but are used for visual differentiation in the editor.
+## Safety layer packages
 
-Because TypeScript uses structural typing, a `WorkflowNet` passes directly to all petri-ts analysis functions — no conversion needed. When you need a clean `PetriNet` (for serialization or analysis), `toNet()` strips the extensions.
+The core product — a framework-agnostic tool gating system with adapter packages for specific agent runtimes.
+
+| Package | Description |
+|---|---|
+| `@petriflow/gate` | Framework-agnostic tool gating — skill nets, deferred transitions, tool mapping, multi-net composition |
+| `@petriflow/rules` | Declarative rules DSL — compiles one-liner safety policies into verified skill nets |
+| `@petriflow/vercel-ai` | [Vercel AI SDK](https://sdk.vercel.ai) adapter — wraps tool `execute` methods with gating |
+| `@petriflow/pi-extension` | [pi-mono](https://github.com/nicholasgasior/pi-mono) adapter — intercepts tool calls and enforces net structure |
+| `@petriflow/claude-code` | [Claude Code](https://claude.ai/code) hook — gates bash, file, and MCP tools via the hook system |
+| `@petriflow/openclaw` | [OpenClaw](https://github.com/nicholasgasior/openclaw) adapter — maps gate concepts to OpenClaw hooks |
+| `@petriflow/pi-assistant` | Four reusable skill nets — safe messaging, staged deploys, research-before-share, backup-before-delete |
+
+### How it works
+
+Each rule compiles to a small, independent Petri net. At runtime every net is checked on every tool call — a tool can only fire if **all** nets allow it.
+
+Key mechanisms:
+- **Deferred transitions** — allow the tool call immediately, but only advance the net when the tool succeeds (e.g. backup must actually work before delete is unlocked)
+- **Tool mapping** — split one tool (e.g. `bash`) into virtual tools based on command content (`map bash.command rm as delete`)
+- **Multi-net composition** — rules compose by intersection. `require lint before test` + `require test before deploy` = `lint → test → deploy`, without the nets knowing about each other
+- **Exhaustive verification** — every reachable state is enumerated at compile time. Small nets, big guarantees.
+
+### Rules DSL
+
+```
+require A before B              # A must succeed before B is allowed
+require human-approval before B # manual gate every time
+block A                         # permanently blocked
+limit A to N per session        # N uses total
+limit A to N per action         # N uses, refills when action fires
+map tool.field pattern as name  # pattern-match tool inputs into virtual names
+```
+
+Full docs: [petriflow.dev](https://petriflow.dev)
+
+### Examples
+
+Three runnable Vercel AI SDK agents in `examples/`:
+
+| Example | What it demonstrates |
+|---|---|
+| `01-file-management` | Deferred transitions (backup must succeed), permanent blocks (`rm`), sequence gates |
+| `02-deployment` | Human approval gates, multi-rule composition (`lint → test → deploy`) |
+| `03-discord-bot` | Dot-notation action dispatch, session rate limiting |
+
+---
+
+## Workflow runtime
+
+Separate from the safety layer, PetriFlow also includes a general-purpose workflow execution engine. This extends [petri-ts](https://github.com/joshuaisaact/petri-net) with guards, side-effect execution, timeouts, persistence, scheduling, and analysis.
+
+| Package | Description |
+|---|---|
+| `@petriflow/engine` | Core types, firing engine, scheduler, pluggable persistence (SQLite included), analysis |
+| `@petriflow/server` | HTTP API — run workflows as a service, inject tokens via REST, observe via SSE |
+| `@petriflow/viewer` | Interactive React app — click to fire transitions, live analysis, visual editor |
+| `@petriflow/cli` | `petriflow analyse <workflow.ts>` — prove properties from the command line |
+
+### Workflows
+
+Six example workflows in `workflows/`:
+
+| Workflow | What it proves |
+|---|---|
+| `coffee` | Concurrency — `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
+| `github-lookup` | Real HTTP calls as transitions |
+| `contract-approval` | Parallel approval gates — finance and legal review independently |
+| `order-checkout` | Resource contention — cannot oversell inventory |
+| `simple-agent` | Iteration loop with budget — agent forced to respond when exhausted |
+| `agent-benchmark` | Everything together — guards, executors, timeouts, human approval, deferred transitions |
+
+### Running workflows
+
+```bash
+# Viewer + API server
+bun dev
+
+# Run a workflow directly
+bun run workflows/coffee/index.ts
+
+# Analyse a workflow
+bun packages/cli/src/cli.ts analyse workflows/agent-benchmark/index.ts
+
+# Strict mode (exits 1 on issues — use in CI)
+bun packages/cli/src/cli.ts analyse workflows/order-checkout/index.ts --strict
+```
+
+### Engine usage
 
 ```ts
 import { defineWorkflow, createExecutor, analyse, Scheduler, sqliteAdapter } from "@petriflow/engine";
@@ -188,7 +153,6 @@ const definition = defineWorkflow({
 
 // Prove properties before running
 const result = analyse(definition);
-// result.isDeadlockFree, result.terminalStates, result.invariants
 
 // Run it
 const db = new Database(":memory:");
@@ -198,192 +162,30 @@ await scheduler.createInstance("instance-1");
 await scheduler.tick();
 ```
 
-## LLM Decision Provider
-
-When multiple transitions are enabled, a `DecisionProvider` calls an LLM to choose which one to fire. When only one transition is enabled it is fired automatically — no LLM call is made.
-
-```ts
-type DecisionProvider<Place extends string, Ctx extends Record<string, unknown>> = {
-  choose(request: {
-    instanceId: string;
-    workflowName: string;
-    enabled: { name: string; inputs: string[]; outputs: string[] }[];
-    marking: Marking<Place>;
-    context: Ctx;
-  }): Promise<{ transition: string; reasoning: string }>;
-};
-```
-
-Wire it into the executor, then pass to the Scheduler:
-
-```ts
-const executor = createExecutor(definition, { decisionProvider: provider });
-const scheduler = new Scheduler(executor, { adapter: sqliteAdapter(db, definition.name) }, {
-  onDecision: (id, name, reasoning, candidates) => {
-    console.log(`[${id}] LLM chose: ${name} (from ${candidates.join(", ")})`);
-    console.log(`  reasoning: ${reasoning}`);
-  },
-});
-```
-
-The `onDecision` event fires after every LLM choice, logging the selected transition, reasoning, and the full candidate list.
-
-## External event injection
-
-`Scheduler.injectToken()` lets external events (webhooks, human approvals, async callbacks) add tokens to running instances:
-
-```ts
-// A webhook handler adds an approval token
-await scheduler.injectToken("order-123", "approved");
-// Next tick() picks it up and fires any newly enabled transitions
-```
-
-Injecting a token also reactivates completed instances, so a workflow can pause at a "waiting" state and resume when the external event arrives.
-
-See `workflows/simple-agent/llm-provider.ts` for a reference implementation using the Vercel AI SDK with Claude.
-
-## Timeouts
-
-A transition with a `timeout` field gets deadline-on-waiting semantics. When the transition is structurally enabled (tokens in all input places) but doesn't fire within the deadline — because a guard blocks it, or it's waiting for an external event — a token is injected into the timeout place as a fallback path.
-
-```ts
-const definition = defineWorkflow({
-  name: "approval-with-timeout",
-  places: ["waiting", "timed_out", "approved", "escalated"],
-  transitions: [
-    {
-      name: "approve",
-      type: "manual",
-      inputs: ["waiting"],
-      outputs: ["approved"],
-      guard: "approved",
-      timeout: { place: "timed_out", ms: 30_000 }, // 30s deadline
-    },
-    {
-      name: "escalate",
-      type: "automatic",
-      inputs: ["waiting", "timed_out"],
-      outputs: ["escalated"],
-      guard: null,
-    },
-  ],
-  initialMarking: { waiting: 1, timed_out: 0, approved: 0, escalated: 0 },
-  initialContext: { approved: false },
-  terminalPlaces: ["approved", "escalated"],
-});
-```
-
-If `approve` doesn't fire within 30 seconds, the scheduler injects a token into `timed_out`. On the next tick, `escalate` becomes enabled (it needs both `waiting` and `timed_out`) and fires.
-
-Timeouts are cancelled when the transition fires normally or loses structural enablement (another transition consumed its input tokens). The `onTimeout` scheduler event fires when a timeout injects a token:
-
-```ts
-const scheduler = new Scheduler(executor, { adapter }, {
-  onTimeout: (id, transitionName, place) => {
-    console.log(`[${id}] ${transitionName} timed out → injected token into ${place}`);
-  },
-});
-```
-
-## HTTP Server
-
-`@petriflow/server` runs workflows as a long-lived service. Create instances, inject tokens (external events like webhooks or human approvals), and observe state changes via SSE — all over HTTP.
-
-Start the server with one or more workflow definitions:
+### HTTP server
 
 ```bash
-bun run packages/server/src/main.ts workflows/coffee/definition.ts workflows/order-checkout/definition.ts
+bun run packages/server/src/main.ts workflows/coffee/definition.ts
 ```
 
-Routes:
-
 ```
-# Definition CRUD
-PUT    /definitions/:name              Save definition (validates, registers)
-GET    /definitions/:name              Get serialized definition
-GET    /definitions                    List all definition names
-DELETE /definitions/:name              Delete and unregister
-
-# Instance management
-GET    /workflows                      List registered workflows
-POST   /workflows/:name/instances      Create instance         { "id": "order-001" }
-GET    /workflows/:name/instances      List instances for workflow
-GET    /instances/:id                  Inspect instance state
-GET    /instances/:id/history          Transition history (what fired and when)
-POST   /instances/:id/inject           Inject token            { "place": "payment", "count": 1 }
-POST   /workflows/register             Register from file      { "path": "./my-workflow.ts" }
-
-# Observability
-GET    /events                         SSE stream (all events)
-GET    /events?workflow=X              SSE filtered by workflow
-GET    /events?instance=X              SSE filtered by instance
+GET    /definitions                    List all workflows
+POST   /workflows/:name/instances      Create instance
+GET    /instances/:id                  Inspect state
+POST   /instances/:id/inject           Inject token (webhooks, approvals)
+GET    /events                         SSE stream
 ```
 
-Example — create an instance and watch it run:
+### Persistence
 
-```bash
-# Terminal 1: stream events
-curl -N http://localhost:3000/events
+The scheduler takes a pluggable `WorkflowPersistence` adapter. SQLite is included; implement the interface for Postgres, Redis, or in-memory.
 
-# Terminal 2: create and observe
-curl -X POST http://localhost:3000/workflows/coffee/instances \
-  -H 'Content-Type: application/json' -d '{"id":"brew-1"}'
-curl http://localhost:3000/instances/brew-1
-```
-
-For programmatic use, import the runtime directly without the HTTP layer:
-
-```ts
-import { Database } from "bun:sqlite";
-import { WorkflowRuntime, createServer } from "@petriflow/server";
-
-const runtime = new WorkflowRuntime({ db: new Database(":memory:") });
-runtime.register(myDefinition);
-runtime.start();
-
-// Optional: expose over HTTP
-const server = createServer({ runtime, port: 3000 });
-```
-
-The `WorkflowRuntime` class is framework-agnostic — it has no HTTP knowledge. The `createServer` function is a thin Hono layer on top. BYO users can import the runtime and wire their own framework.
-
-## Persistence
-
-The scheduler takes a `WorkflowPersistence` adapter. A SQLite adapter is included:
-
-```ts
-import { sqliteAdapter } from "@petriflow/engine";
-import { Database } from "bun:sqlite";
-
-const db = new Database("workflows.sqlite");
-const adapter = sqliteAdapter(db, "my-workflow");
-```
-
-To use a different backend (Postgres, Redis, in-memory for tests), implement the interface:
-
-```ts
-import type { WorkflowPersistence } from "@petriflow/engine";
-
-const customAdapter: WorkflowPersistence<MyPlace, MyCtx> = {
-  async loadExtended(id) { /* ... */ },
-  async saveExtended(id, state) { /* ... */ },
-  async listActive() { /* ... */ },
-  async scheduleTimeout(entry) { /* ... */ },
-  async getExpiredTimeouts(instanceId, now) { /* ... */ },
-  async markTimeoutFired(id) { /* ... */ },
-  async clearTimeouts(instanceId, transitionName?) { /* ... */ },
-  async hasPendingTimeouts(instanceId) { /* ... */ },
-};
-
-const scheduler = new Scheduler(executor, { adapter: customAdapter });
-```
+---
 
 ## Built with
 
 - [petri-ts](https://www.npmjs.com/package/petri-ts) — Petri net engine and analysis
-- [Bun](https://bun.sh) — runtime, test runner, bundler
+- [Bun](https://bun.sh) — runtime, test runner, package manager
 - [Turborepo](https://turbo.build) — monorepo orchestration
 - [Hono](https://hono.dev) — HTTP router for the server
 - [React Flow](https://reactflow.dev) — graph rendering for the viewer
-- [dagre](https://github.com/dagrejs/dagre) — automatic graph layout
-- [Vercel AI SDK](https://sdk.vercel.ai) — LLM integration for the decision provider
