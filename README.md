@@ -55,6 +55,8 @@ Key mechanisms:
 - **Tool mapping** — split one tool (e.g. `bash`) into virtual tools based on command content (e.g. `backup` vs `destructive`)
 - **Semantic validation** — hooks check domain-specific properties (path coverage, channel matching) beyond what net structure alone enforces
 
+Rules compose without coordination. Each skill net is an independent constraint — a tool call must satisfy **all** nets to fire. Write `require lint before test` and `require test before deploy` as two separate rules: the first blocks `test` until `lint` has run, the second blocks `deploy` until `test` has run, and the chain `lint → test → deploy` emerges from their intersection. No net knows about any other. Each is small enough to verify exhaustively in isolation, but their combined enforcement covers complex multi-step policies.
+
 ```bash
 # Run the tests
 bun test packages/pi-extension
