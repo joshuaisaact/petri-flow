@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
+import Logo from "../components/Logo.astro";
 ---
 <Layout title="PetriFlow — Provably Safe AI Agents">
   <Nav currentPage="index" />
@@ -11,7 +12,7 @@ import Footer from "../components/Footer.astro";
     <div class="container">
       <h1>Provably Safe<br /><em>AI Agents.</em></h1>
       <p class="hero-sub">
-        A safety layer between your agent and the outside world. Any framework. Rules your agent <strong style="color:var(--text)">cannot</strong> break.
+        <strong style="color:var(--text)">Petri<span style="color:var(--accent-text)">Flow</span></strong> is a safety layer between your agent and the outside world. Any framework. Rules your agent <strong style="color:var(--text)">cannot</strong> break.
       </p>
       <div class="hero-buttons">
         <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
@@ -409,15 +410,8 @@ If anything is ambiguous, ask first.
         <div class="integration-diagram-flow">
           <span class="diagram-label">Your Agent</span>
           <div class="diagram-arrow">&rarr;</div>
-          <span class="diagram-gate flex items-center gap-1.5">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <circle cx="6" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
-              <circle cx="18" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
-              <circle cx="12" cy="19" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
-              <circle cx="6" cy="6" r="1.5" fill="#8b5cf6"/>
-              <line x1="9" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
-              <line x1="15" y1="8" x2="12" y2="16" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
-            </svg>Petri<span style="color:var(--accent-text)">Flow</span>
+          <span class="diagram-gate nav-logo flex items-center gap-2">
+            <Logo size={18} />
           </span>
           <div class="diagram-arrow">&rarr;</div>
           <span class="diagram-label">Tools</span>

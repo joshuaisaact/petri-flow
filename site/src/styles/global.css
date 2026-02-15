@@ -86,7 +86,8 @@ nav .container {
   letter-spacing: -0.01em;
 }
 
-.nav-logo span { color: var(--accent-text); }
+.nav-logo .logo-text { color: var(--text); }
+.nav-logo .logo-text span { color: var(--accent-text); }
 
 .nav-links {
   display: flex;
