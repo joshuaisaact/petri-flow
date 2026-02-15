@@ -1,0 +1,4 @@
+require lint before test
+require test before deploy
+require human-approval before deploy
+limit deploy to 2 per session

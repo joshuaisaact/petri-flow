@@ -1,7 +1,7 @@
 {
   "name": "petriflow",
   "private": true,
-  "workspaces": ["packages/*", "workflows/*", "comparisons/*", "apps/*"],
+  "workspaces": ["packages/*", "workflows/*", "comparisons/*", "apps/*", "examples"],
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",

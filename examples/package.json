@@ -1,0 +1,12 @@
+{
+  "name": "@petriflow/examples",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@petriflow/rules": "workspace:*",
+    "@petriflow/vercel-ai": "workspace:*",
+    "ai": "^6",
+    "@ai-sdk/anthropic": "^3",
+    "zod": "^4"
+  }
+}

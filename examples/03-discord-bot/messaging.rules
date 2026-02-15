@@ -1,0 +1,2 @@
+require discord.readMessages before discord.sendMessage
+limit discord.sendMessage to 5 per session
