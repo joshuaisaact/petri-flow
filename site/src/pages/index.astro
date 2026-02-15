@@ -54,26 +54,26 @@ import { Code } from "astro:components";
       </p>
 
       <blockquote>
-        "Most failures are not fancy exploits&thinsp;&mdash;&thinsp;they're someone messaged the bot and the bot did what they asked."
+        "Most failures are not fancy exploits. Someone messaged the bot, and the bot did what they asked."
         <cite>&mdash; OpenClaw safety documentation</cite>
       </blockquote>
 
       <div class="problem-grid">
         <div class="problem-card">
           <h3>Skills are just prompts</h3>
-          <p>A <code>SKILL.md</code> is natural language instructions the model reads and hopefully follows. "Run tests before deploying" is a suggestion, not a constraint. Nothing enforces it.</p>
+          <p>A <code>SKILL.md</code> is natural language instructions the model reads and hopefully follows. "Run tests before deploying" is a <strong style="color:var(--red)">suggestion</strong>, not a constraint. Nothing enforces it.</p>
         </div>
         <div class="problem-card">
           <h3>Deny-lists are never complete</h3>
-          <p>You block <code>rm -rf</code> but miss <code>find -delete</code>. You block <code>DROP TABLE</code> but miss <code>TRUNCATE</code>. The agent finds the gap you didn't think of.</p>
+          <p>You block <code>rm -rf</code> but miss <code>find -delete</code>. You block <code>DROP TABLE</code> but miss <code>TRUNCATE</code>. The agent finds <strong style="color:var(--red)">the gap you didn't think of</strong>.</p>
         </div>
         <div class="problem-card">
           <h3>Nothing between intent and action</h3>
-          <p>Skills have no runtime. The model reads markdown, decides what to do, and calls tools directly. There's no gate between what the agent wants to do and doing it.</p>
+          <p>Skills have no runtime. The model reads markdown, decides what to do, and calls tools directly. There's <strong style="color:var(--red)">no gate</strong> between what the agent wants to do and doing it.</p>
         </div>
         <div class="problem-card">
           <h3>More skills = more trust</h3>
-          <p>Every new skill hands the model more tools and more instructions to follow correctly. You're scaling capability while scaling risk&thinsp;&mdash;&thinsp;with nothing but the prompt standing between them.</p>
+          <p>Every new skill hands the model more tools and more instructions to follow correctly. You're <strong style="color:var(--red)">scaling capability while scaling risk</strong>, with nothing but the prompt standing between them.</p>
         </div>
       </div>
     </div>
@@ -135,7 +135,7 @@ Never delete without a backup.
         <!-- Left: the skill -->
         <div class="rw-panel">
           <div class="rw-panel-header">
-            <div class="file-icon">S</div>
+            <div class="rw-dot"></div><div class="rw-dot"></div><div class="rw-dot"></div>
             SKILL.md
           </div>
           <div class="rw-panel-body" set:html={`<span class="heading"># WhatsApp CLI</span>
@@ -160,8 +160,8 @@ If anything is ambiguous, ask first.
         <!-- Right: the rules -->
         <div class="rw-panel">
           <div class="rw-panel-header">
-            <div class="file-icon">R</div>
-            whatsapp.rules
+            <div class="rw-dot"></div><div class="rw-dot"></div><div class="rw-dot"></div>
+            <span><span style="color:#25D366">whatsapp</span>.rules</span>
           </div>
           <div class="rw-panel-body" set:html={`<span class="comment"># look up the recipient first.</span>
 <span class="comment"># no guessing phone numbers from memory.</span>
