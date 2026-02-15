@@ -91,6 +91,21 @@ Syntax: `map <tool>.<field> <keyword> as <name>`
 
 `compile()` automatically verifies every net by enumerating all reachable states. This catches unbounded nets, structural errors, and confirms each rule compiles to a finite, well-formed state machine. Verification runs at compile time — before your agent starts.
 
+## How rules compose
+
+Each rule compiles to its own independent Petri net. At runtime, every net is checked on every tool call — a tool can only fire if **all** nets allow it.
+
+```
+require lint before test
+require test before deploy
+```
+
+This produces two separate nets, not one. But the effect is transitive: `deploy` requires `test` (net 2), and `test` requires `lint` (net 1), so `deploy` implicitly requires `lint → test → deploy`.
+
+This works because safety properties compose by intersection. If net A says "no deploy without lint" and net B says "no deploy without test," enforcing both gives you "no deploy without lint AND test." No coordination between nets is needed — they don't know about each other.
+
+The practical consequence: each net is small enough to verify exhaustively (a few reachable states), but their combined enforcement covers complex multi-step policies. You get compositional guarantees without a combinatorial explosion.
+
 ## Custom SkillNets
 
 For complete control, build custom SkillNets with `defineSkillNet`:
