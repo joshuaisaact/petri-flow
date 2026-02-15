@@ -1,8 +1,8 @@
 # PetriFlow
 
-Provably safe AI agents. Rules your agent **cannot** break — any framework, one safety layer.
+Provably safe AI agents. Rules your agent **cannot** break. Any framework. One safety layer.
 
-PetriFlow compiles declarative safety rules into Petri nets that gate every tool call. Each rule is verified exhaustively before your agent starts. If the verifier says "safe," it means safe in every possible execution — not just the ones you tested.
+PetriFlow compiles declarative safety rules into Petri nets that gate every tool call. Each rule is verified exhaustively before your agent starts. If the verifier says "safe," it means safe in every possible execution, not just the ones you tested.
 
 ```
 # safety.rules
@@ -40,27 +40,27 @@ bun run examples/01-file-management/agent.ts
 
 ## Safety layer packages
 
-The core product — a framework-agnostic tool gating system with adapter packages for specific agent runtimes.
+The core product: a framework-agnostic tool gating system with adapter packages for specific agent runtimes.
 
 | Package | Description |
 |---|---|
-| `@petriflow/gate` | Framework-agnostic tool gating — skill nets, deferred transitions, tool mapping, multi-net composition |
-| `@petriflow/rules` | Declarative rules DSL — compiles one-liner safety policies into verified skill nets |
-| `@petriflow/vercel-ai` | [Vercel AI SDK](https://sdk.vercel.ai) adapter — wraps tool `execute` methods with gating |
-| `@petriflow/pi-extension` | [pi-mono](https://github.com/nicholasgasior/pi-mono) adapter — intercepts tool calls and enforces net structure |
-| `@petriflow/claude-code` | [Claude Code](https://claude.ai/code) hook — gates bash, file, and MCP tools via the hook system |
-| `@petriflow/openclaw` | [OpenClaw](https://github.com/nicholasgasior/openclaw) adapter — maps gate concepts to OpenClaw hooks |
-| `@petriflow/pi-assistant` | Four reusable skill nets — safe messaging, staged deploys, research-before-share, backup-before-delete |
+| `@petriflow/gate` | Framework-agnostic tool gating. Skill nets, deferred transitions, tool mapping, multi-net composition |
+| `@petriflow/rules` | Declarative rules DSL. Compiles one-liner safety policies into verified skill nets |
+| `@petriflow/vercel-ai` | [Vercel AI SDK](https://sdk.vercel.ai) adapter. Wraps tool `execute` methods with gating |
+| `@petriflow/pi-extension` | [pi-mono](https://github.com/nicholasgasior/pi-mono) adapter. Intercepts tool calls and enforces net structure |
+| `@petriflow/claude-code` | [Claude Code](https://claude.ai/code) hook. Gates bash, file, and MCP tools via the hook system |
+| `@petriflow/openclaw` | [OpenClaw](https://github.com/nicholasgasior/openclaw) adapter. Maps gate concepts to OpenClaw hooks |
+| `@petriflow/pi-assistant` | Four reusable skill nets: safe messaging, staged deploys, research-before-share, backup-before-delete |
 
 ### How it works
 
-Each rule compiles to a small, independent Petri net. At runtime every net is checked on every tool call — a tool can only fire if **all** nets allow it.
+Each rule compiles to a small, independent Petri net. At runtime every net is checked on every tool call. A tool can only fire if **all** nets allow it.
 
 Key mechanisms:
-- **Deferred transitions** — allow the tool call immediately, but only advance the net when the tool succeeds (e.g. backup must actually work before delete is unlocked)
-- **Tool mapping** — split one tool (e.g. `bash`) into virtual tools based on command content (`map bash.command rm as delete`)
-- **Multi-net composition** — rules compose by intersection. `require lint before test` + `require test before deploy` = `lint → test → deploy`, without the nets knowing about each other
-- **Exhaustive verification** — every reachable state is enumerated at compile time. Small nets, big guarantees.
+- **Deferred transitions** allow the tool call immediately, but only advance the net when the tool succeeds (e.g. backup must actually work before delete is unlocked)
+- **Tool mapping** splits one tool (e.g. `bash`) into virtual tools based on command content (`map bash.command rm as delete`)
+- **Multi-net composition** means rules compose by intersection. `require lint before test` + `require test before deploy` = `lint → test → deploy`, without the nets knowing about each other
+- **Exhaustive verification** enumerates every reachable state at compile time. Small nets, big guarantees.
 
 ### Rules DSL
 
@@ -94,9 +94,9 @@ Separate from the safety layer, PetriFlow also includes a general-purpose workfl
 | Package | Description |
 |---|---|
 | `@petriflow/engine` | Core types, firing engine, scheduler, pluggable persistence (SQLite included), analysis |
-| `@petriflow/server` | HTTP API — run workflows as a service, inject tokens via REST, observe via SSE |
-| `@petriflow/viewer` | Interactive React app — click to fire transitions, live analysis, visual editor |
-| `@petriflow/cli` | `petriflow analyse <workflow.ts>` — prove properties from the command line |
+| `@petriflow/server` | HTTP API. Run workflows as a service, inject tokens via REST, observe via SSE |
+| `@petriflow/viewer` | Interactive React app. Click to fire transitions, live analysis, visual editor |
+| `@petriflow/cli` | `petriflow analyse <workflow.ts>`. Prove properties from the command line |
 
 ### Workflows
 
@@ -104,12 +104,12 @@ Six example workflows in `workflows/`:
 
 | Workflow | What it proves |
 |---|---|
-| `coffee` | Concurrency — `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
+| `coffee` | Concurrency. `heatWater` and `grindBeans` fire independently, `pourOver` joins them |
 | `github-lookup` | Real HTTP calls as transitions |
-| `contract-approval` | Parallel approval gates — finance and legal review independently |
-| `order-checkout` | Resource contention — cannot oversell inventory |
-| `simple-agent` | Iteration loop with budget — agent forced to respond when exhausted |
-| `agent-benchmark` | Everything together — guards, executors, timeouts, human approval, deferred transitions |
+| `contract-approval` | Parallel approval gates. Finance and legal review independently |
+| `order-checkout` | Resource contention. Cannot oversell inventory |
+| `simple-agent` | Iteration loop with budget. Agent forced to respond when exhausted |
+| `agent-benchmark` | Everything together: guards, executors, timeouts, human approval, deferred transitions |
 
 ### Running workflows
 
@@ -123,7 +123,7 @@ bun run workflows/coffee/index.ts
 # Analyse a workflow
 bun packages/cli/src/cli.ts analyse workflows/agent-benchmark/index.ts
 
-# Strict mode (exits 1 on issues — use in CI)
+# Strict mode (exits 1 on issues, use in CI)
 bun packages/cli/src/cli.ts analyse workflows/order-checkout/index.ts --strict
 ```
 
@@ -184,8 +184,8 @@ The scheduler takes a pluggable `WorkflowPersistence` adapter. SQLite is include
 
 ## Built with
 
-- [petri-ts](https://www.npmjs.com/package/petri-ts) — Petri net engine and analysis
-- [Bun](https://bun.sh) — runtime, test runner, package manager
-- [Turborepo](https://turbo.build) — monorepo orchestration
-- [Hono](https://hono.dev) — HTTP router for the server
-- [React Flow](https://reactflow.dev) — graph rendering for the viewer
+- [petri-ts](https://www.npmjs.com/package/petri-ts) Petri net engine and analysis
+- [Bun](https://bun.sh) runtime, test runner, package manager
+- [Turborepo](https://turbo.build) monorepo orchestration
+- [Hono](https://hono.dev) HTTP router for the server
+- [React Flow](https://reactflow.dev) graph rendering for the viewer
