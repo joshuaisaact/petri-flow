@@ -547,6 +547,11 @@ blockquote cite {
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: border-color 0.15s, box-shadow 0.15s;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  padding: 20px 28px 24px;
+  gap: 0 24px;
 }
 
 .layer:hover { border-color: var(--border-hover); box-shadow: 0 4px 24px rgba(0,0,0,0.2); }
@@ -555,7 +560,8 @@ blockquote cite {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 20px 28px;
+  grid-column: 1;
+  grid-row: 1;
   cursor: default;
 }
 
@@ -595,17 +601,16 @@ blockquote cite {
 .layer:nth-child(3) .layer-tag { color: var(--text-muted); background: rgba(255,255,255,0.04); }
 
 .layer-body {
-  padding: 0 28px 24px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  align-items: start;
+  display: contents;
 }
 
 .layer-desc {
   font-size: 14px;
   color: var(--text-muted);
   line-height: 1.7;
+  grid-column: 1;
+  grid-row: 2;
+  padding-top: 8px;
 }
 
 .layer-desc strong { color: var(--text-secondary); }
@@ -616,17 +621,36 @@ blockquote cite {
   border-radius: 8px;
   padding: 14px 18px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.8;
   color: var(--text-muted);
   overflow-x: auto;
   white-space: pre-wrap;
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
 }
 
 .layer-code .kw { color: var(--accent-text); }
 .layer-code .str { color: var(--green); }
 .layer-code .fn { color: var(--orange); }
 .layer-code .comment { color: var(--text-muted); }
+
+.layer-body .astro-code,
+.layer > .astro-code {
+  background: var(--bg) !important;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
+}
 
 /* ───── COMPARISON TABLE ───── */
 
@@ -834,6 +858,19 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 .integration-code .kw { color: var(--accent-text); }
 .integration-code .str { color: var(--green); }
 .integration-code .fn { color: var(--orange); }
+
+.integration-card .astro-code {
+  background: var(--bg) !important;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: left;
+  white-space: pre-wrap;
+  margin-top: auto;
+}
 
 .integration-diagram {
   margin-top: 16px;
