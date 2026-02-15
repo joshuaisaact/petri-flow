@@ -1162,23 +1162,23 @@ describe("compile — verification", () => {
 });
 
 describe("loadRules", () => {
-  it("reads and compiles a .rules file", () => {
+  it("reads and compiles a .rules file", async () => {
     const path = require("path");
-    const fs = require("fs");
     const tmpDir = require("os").tmpdir();
     const file = path.join(tmpDir, "test-safety.rules");
-    fs.writeFileSync(file, "require backup before delete\nblock rm\n");
+    await Bun.write(file, "require backup before delete\nblock rm\n");
 
-    const { nets, verification } = loadRules(file);
+    const { nets, verification } = await loadRules(file);
     expect(nets).toHaveLength(2);
     expect(verification).toHaveLength(2);
     expect(verification[0]!.name).toBe("require-backup-before-delete");
     expect(verification[1]!.name).toBe("block-rm");
 
-    fs.unlinkSync(file);
+    const { unlinkSync } = require("fs");
+    unlinkSync(file);
   });
 
   it("throws on missing file", () => {
-    expect(() => loadRules("/nonexistent/safety.rules")).toThrow();
+    expect(loadRules("/nonexistent/safety.rules")).rejects.toThrow();
   });
 });

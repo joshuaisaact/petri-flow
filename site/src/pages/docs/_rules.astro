@@ -7,7 +7,7 @@ import { Code } from "astro:components";
 
 const quickStart = `import { loadRules, createGateManager } from "@petriflow/rules";
 
-const { nets, verification } = loadRules("./safety.rules");
+const { nets, verification } = await loadRules("./safety.rules");
 
 console.log(verification);
 // [
@@ -66,7 +66,7 @@ console.log(verification);
 //   { name: "limit-send-3",                 reachableStates: 5 },
 // ]`;
 
-const loadRulesSignature = `function loadRules(path: string): CompiledRules`;
+const loadRulesSignature = `function loadRules(path: string): Promise<CompiledRules>`;
 
 const compileSignature = `function compile(rules: string | string[]): CompiledRules`;
 

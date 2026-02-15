@@ -428,7 +428,7 @@ export function compile(rules: string | string[]): CompiledRules {
 }
 
 /** Read a .rules file and compile it. */
-export function loadRules(path: string): CompiledRules {
-  const fs = require("fs") as typeof import("fs");
-  return compile(fs.readFileSync(path, "utf-8"));
+export async function loadRules(path: string): Promise<CompiledRules> {
+  const { readFile } = await import("node:fs/promises");
+  return compile(await readFile(path, "utf-8"));
 }

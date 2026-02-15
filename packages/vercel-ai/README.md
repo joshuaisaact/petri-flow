@@ -20,7 +20,7 @@ import { createPetriflowGate } from '@petriflow/vercel-ai';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const { nets } = loadRules('./safety.rules');
+const { nets } = await loadRules('./safety.rules');
 const gate = createPetriflowGate(nets);
 
 const result = await generateText({

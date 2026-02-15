@@ -18,7 +18,7 @@ limit push to 1 per test    # refill budget after each test
 ```typescript
 import { loadRules, createGateManager } from "@petriflow/rules";
 
-const { nets, verification } = loadRules("./safety.rules");
+const { nets, verification } = await loadRules("./safety.rules");
 
 // Every net is verified at compile time
 console.log(verification);

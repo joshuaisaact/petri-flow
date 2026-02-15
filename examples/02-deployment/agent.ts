@@ -5,7 +5,7 @@ import { loadRules } from "@petriflow/rules";
 import { createPetriflowGate } from "@petriflow/vercel-ai";
 
 // Load rules from file
-const { nets, verification } = loadRules(
+const { nets, verification } = await loadRules(
   new URL("./pipeline.rules", import.meta.url).pathname,
 );
 console.log("Loaded rules:", verification);
