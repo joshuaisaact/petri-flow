@@ -105,22 +105,6 @@ nav .container {
 
 .nav-links a:hover { color: var(--text-secondary); }
 
-.nav-github {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.nav-github img {
-  filter: invert(1);
-  opacity: 0.45;
-  transition: opacity 0.15s;
-  vertical-align: middle;
-}
-
-.nav-github:hover img {
-  opacity: 0.7;
-}
 
 /* ───── BUTTONS ───── */
 .btn {
