@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { compile } from "../compiler.js";
+import { compile, compileFile } from "../compiler.js";
 import {
   handleToolCall,
   handleToolResult,
@@ -1158,5 +1158,27 @@ describe("compile — verification", () => {
   it("empty rules produce empty verification", () => {
     const { verification } = compile("# just a comment");
     expect(verification).toHaveLength(0);
+  });
+});
+
+describe("compileFile", () => {
+  it("reads and compiles a .rules file", () => {
+    const path = require("path");
+    const fs = require("fs");
+    const tmpDir = require("os").tmpdir();
+    const file = path.join(tmpDir, "test-safety.rules");
+    fs.writeFileSync(file, "require backup before delete\nblock rm\n");
+
+    const { nets, verification } = compileFile(file);
+    expect(nets).toHaveLength(2);
+    expect(verification).toHaveLength(2);
+    expect(verification[0]!.name).toBe("require-backup-before-delete");
+    expect(verification[1]!.name).toBe("block-rm");
+
+    fs.unlinkSync(file);
+  });
+
+  it("throws on missing file", () => {
+    expect(() => compileFile("/nonexistent/safety.rules")).toThrow();
   });
 });

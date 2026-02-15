@@ -23,6 +23,7 @@ DAG-based workflow tools (n8n, Airflow, Temporal) can't express concurrent synch
 | `@petriflow/pi-extension` | Petri net gating for [pi-mono](https://github.com/nicholasgasior/pi-mono) agent tools — intercepts tool calls and enforces workflow structure |
 | `@petriflow/openclaw` | Petri net gating for [OpenClaw](https://github.com/nicholasgasior/openclaw) — plugin adapter mapping gate concepts to OpenClaw hooks |
 | `@petriflow/rules` | Declarative rules DSL — compiles one-liner safety policies into verified skill nets |
+| `@petriflow/vercel-ai` | Vercel AI SDK adapter — wraps tool `execute` methods with Petri net gating |
 | `@petriflow/pi-assistant` | Personal assistant skill nets — safe messaging, deployment pipelines, research-before-share, backup-before-destroy |
 
 ## Workflows

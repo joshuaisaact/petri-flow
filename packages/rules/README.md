@@ -4,18 +4,21 @@ Declarative rules DSL for PetriFlow tool gating.
 
 ## Declarative DSL
 
-Write rules as plain strings. The compiler turns each rule into a verified SkillNet.
+Write rules in a `.rules` file or as inline strings. The compiler turns each rule into a verified SkillNet.
+
+```
+# safety.rules
+require backup before delete
+require human-approval before deploy
+block rm
+limit push to 3 per session
+limit push to 1 per test    # refill budget after each test
+```
 
 ```typescript
-import { compile, createGateManager } from "@petriflow/rules";
+import { compileFile, createGateManager } from "@petriflow/rules";
 
-const { nets, verification } = compile(`
-  require backup before delete
-  require human-approval before deploy
-  block rm
-  limit push to 3 per session
-  limit push to 1 per test    # refill budget after each test
-`);
+const { nets, verification } = compileFile("./safety.rules");
 
 // Every net is verified at compile time
 console.log(verification);
@@ -28,6 +31,17 @@ console.log(verification);
 // ]
 
 const manager = createGateManager(nets, { mode: "enforce" });
+```
+
+`compile()` also accepts inline strings if you prefer:
+
+```typescript
+import { compile } from "@petriflow/rules";
+
+const { nets } = compile(`
+  require backup before delete
+  block rm
+`);
 ```
 
 ### Rule types

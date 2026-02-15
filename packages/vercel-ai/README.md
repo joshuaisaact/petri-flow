@@ -15,11 +15,13 @@ Peer dependency: `ai` ^6.0.0
 ## Usage
 
 ```ts
+import { compileFile } from '@petriflow/rules';
 import { createPetriflowGate } from '@petriflow/vercel-ai';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const gate = createPetriflowGate([safetyNet]);
+const { nets } = compileFile('./safety.rules');
+const gate = createPetriflowGate(nets);
 
 const result = await generateText({
   model: openai('gpt-4o'),
