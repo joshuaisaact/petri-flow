@@ -1,4 +1,4 @@
-export { compile, compileFile } from "./compiler.js";
+export { compile, loadRules } from "./compiler.js";
 export type { CompiledRules, NetVerification } from "./compiler.js";
 
 export { defineSkillNet, createGateManager } from "@petriflow/gate";

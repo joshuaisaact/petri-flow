@@ -15,12 +15,12 @@ Peer dependency: `ai` ^6.0.0
 ## Usage
 
 ```ts
-import { compileFile } from '@petriflow/rules';
+import { loadRules } from '@petriflow/rules';
 import { createPetriflowGate } from '@petriflow/vercel-ai';
 import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
-const { nets } = compileFile('./safety.rules');
+const { nets } = loadRules('./safety.rules');
 const gate = createPetriflowGate(nets);
 
 const result = await generateText({

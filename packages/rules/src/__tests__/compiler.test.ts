@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { compile, compileFile } from "../compiler.js";
+import { compile, loadRules } from "../compiler.js";
 import {
   handleToolCall,
   handleToolResult,
@@ -1161,7 +1161,7 @@ describe("compile — verification", () => {
   });
 });
 
-describe("compileFile", () => {
+describe("loadRules", () => {
   it("reads and compiles a .rules file", () => {
     const path = require("path");
     const fs = require("fs");
@@ -1169,7 +1169,7 @@ describe("compileFile", () => {
     const file = path.join(tmpDir, "test-safety.rules");
     fs.writeFileSync(file, "require backup before delete\nblock rm\n");
 
-    const { nets, verification } = compileFile(file);
+    const { nets, verification } = loadRules(file);
     expect(nets).toHaveLength(2);
     expect(verification).toHaveLength(2);
     expect(verification[0]!.name).toBe("require-backup-before-delete");
@@ -1179,6 +1179,6 @@ describe("compileFile", () => {
   });
 
   it("throws on missing file", () => {
-    expect(() => compileFile("/nonexistent/safety.rules")).toThrow();
+    expect(() => loadRules("/nonexistent/safety.rules")).toThrow();
   });
 });

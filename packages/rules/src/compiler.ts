@@ -428,7 +428,7 @@ export function compile(rules: string | string[]): CompiledRules {
 }
 
 /** Read a .rules file and compile it. */
-export function compileFile(path: string): CompiledRules {
+export function loadRules(path: string): CompiledRules {
   const fs = require("fs") as typeof import("fs");
   return compile(fs.readFileSync(path, "utf-8"));
 }
