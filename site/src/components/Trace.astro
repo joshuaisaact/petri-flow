@@ -1,0 +1,26 @@
+---
+interface Step {
+  icon: "blocked" | "ok" | "wait";
+  html: string;
+}
+
+interface Props {
+  label: string;
+  steps: Step[];
+}
+
+const { label, steps } = Astro.props;
+---
+<div class="trace">
+  <div class="trace-label">{label}</div>
+  <div class="trace-steps">
+    {steps.map((step) => (
+      <div class="trace-step">
+        <div class={`trace-icon ${step.icon}`} aria-hidden="true">
+          {step.icon === "blocked" ? "\u2715" : step.icon === "ok" ? "\u2713" : "?"}
+        </div>
+        <div class="trace-text" set:html={step.html} />
+      </div>
+    ))}
+  </div>
+</div>

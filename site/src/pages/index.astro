@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import Logo from "../components/Logo.astro";
+import Trace from "../components/Trace.astro";
 import { Code } from "astro:components";
 ---
 <Layout title="PetriFlow — Provably Safe AI Agents">
@@ -245,46 +246,14 @@ If anything is ambiguous, ask first.
         </div>
       </div>
 
-      <!-- Trace -->
-      <div class="rw-trace">
-        <div class="rw-trace-label">// what happens when the agent tries to send a message</div>
-        <div class="rw-trace-steps">
-          <div class="rw-trace-step">
-            <div class="rw-trace-icon blocked" aria-hidden="true">&#x2715;</div>
-            <div class="rw-trace-text" set:html={`Agent calls <strong>whatsapp { action: "send", to: "+1415...", message: "Hey!" }</strong><br>
-            <span class="blocked-text">BLOCKED</span> &mdash; no recipient lookup yet`} />
-          </div>
-          <div class="rw-trace-step">
-            <div class="rw-trace-icon ok" aria-hidden="true">&#x2713;</div>
-            <div class="rw-trace-text" set:html={`Agent calls <strong>whatsapp { action: "lookup", query: "Sarah" }</strong><br>
-            <span class="ok-text">OK</span> &mdash; resolves to +14155551212`} />
-          </div>
-          <div class="rw-trace-step">
-            <div class="rw-trace-icon blocked" aria-hidden="true">&#x2715;</div>
-            <div class="rw-trace-text" set:html={`Agent tries <strong>whatsapp { action: "send" }</strong> again<br>
-            <span class="blocked-text">BLOCKED</span> &mdash; human hasn't approved yet`} />
-          </div>
-          <div class="rw-trace-step">
-            <div class="rw-trace-icon wait" aria-hidden="true">?</div>
-            <div class="rw-trace-text">
-              PetriFlow prompts: <strong>"Send 'Hey!' to Sarah (+14155551212)?"</strong><br />
-              Human approves &rarr; manual gate opens
-            </div>
-          </div>
-          <div class="rw-trace-step">
-            <div class="rw-trace-icon ok" aria-hidden="true">&#x2713;</div>
-            <div class="rw-trace-text" set:html={`Agent calls <strong>whatsapp { action: "send", to: "+14155551212", message: "Hey!" }</strong><br>
-            <span class="ok-text">ALLOWED</span> &mdash; lookup done, human approved, token consumed`} />
-          </div>
-          <div class="rw-trace-step">
-            <div class="rw-trace-icon blocked" aria-hidden="true">&#x2715;</div>
-            <div class="rw-trace-text">
-              Agent tries to send another message<br />
-              <span class="blocked-text">BLOCKED</span> &mdash; budget consumed, must look up again
-            </div>
-          </div>
-        </div>
-      </div>
+      <Trace label="// what happens when the agent tries to send a message" steps={[
+        { icon: "blocked", html: `Agent calls <strong>whatsapp { action: "send", to: "+1415...", message: "Hey!" }</strong><br><span class="blocked-text">BLOCKED</span> no recipient lookup yet` },
+        { icon: "ok", html: `Agent calls <strong>whatsapp { action: "lookup", query: "Sarah" }</strong><br><span class="ok-text">OK</span> resolves to +14155551212` },
+        { icon: "blocked", html: `Agent tries <strong>whatsapp { action: "send" }</strong> again<br><span class="blocked-text">BLOCKED</span> human hasn't approved yet` },
+        { icon: "wait", html: `PetriFlow prompts: <strong>"Send 'Hey!' to Sarah (+14155551212)?"</strong><br>Human approves &rarr; manual gate opens` },
+        { icon: "ok", html: `Agent calls <strong>whatsapp { action: "send", to: "+14155551212", message: "Hey!" }</strong><br><span class="ok-text">ALLOWED</span> lookup done, human approved, token consumed` },
+        { icon: "blocked", html: `Agent tries to send another message<br><span class="blocked-text">BLOCKED</span> budget consumed, must look up again` },
+      ]} />
     </div>
   </section>
 

@@ -535,58 +535,9 @@ blockquote cite {
 .rw-panel-body .dim { color: var(--text-muted); }
 .rw-panel-body .heading { color: var(--text-secondary); font-weight: 600; }
 
-.rw-trace {
+.real-world .trace {
   margin-top: 16px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px 28px;
 }
-
-.rw-trace-label {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-}
-
-.rw-trace-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-family: var(--mono);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.rw-trace-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 6px 0;
-}
-
-.rw-trace-icon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 700;
-  align-self: center;
-}
-
-.rw-trace-icon.blocked { background: var(--red-dim); color: var(--red); }
-.rw-trace-icon.ok { background: rgba(37,211,102,0.1); color: #25D366; }
-.rw-trace-icon.wait { background: var(--accent-dim); color: var(--accent-text); }
-
-.rw-trace-text { color: var(--text-muted); }
-.rw-trace-text strong { color: var(--text-secondary); }
-.rw-trace-text .blocked-text { color: var(--red); }
-.rw-trace-text .ok-text { color: #25D366; }
 
 /* ───── HOW IT WORKS (3 layers) ───── */
 
@@ -1195,27 +1146,29 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
 
 .example-rule .kw { color: var(--accent-text); }
 .example-rule .str { color: var(--green); }
-.example-rule .comment { color: rgba(255,255,255,0.3); }
+.example-rule .comment { color: rgba(255,255,255,0.45); }
 
-.example-trace {
+/* ───── TRACE (shared component) ───── */
+
+.trace {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
   margin-bottom: 16px;
 }
 
-.example-trace-label {
+.trace-label {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-muted);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .trace-steps {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-family: var(--mono);
   font-size: 13px;
   line-height: 1.6;
@@ -1230,25 +1183,25 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
 
 .trace-icon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 15px;
   font-weight: 700;
-  margin-top: 2px;
+  align-self: center;
 }
 
 .trace-icon.blocked { background: var(--red-dim); color: var(--red); }
-.trace-icon.ok { background: var(--green-dim); color: var(--green); }
+.trace-icon.ok { background: rgba(37,211,102,0.1); color: #25D366; }
 .trace-icon.wait { background: var(--accent-dim); color: var(--accent-text); }
 
 .trace-text { color: var(--text-muted); }
 .trace-text strong { color: var(--text-secondary); }
 .trace-text .blocked-text { color: var(--red); }
-.trace-text .ok-text { color: var(--green); }
+.trace-text .ok-text { color: #25D366; }
 
 .example-note {
   font-size: 14px;
