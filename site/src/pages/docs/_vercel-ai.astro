@@ -1,0 +1,326 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const quickStart = `import { loadRules } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { generateText } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+const { nets } = loadRules("./safety.rules");
+
+const gate = createPetriflowGate(nets);
+const tools = gate.wrapTools(myTools);
+
+const { text } = await generateText({
+  model: openai("gpt-4o"),
+  tools,
+  system: gate.systemPrompt(),
+  prompt: "Clean up old data files",
+});`;
+
+const howItWorks = `// gate.wrapTools() instruments each tool's execute method:
+
+// 1. Before execute → handleToolCall (gate check)
+//    Blocked? → throw ToolCallBlockedError, tool never runs
+
+// 2. Execute → original tool.execute(input, options)
+
+// 3. After execute → handleToolResult
+//    Success (isError: false) → deferred transitions advance
+//    Failure (isError: true)  → marking unchanged`;
+
+const rulesExample = `import { compile } from "@petriflow/rules";
+import { createPetriflowGate, ToolCallBlockedError } from "@petriflow/vercel-ai";
+import { generateText } from "ai";
+
+const { nets } = compile(\`
+  require lint before deploy
+  require human-approval before deploy
+  limit deploy to 2 per session
+\`);
+
+const gate = createPetriflowGate(nets, {
+  confirm: async (title, message) => {
+    // your UI or CLI prompt here
+    return await askUser(message);
+  },
+});
+
+const tools = gate.wrapTools(myTools);
+
+const { text } = await generateText({
+  model: openai("gpt-4o"),
+  tools,
+  system: gate.systemPrompt(),
+  prompt: "Run lint, then deploy to production",
+});`;
+
+const confirmExample = `import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { compile } from "@petriflow/rules";
+import * as readline from "readline";
+
+const { nets } = compile("require human-approval before deploy");
+
+// CLI: prompt on stdin
+const gate = createPetriflowGate(nets, {
+  confirm: async (title, message) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    return new Promise((resolve) => {
+      rl.question(\`\${message} (y/n) \`, (answer) => {
+        rl.close();
+        resolve(answer.toLowerCase() === "y");
+      });
+    });
+  },
+});
+
+// React: show a dialog
+const gate2 = createPetriflowGate(nets, {
+  confirm: async (title, message) => {
+    return await showApprovalDialog({ title, message });
+  },
+});`;
+
+const shadowExample = `const gate = createPetriflowGate(nets, {
+  mode: "shadow",
+  onDecision: (event, decision) => {
+    if (decision?.block) {
+      console.warn(\`[AUDIT] \${event.toolName} would be blocked: \${decision.reason}\`);
+    }
+  },
+});
+
+// Tools execute normally. Nothing is blocked.
+// onDecision fires on every call, so you see what *would* happen.
+const tools = gate.wrapTools(myTools);`;
+
+const registryExample = `import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { compile } from "@petriflow/rules";
+
+const { nets: safetyNets } = compile("block rm");
+const { nets: deployNets } = compile(\`
+  require lint before deploy
+  require human-approval before deploy
+\`);
+
+// Register all nets, activate only safety at startup
+const gate = createPetriflowGate({
+  registry: {
+    safety: safetyNets[0],
+    deploy: deployNets[0],
+    approval: deployNets[1],
+  },
+  active: ["safety"],
+});
+
+const tools = gate.wrapTools(myTools);
+
+// Later: enable deploy policy at runtime
+gate.addNet("deploy");
+gate.addNet("approval");
+// { ok: true, message: "Activated 'deploy'" }
+
+// Disable when no longer needed
+gate.removeNet("approval");
+// { ok: true, message: "Deactivated 'approval' (state preserved)" }`;
+
+const errorExample = `import { ToolCallBlockedError } from "@petriflow/vercel-ai";
+
+try {
+  const result = await generateText({
+    model: openai("gpt-4o"),
+    tools: gate.wrapTools(myTools),
+    prompt: "Delete all logs",
+  });
+} catch (e) {
+  if (e instanceof ToolCallBlockedError) {
+    console.log(e.toolName);   // "delete"
+    console.log(e.toolCallId); // "call_abc123"
+    console.log(e.reason);     // "[block-rm] Tool 'rm' not available ..."
+    console.log(e.message);    // "Tool 'delete' blocked: [block-rm] ..."
+  }
+}`;
+
+const createGateSignature = `// Static: pass compiled nets directly
+function createPetriflowGate(
+  nets: SkillNet<string>[],
+  opts?: GateOptions,
+): PetriflowGate;
+
+// Registry: dynamic activation/deactivation
+function createPetriflowGate(
+  config: ComposeConfig,
+  opts?: GateOptions,
+): PetriflowGate;`;
+
+const gateOptionsType = `type GateOptions = {
+  mode?: "enforce" | "shadow";  // default: "enforce"
+  confirm?: (title: string, message: string) => Promise<boolean>;
+  onDecision?: (event: GateToolCall, decision: GateDecision) => void;
+};`;
+
+const petriflowGateType = `type PetriflowGate = {
+  wrapTools: <T extends Record<string, any>>(tools: T) => T;
+  systemPrompt: () => string;
+  formatStatus: () => string;
+  addNet: (name: string) => { ok: boolean; message: string };
+  removeNet: (name: string) => { ok: boolean; message: string };
+  manager: GateManager;
+};`;
+
+const errorType = `class ToolCallBlockedError extends Error {
+  readonly toolName: string;
+  readonly toolCallId: string;
+  readonly reason: string;
+}`;
+
+const bundledNetExample = `import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai";
+// or: import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai/nets/tool-approval";
+
+const gate = createPetriflowGate([vercelAiToolApprovalNet]);
+// Free tools: readData, fetchData (always allowed)
+// Gated tools: writeData, sendEmail (require "ready" state)`;
+---
+<Layout title="Vercel AI SDK | PetriFlow" description="Integrate Petri net gating with the Vercel AI SDK. Wrap tools, enforce rules, and control agent behavior.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <h1>Vercel AI SDK</h1>
+      <p>Wrap your Vercel AI SDK tools with Petri net gating. One function call instruments every tool's <code>execute</code> method with safety checks that the model cannot bypass.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#quick-start">Quick start</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#using-with-rules">Using with rules</a>
+        <a href="#manual-confirmation">Manual confirmation</a>
+        <a href="#shadow-mode">Shadow mode</a>
+        <a href="#registry-mode">Registry mode</a>
+        <a href="#error-handling">Error handling</a>
+        <a href="#api-reference">API reference</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <!-- Quick start -->
+    <div class="doc-section" id="quick-start">
+      <h2>Quick start</h2>
+      <Code code={`bun add @petriflow/vercel-ai @petriflow/rules`} lang="bash" />
+      <p>Write your rules in a <code>.rules</code> file:</p>
+      <div class="example-rule" set:html={`<span class="comment"># safety.rules</span>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+<span class="kw">block</span> <span class="str">rm</span>`} />
+      <p>Load, compile, gate:</p>
+      <Code code={quickStart} lang="typescript" />
+      <p><code>loadRules</code> reads a <code>.rules</code> file and builds a verified Petri net for each rule. <code>createPetriflowGate</code> wraps the nets into a gate. <code>wrapTools</code> instruments every tool's <code>execute</code> method. <code>systemPrompt()</code> tells the model which tools are gated and why, so it can plan around the constraints instead of hitting them blind.</p>
+    </div>
+
+    <!-- How it works -->
+    <div class="doc-section" id="how-it-works">
+      <h2>How it works</h2>
+      <p><code>wrapTools</code> replaces each tool's <code>execute</code> with a wrapper that runs three phases:</p>
+      <Code code={howItWorks} lang="typescript" />
+
+      <Trace label="// require backup before delete" steps={[
+        { icon: "blocked", html: `Agent calls <strong>delete</strong><br><span class="blocked-text">BLOCKED</span> handleToolCall rejects. ToolCallBlockedError thrown. Tool never executes.` },
+        { icon: "ok", html: `Agent calls <strong>backup</strong><br><span class="ok-text">OK</span> handleToolCall allows. Tool executes. handleToolResult advances the net.` },
+        { icon: "ok", html: `Agent calls <strong>delete</strong><br><span class="ok-text">ALLOWED</span> net satisfied. Tool executes normally.` },
+      ]} />
+
+      <p>Tools without an <code>execute</code> method (schema-only) pass through unchanged. The return type is preserved: <code>wrapTools</code> returns the same <code>T</code> you pass in, so type inference works everywhere.</p>
+      <p>For details on the rule DSL (sequences, blocks, limits, tool mapping), see the <a href="/docs/rules/" style="color:var(--accent-text)">rules engine docs</a>.</p>
+    </div>
+
+    <!-- Using with @petriflow/rules -->
+    <div class="doc-section" id="using-with-rules">
+      <h2>Using with rules</h2>
+      <p>The full pipeline: write rules in the DSL, compile them, create a gate, wrap your tools. Three imports, four steps.</p>
+      <Code code={rulesExample} lang="typescript" />
+      <p>Each rule compiles to an independent Petri net. The gate checks all nets on every tool call. A tool fires only if every net allows it. Rules compose by intersection, the same way they do in <code>@petriflow/rules</code> directly. See <a href="/docs/rules/#composition" style="color:var(--accent-text)">how rules compose</a>.</p>
+    </div>
+
+    <!-- Manual confirmation -->
+    <div class="doc-section" id="manual-confirmation">
+      <h2>Manual confirmation</h2>
+      <p><code>require human-approval before X</code> rules compile to manual transitions. The runtime calls your <code>confirm</code> callback and waits for a response. If the human approves, the tool executes. If they reject, it's blocked. If no <code>confirm</code> callback is provided, manual transitions are always blocked.</p>
+      <Code code={confirmExample} lang="typescript" />
+      <p>The callback receives two arguments: a <code>title</code> (e.g. "Approve: deploy") and a <code>message</code> (e.g. "Allow 'deploy' via transition 'approve' in net 'approve-before-deploy'?"). Return <code>true</code> to approve, <code>false</code> to reject.</p>
+    </div>
+
+    <!-- Shadow mode -->
+    <div class="doc-section" id="shadow-mode">
+      <h2>Shadow mode</h2>
+      <p>Set <code>mode: "shadow"</code> to observe gating decisions without blocking anything. Tools always execute. The <code>onDecision</code> callback fires on every call with what <em>would</em> have happened in enforce mode.</p>
+      <Code code={shadowExample} lang="typescript" />
+      <p>Use this for auditing an existing agent. Deploy shadow mode first, review the logs, then switch to <code>"enforce"</code> when you're confident the rules match your intent.</p>
+    </div>
+
+    <!-- Registry mode -->
+    <div class="doc-section" id="registry-mode">
+      <h2>Registry mode</h2>
+      <p>Pass a <code>ComposeConfig</code> instead of an array to enable dynamic net management. Register all nets upfront, activate a subset, and add or remove nets at runtime.</p>
+      <Code code={registryExample} lang="typescript" />
+      <p><code>addNet</code> and <code>removeNet</code> return <code>{"{"} ok: boolean, message: string {"}"}</code>. Net state is preserved on deactivation and restored on reactivation. Inactive nets don't participate in gating decisions.</p>
+      <p>Use this when your agent's permissions change mid-session: escalating privileges after authentication, enabling deploy rules only during a release window, or disabling rate limits for admin users.</p>
+    </div>
+
+    <!-- Error handling -->
+    <div class="doc-section" id="error-handling">
+      <h2>Error handling</h2>
+      <p>When a tool is blocked in enforce mode, <code>wrapTools</code> throws a <code>ToolCallBlockedError</code>. The original tool never executes.</p>
+      <Code code={errorExample} lang="typescript" />
+      <p><code>ToolCallBlockedError</code> extends <code>Error</code>. Use <code>instanceof</code> to distinguish it from tool execution errors. The Vercel AI SDK catches tool errors and feeds them back to the model, so the agent sees the block reason and can adjust its plan.</p>
+    </div>
+
+    <!-- API reference -->
+    <div class="doc-section" id="api-reference">
+      <h2>API reference</h2>
+
+      <h3><code>createPetriflowGate(nets, opts?)</code></h3>
+      <p>Creates a gate instance. Two overloads: pass an array of nets for static composition, or a <code>ComposeConfig</code> for registry mode with dynamic activation.</p>
+      <Code code={createGateSignature} lang="typescript" />
+
+      <h3><code>GateOptions</code></h3>
+      <Code code={gateOptionsType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">mode</strong>: <code>"enforce"</code> throws on blocked calls. <code>"shadow"</code> logs but never blocks. Default: <code>"enforce"</code>.</li>
+        <li><strong style="color:var(--text-secondary)">confirm</strong>: callback for <code>require human-approval</code> rules. If omitted, manual transitions are blocked.</li>
+        <li><strong style="color:var(--text-secondary)">onDecision</strong>: fires after every gating decision. Receives the tool call event and the decision (<code>{"{"} block: true, reason {"}"}</code> or <code>undefined</code>).</li>
+      </ul>
+
+      <h3><code>PetriflowGate</code></h3>
+      <Code code={petriflowGateType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">wrapTools(tools)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns the same type.</li>
+        <li><strong style="color:var(--text-secondary)">systemPrompt()</strong>: returns a formatted prompt describing active nets, gated tools, and current state. Pass this to the model so it knows the constraints.</li>
+        <li><strong style="color:var(--text-secondary)">formatStatus()</strong>: returns the current marking of all nets. Useful for debugging.</li>
+        <li><strong style="color:var(--text-secondary)">addNet(name)</strong>: registry mode only. Activates a registered net.</li>
+        <li><strong style="color:var(--text-secondary)">removeNet(name)</strong>: registry mode only. Deactivates a net. State is preserved for later reactivation.</li>
+      </ul>
+
+      <h3><code>ToolCallBlockedError</code></h3>
+      <Code code={errorType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">toolName</strong>: the tool that was blocked</li>
+        <li><strong style="color:var(--text-secondary)">toolCallId</strong>: the specific invocation ID</li>
+        <li><strong style="color:var(--text-secondary)">reason</strong>: human-readable explanation from the gate</li>
+        <li><strong style="color:var(--text-secondary)">message</strong>: formatted as <code>"Tool '&lt;name&gt;' blocked: &lt;reason&gt;"</code></li>
+      </ul>
+
+      <h3><code>vercelAiToolApprovalNet</code></h3>
+      <p>A bundled Petri net for a common pattern: read-only tools are free, write tools are gated.</p>
+      <Code code={bundledNetExample} lang="typescript" />
+      <p>Available from the main export or from <code>@petriflow/vercel-ai/nets/tool-approval</code>.</p>
+    </div>
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

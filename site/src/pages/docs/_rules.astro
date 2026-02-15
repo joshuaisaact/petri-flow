@@ -5,14 +5,9 @@ import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import { Code } from "astro:components";
 
-const quickStart = `import { compile, createGateManager } from "@petriflow/rules";
+const quickStart = `import { loadRules, createGateManager } from "@petriflow/rules";
 
-const { nets, verification } = compile(\`
-  require backup before delete
-  require human-approval before deploy
-  block rm
-  limit push to 3 per session
-\`);
+const { nets, verification } = loadRules("./safety.rules");
 
 console.log(verification);
 // [
@@ -70,6 +65,8 @@ console.log(verification);
 //   { name: "require-backup-before-delete", reachableStates: 3 },
 //   { name: "limit-send-3",                 reachableStates: 5 },
 // ]`;
+
+const loadRulesSignature = `function loadRules(path: string): CompiledRules`;
 
 const compileSignature = `function compile(rules: string | string[]): CompiledRules`;
 
@@ -152,8 +149,13 @@ const manager = createGateManager([...dslNets, pathGuard], { mode: "enforce" });
     <!-- Quick start -->
     <div class="doc-section" id="quick-start">
       <h2>Quick start</h2>
+      <div class="example-rule" set:html={`<span class="comment"># safety.rules</span>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">block</span> <span class="str">rm</span>
+<span class="kw">limit</span> <span class="str">push</span> to <span class="str">3</span> per <span class="str">session</span>`} />
       <Code code={quickStart} lang="typescript" />
-      <p><code>compile()</code> parses your rules, builds a Petri net for each one, and verifies every net by exhaustive state enumeration. If your rules have structural problems, you find out here, not when your agent is live.</p>
+      <p><code>loadRules()</code> reads a <code>.rules</code> file, parses each rule, builds a Petri net for each one, and verifies every net by exhaustive state enumeration. If your rules have structural problems, you find out here, not when your agent is live. <code>compile()</code> does the same with inline strings.</p>
     </div>
 
     <!-- Wiring it up -->
@@ -340,8 +342,12 @@ const manager = createGateManager([...dslNets, pathGuard], { mode: "enforce" });
     <div class="doc-section" id="api-reference">
       <h2>API reference</h2>
 
+      <h3><code>loadRules(path)</code></h3>
+      <p>Reads a <code>.rules</code> file and compiles it. Returns the same <code>CompiledRules</code> as <code>compile()</code>.</p>
+      <Code code={loadRulesSignature} lang="typescript" />
+
       <h3><code>compile(rules)</code></h3>
-      <p>Parses rules, compiles each to a Petri net, verifies all nets by exhaustive state enumeration. Accepts a multiline string or an array of strings.</p>
+      <p>Parses inline rule strings, compiles each to a Petri net, verifies all nets by exhaustive state enumeration. Accepts a multiline string or an array of strings.</p>
       <Code code={compileSignature} lang="typescript" />
 
       <h3><code>CompiledRules</code></h3>
