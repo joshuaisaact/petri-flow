@@ -1,0 +1,366 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const quickStart = `import { compile, createGateManager } from "@petriflow/rules";
+
+const { nets, verification } = compile(\`
+  require backup before delete
+  require human-approval before deploy
+  block rm
+  limit push to 3 per session
+\`);
+
+console.log(verification);
+// [
+//   { name: "require-backup-before-delete", reachableStates: 3 },
+//   { name: "approve-before-deploy",        reachableStates: 2 },
+//   { name: "block-rm",                     reachableStates: 2 },
+//   { name: "limit-push-3",                 reachableStates: 5 },
+// ]
+
+const manager = createGateManager(nets, { mode: "enforce" });`;
+
+const wiringExample = `import { compile, createGateManager } from "@petriflow/rules";
+
+const { nets } = compile("require backup before delete");
+const manager = createGateManager(nets, { mode: "enforce" });
+
+const ctx = { hasUI: false, confirm: async () => false };
+
+// 1. Agent tries to delete without backing up
+const decision = await manager.handleToolCall(
+  { toolCallId: "call_1", toolName: "delete", input: { path: "/data" } },
+  ctx,
+);
+// decision → { block: true, reason: "..." }
+
+// 2. Agent backs up
+await manager.handleToolCall(
+  { toolCallId: "call_2", toolName: "backup", input: { path: "/data" } },
+  ctx,
+);
+// → undefined (allowed)
+
+// 3. Feed the result back so deferred transition fires on success
+manager.handleToolResult({
+  toolCallId: "call_2",
+  toolName: "backup",
+  input: { path: "/data" },
+  isError: false,
+});
+
+// 4. Now delete is allowed
+await manager.handleToolCall(
+  { toolCallId: "call_3", toolName: "delete", input: { path: "/data" } },
+  ctx,
+);
+// → undefined (allowed)`;
+
+const verifyExample = `const { verification } = compile(\`
+  require backup before delete
+  limit send to 3 per session
+\`);
+
+console.log(verification);
+// [
+//   { name: "require-backup-before-delete", reachableStates: 3 },
+//   { name: "limit-send-3",                 reachableStates: 5 },
+// ]`;
+
+const compileSignature = `function compile(rules: string | string[]): CompiledRules`;
+
+const compiledRulesType = `type CompiledRules = {
+  nets: SkillNet<string>[];
+  verification: NetVerification[];
+}`;
+
+const netVerificationType = `type NetVerification = {
+  name: string;
+  reachableStates: number;
+}`;
+
+const gateManagerUsage = `import { createGateManager } from "@petriflow/rules";
+
+const manager = createGateManager(nets, { mode: "enforce" });
+
+// Returns { block: true, reason } or undefined (allowed)
+await manager.handleToolCall(event, ctx);
+
+// Feed results back for deferred transitions
+manager.handleToolResult(result);`;
+
+const customNetExample = `import { defineSkillNet, compile, createGateManager } from "@petriflow/rules";
+
+// Restrict file writes to /workspace/ (the DSL can't express input validation)
+const pathGuard = defineSkillNet({
+  name: "write-path-guard",
+  places: ["idle", "ready"],
+  initialMarking: { idle: 1, ready: 0 },
+  transitions: [
+    { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
+    {
+      name: "write",
+      type: "auto",
+      inputs: ["ready"],
+      outputs: ["ready"],
+      tools: ["write-file"],
+    },
+  ],
+  freeTools: [],
+  terminalPlaces: [],
+  validateToolCall: (event) => {
+    const path = event.input.path as string;
+    if (!path.startsWith("/workspace/")) {
+      return { block: true, reason: \`writes restricted to /workspace/, got \${path}\` };
+    }
+  },
+});
+
+// Compose DSL rules and custom nets. They enforce independently.
+const { nets: dslNets } = compile("require lint before write-file");
+const manager = createGateManager([...dslNets, pathGuard], { mode: "enforce" });`;
+---
+<Layout title="Rules Engine | PetriFlow" description="DSL reference, composition model, and internals for @petriflow/rules.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <h1>Rules Engine</h1>
+      <p>Write safety rules. The compiler verifies them. The runtime enforces them.<br />This page covers the DSL, how rules compose, and what happens under the hood.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#quick-start">Quick start</a>
+        <a href="#wiring">Wiring it up</a>
+        <a href="#dsl-reference">DSL reference</a>
+        <a href="#tool-mapping">Tool mapping</a>
+        <a href="#composition">How rules compose</a>
+        <a href="#under-the-hood">Under the hood</a>
+        <a href="#verification">Verification</a>
+        <a href="#gotchas">Gotchas</a>
+        <a href="#api-reference">API reference</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <!-- Quick start -->
+    <div class="doc-section" id="quick-start">
+      <h2>Quick start</h2>
+      <Code code={quickStart} lang="typescript" />
+      <p><code>compile()</code> parses your rules, builds a Petri net for each one, and verifies every net by exhaustive state enumeration. If your rules have structural problems, you find out here, not when your agent is live.</p>
+    </div>
+
+    <!-- Wiring it up -->
+    <div class="doc-section" id="wiring">
+      <h2>Wiring it up</h2>
+      <p>The gate manager sits between your agent and its tools. On every tool call, you pass the event to <code>handleToolCall</code>. It returns <code>undefined</code> if the call is allowed, or <code>{"{"} block: true, reason: "..." {"}"}</code> if it's blocked. After a tool executes, feed the result back with <code>handleToolResult</code> so deferred transitions can fire.</p>
+      <Code code={wiringExample} lang="typescript" />
+      <p>Step 3 matters. Sequence rules use deferred transitions: the net records that backup was attempted, but only advances the marking once the tool result confirms it succeeded. If you skip <code>handleToolResult</code>, the gate stays closed. See <a href="#deferred" style="color:var(--accent-text)">deferred transitions</a> below for why this exists.</p>
+    </div>
+
+    <!-- DSL reference -->
+    <div class="doc-section" id="dsl-reference">
+      <h2>DSL reference</h2>
+      <p>One rule per line. <code>#</code> starts a comment. Blank lines are ignored.</p>
+
+      <h3 id="require"><code>require A before B</code></h3>
+      <div class="example-rule"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span></div>
+      <p>A must fire before B is allowed. After B fires, the gate resets. A must fire again before the next B. This creates a 1:1 ratio: every delete is backed by a preceding backup.</p>
+
+      <p id="deferred">The prerequisite (A) uses a <strong style="color:var(--text-secondary)">deferred transition</strong>. When the agent calls A, the net doesn't advance immediately. Instead, it waits for the tool result. If A succeeds (<code>isError: false</code>), the token moves and B becomes available. If A fails, the marking stays unchanged and B remains blocked.</p>
+      <p>This matters for safety. Without deferral, the token would move the moment A is called, before knowing whether A actually succeeded. A failed backup would still unlock delete. Deferral closes that gap: the net only advances on confirmed success.</p>
+
+      <h3 id="require-approval"><code>require human-approval before B</code></h3>
+      <div class="example-rule"><span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span></div>
+      <p>B requires manual confirmation every time. The runtime calls <code>ctx.confirm()</code> and waits for a human response. This is a <strong style="color:var(--text-secondary)">manual transition</strong> in the Petri net. The transition type itself requires external input, so no amount of prompt engineering can bypass it.</p>
+
+      <h3 id="block"><code>block A</code></h3>
+      <div class="example-rule"><span class="kw">block</span> <span class="str">rm</span></div>
+      <p>A is permanently blocked. The compiled net places A's transition behind a <code>locked</code> place that never receives a token. The tool name exists in the net, but no reachable state can ever fire it.</p>
+
+      <h3 id="limit-session"><code>limit A to N per session</code></h3>
+      <div class="example-rule"><span class="kw">limit</span> <span class="str">push</span> to <span class="str">3</span> per <span class="str">session</span></div>
+      <p>A can fire at most N times total. Each firing consumes one budget token. When the budget hits zero, A is blocked for the rest of the session. No refill mechanism exists.</p>
+
+      <h3 id="limit-action"><code>limit A to N per action</code></h3>
+      <div class="example-rule"><span class="kw">limit</span> <span class="str">send</span> to <span class="str">3</span> per <span class="str">read</span></div>
+      <p>A can fire N times, then it's blocked until <code>action</code> fires and refills the budget. The refill is <strong style="color:var(--text-secondary)">one token per action call</strong>, not a full reset. Each read refills one send. To restore the full budget of 3, the agent must read 3 times.</p>
+
+      <Trace label="// limit send to 3 per read: refill is one-at-a-time" steps={[
+        { icon: "ok", html: `<strong>send</strong>, <strong>send</strong>, <strong>send</strong><br><span class="ok-text">OK</span> budget: 3 &rarr; 0, spent: 0 &rarr; 3` },
+        { icon: "blocked", html: `Agent calls <strong>send</strong><br><span class="blocked-text">BLOCKED</span> budget exhausted` },
+        { icon: "ok", html: `Agent calls <strong>read</strong><br><span class="ok-text">OK</span> refills one token. budget: 1, spent: 2` },
+        { icon: "ok", html: `Agent calls <strong>send</strong><br><span class="ok-text">OK</span> budget: 0, spent: 3` },
+        { icon: "blocked", html: `Agent calls <strong>send</strong><br><span class="blocked-text">BLOCKED</span> must read again` },
+      ]} />
+      <p>This enforces a ratio, not a cycle. With <code>limit send to 1 per read</code>, the agent gets exactly one send per read. With <code>limit send to 3 per read</code>, the agent can burst 3 sends, then must read 3 times to fully recharge (or read once for one more send).</p>
+    </div>
+
+    <!-- Tool mapping -->
+    <div class="doc-section" id="tool-mapping">
+      <h2>Tool mapping</h2>
+
+      <h3>Dot notation</h3>
+      <p>Many MCP tools use a single tool name with an <code>action</code> field: <code>discord</code> with <code>action: "sendMessage"</code>, <code>whatsapp</code> with <code>action: "lookup"</code>. Dot notation gates specific actions:</p>
+      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">discord.readMessages</span> before <span class="str">discord.sendMessage</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">discord.sendMessage</span>
+<span class="kw">block</span>   <span class="str">discord.timeout</span>`} />
+      <p><code>discord.sendMessage</code> means: tool name is <code>discord</code>, input has <code>action: "sendMessage"</code>. The compiler generates a <code>toolMapper</code> automatically. Actions not mentioned in any rule pass through freely. <code>discord.react</code>, <code>discord.getChannels</code>, etc. are ungated.</p>
+
+      <h3><code>map</code> statements</h3>
+      <p>For tools where you need pattern matching (like gating specific bash commands), <code>map</code> defines virtual tool names:</p>
+      <div class="example-rule" set:html={`<span class="kw">map</span> bash.command rm as <span class="str">delete</span>
+<span class="kw">map</span> bash.command cp as <span class="str">backup</span>
+<span class="kw">map</span> bash.command deploy as <span class="str">deploy-cmd</span>
+
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-cmd</span>`} />
+
+      <p>Syntax: <code>map &lt;tool&gt;.&lt;field&gt; &lt;pattern&gt; as &lt;name&gt;</code></p>
+      <ul>
+        <li><code>bash.command</code> matches against <code>input.command</code> of the <code>bash</code> tool</li>
+        <li>Bare words use word-boundary matching: <code>rm</code> matches <code>rm -rf build/</code> but not <code>format</code></li>
+        <li>For regex, use <code>/</code> delimiters: <code>map bash.command /cp\s+-r/ as backup</code></li>
+        <li>Works with any tool and field, not just bash</li>
+        <li>Unmatched calls pass through freely (nets abstain)</li>
+      </ul>
+    </div>
+
+    <!-- How rules compose -->
+    <div class="doc-section" id="composition">
+      <h2>How rules compose</h2>
+      <p>Each rule compiles to its own independent Petri net. At runtime, <strong style="color:var(--text)">every net is checked on every tool call</strong>. A tool fires only if all nets allow it.</p>
+      <p>Rules compose by intersection. Each net enforces its own constraint. The runtime takes the conjunction. The nets don't coordinate and don't know about each other.</p>
+
+      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">lint</span> before <span class="str">test</span>
+<span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span>`} />
+
+      <p>Two rules produce two nets. The effect is transitive: <code>deploy</code> needs <code>test</code> (net 2), and <code>test</code> needs <code>lint</code> (net 1). The result is a forced ordering of <code>lint &rarr; test &rarr; deploy</code>, without either net knowing the other exists.</p>
+
+      <Trace label="// agent tries to skip steps" steps={[
+        { icon: "blocked", html: `Agent calls <strong>deploy</strong><br><span class="blocked-text">BLOCKED</span> by net 2: test hasn't fired` },
+        { icon: "blocked", html: `Agent calls <strong>test</strong><br><span class="blocked-text">BLOCKED</span> by net 1: lint hasn't fired` },
+        { icon: "ok", html: `Agent calls <strong>lint</strong><br><span class="ok-text">OK</span> net 1 unlocks test` },
+        { icon: "ok", html: `Agent calls <strong>test</strong><br><span class="ok-text">OK</span> net 1 allows, net 2 unlocks deploy` },
+        { icon: "ok", html: `Agent calls <strong>deploy</strong><br><span class="ok-text">ALLOWED</span> both nets satisfied` },
+      ]} />
+
+      <p>Each net is small enough to verify exhaustively. A sequence rule has 3 reachable states. But their combined enforcement covers arbitrarily complex policies. Compositional guarantees without combinatorial explosion.</p>
+
+      <p>You can add rules incrementally. Adding <code>require human-approval before deploy</code> doesn't change any existing net. It adds a third independent check. Now deploy requires lint, test, <em>and</em> human approval.</p>
+    </div>
+
+    <!-- Under the hood -->
+    <div class="doc-section" id="under-the-hood">
+      <h2>Under the hood</h2>
+      <p>Each rule compiles to a <a href="https://en.wikipedia.org/wiki/Petri_net" style="color:var(--accent-text)">Petri net</a>. Places hold tokens, transitions move them between places. Here's what each rule type produces.</p>
+
+      <h3>Sequence</h3>
+      <div class="example-rule"><span class="kw">require</span> <span class="str">A</span> before <span class="str">B</span></div>
+      <div class="net-structure" set:html={`<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)  <span class="place">gate</span>(0)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             do-A(<span class="place">ready</span>&rarr;<span class="place">gate</span>) <span class="comment">deferred</span>
+             do-B(<span class="place">gate</span>&rarr;<span class="place">ready</span>)
+<span class="dim">cycle:</span>       ready &rarr; gate &rarr; ready (A then B, repeatable)
+<span class="dim">states:</span>      3`} />
+
+      <h3>Approval</h3>
+      <div class="example-rule"><span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">B</span></div>
+      <div class="net-structure" set:html={`<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             approve(<span class="place">ready</span>&rarr;<span class="place">ready</span>) <span class="comment">type: manual</span>
+<span class="dim">mechanism:</span>  manual transition, requires ctx.confirm()
+<span class="dim">states:</span>      2`} />
+
+      <h3>Block</h3>
+      <div class="example-rule"><span class="kw">block</span> <span class="str">A</span></div>
+      <div class="net-structure" set:html={`<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)  <span class="place">locked</span>(0)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             do-A(<span class="place">locked</span>&rarr;<span class="place">locked</span>) <span class="comment">needs token in locked, never has one</span>
+<span class="dim">mechanism:</span>  A exists but is permanently unfireable
+<span class="dim">states:</span>      2`} />
+
+      <h3>Session limit</h3>
+      <div class="example-rule"><span class="kw">limit</span> <span class="str">A</span> to <span class="str">N</span> per <span class="str">session</span></div>
+      <div class="net-structure" set:html={`<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)  <span class="place">budget</span>(N)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             do-A(<span class="place">ready</span>+<span class="place">budget</span>&rarr;<span class="place">ready</span>) <span class="comment">consumes one budget token</span>
+<span class="dim">mechanism:</span>  budget tokens consumed, never replenished
+<span class="dim">states:</span>      N+2`} />
+
+      <h3>Action limit</h3>
+      <div class="example-rule"><span class="kw">limit</span> <span class="str">A</span> to <span class="str">N</span> per <span class="str">action</span></div>
+      <div class="net-structure" set:html={`<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)  <span class="place">budget</span>(N)  <span class="place">spent</span>(0)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             do-A(<span class="place">ready</span>+<span class="place">budget</span>&rarr;<span class="place">ready</span>+<span class="place">spent</span>) <span class="comment">uses budget</span>
+             refill(<span class="place">ready</span>+<span class="place">spent</span>&rarr;<span class="place">ready</span>+<span class="place">budget</span>) <span class="comment">one token per action call</span>
+<span class="dim">mechanism:</span>  each action call recycles one spent &rarr; budget
+<span class="dim">states:</span>      N+2`} />
+    </div>
+
+    <!-- Verification -->
+    <div class="doc-section" id="verification">
+      <h2>Verification</h2>
+      <p><code>compile()</code> runs petri-ts's reachable state analysis on every net. This is exhaustive: it enumerates every state reachable from the initial marking. Unbounded state growth or structural errors are caught here, at compile time.</p>
+      <p>The nets produced by the DSL are small by construction. A sequence rule has 3 reachable states. A block rule has 2. Even <code>limit A to 10 per session</code> only has 12. Verification is instantaneous.</p>
+      <p>The output tells you two things per net:</p>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">name</strong>: generated from the rule syntax (e.g. <code>require-backup-before-delete</code>)</li>
+        <li><strong style="color:var(--text-secondary)">reachableStates</strong>: total states the net can reach. If this is unexpectedly high, the rule is wrong.</li>
+      </ul>
+      <Code code={verifyExample} lang="typescript" />
+    </div>
+
+    <!-- Gotchas -->
+    <div class="doc-section" id="gotchas">
+      <h2>Gotchas</h2>
+
+      <h3>Misspelled tool names</h3>
+      <p>Rules with typos compile without errors. A net referencing <code>deply</code> instead of <code>deploy</code> simply never matches any tool call. It abstains from every decision. Check the verification output: if a net name doesn't match what you expect, you have a typo.</p>
+
+      <h3><code>require A before A</code></h3>
+      <p>This compiles, but the behavior is subtle. A is both the prerequisite and the gated action. The first call to A is deferred (the net waits for the tool result), then A can fire again immediately. Every pair of A calls forms a cycle: one observed, one gated. Verification shows 3 reachable states. Probably not what you intended.</p>
+
+      <h3>Circular dependencies</h3>
+      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">A</span> before <span class="str">B</span>
+<span class="kw">require</span> <span class="str">B</span> before <span class="str">A</span>`} />
+      <p>Two independent nets. Net 1 blocks B until A fires. Net 2 blocks A until B fires. Neither can ever fire. Both tools are permanently dead. The compiler doesn't detect this because each net in isolation is well-formed. If you suspect a deadlock, check whether any of your tools are permanently unreachable by tracing through the nets manually.</p>
+
+      <h3>Redundant rules</h3>
+      <p><code>block deploy</code> alongside <code>require test before deploy</code> is not an error. Both nets compile independently. The block net is sufficient on its own, and the sequence net's deploy transition simply never fires. No conflict, just redundancy.</p>
+    </div>
+
+    <!-- API reference -->
+    <div class="doc-section" id="api-reference">
+      <h2>API reference</h2>
+
+      <h3><code>compile(rules)</code></h3>
+      <p>Parses rules, compiles each to a Petri net, verifies all nets by exhaustive state enumeration. Accepts a multiline string or an array of strings.</p>
+      <Code code={compileSignature} lang="typescript" />
+
+      <h3><code>CompiledRules</code></h3>
+      <Code code={compiledRulesType} lang="typescript" />
+
+      <h3><code>NetVerification</code></h3>
+      <Code code={netVerificationType} lang="typescript" />
+
+      <h3><code>createGateManager(nets, options)</code></h3>
+      <p>Creates a runtime gate manager from compiled nets. Re-exported from <code>@petriflow/gate</code>. Modes: <code>"enforce"</code> blocks disallowed calls, <code>"shadow"</code> logs but never blocks (useful for dry runs).</p>
+      <Code code={gateManagerUsage} lang="typescript" />
+
+      <h3><code>defineSkillNet(config)</code></h3>
+      <p>Build custom Petri nets for things the DSL can't express: input validation, multi-phase approval flows, domain-specific guards. DSL nets and custom nets compose in the same <code>createGateManager</code> call.</p>
+      <p>The example below restricts file writes to <code>/workspace/</code> using <code>validateToolCall</code>, which runs after the net confirms the transition is enabled but before it fires. The DSL has no way to inspect tool inputs, so this requires a custom net.</p>
+      <Code code={customNetExample} lang="typescript" />
+    </div>
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

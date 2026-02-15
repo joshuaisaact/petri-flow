@@ -2,7 +2,7 @@
 import Logo from "./Logo.astro";
 
 interface Props {
-  currentPage?: "index" | "examples";
+  currentPage?: "index" | "examples" | "docs";
 }
 const { currentPage = "index" } = Astro.props;
 const prefix = currentPage === "index" ? "" : "/";
