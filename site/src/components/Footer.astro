@@ -5,13 +5,14 @@ interface Props {
   variant?: "full" | "minimal";
 }
 const { variant = "full" } = Astro.props;
+const base = import.meta.env.BASE_URL;
 ---
 {variant === "full" ? (
   <footer>
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <a href="/" class="nav-logo">
+          <a href={base} class="nav-logo">
             <Logo />
           </a>
           <p style="margin-top:12px;">
@@ -24,7 +25,7 @@ const { variant = "full" } = Astro.props;
           <a href="#how-it-works">How It Works</a>
           <a href="#rules">Safety Rules</a>
           <a href="#comparison">Comparison</a>
-          <a href="/examples/">Examples</a>
+          <a href={`${base}examples/`}>Examples</a>
         </div>
         <div class="footer-col">
           <h4>Community</h4>
@@ -40,7 +41,7 @@ const { variant = "full" } = Astro.props;
 ) : (
   <footer class="footer-minimal">
     <div class="container">
-      <a href="/" class="nav-logo">
+      <a href={base} class="nav-logo">
         <Logo size={20} />
       </a>
       <span>&copy; 2026 PetriFlow</span>

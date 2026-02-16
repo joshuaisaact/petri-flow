@@ -351,28 +351,28 @@ const manager = createGateManager(
       </p>
 
       <div class="rules-grid">
-        <a href="/examples/#observe-before-send" class="rule-card">
+        <a href={`${import.meta.env.BASE_URL}examples/#observe-before-send`} class="rule-card">
           <div class="rule-name">observe-before-send</div>
           <h3>Don't message blindly</h3>
           <p>Read a channel before you can send to it. One read, one send. Channel-matched: reading #general doesn't unlock #production.</p>
           <div class="rule-preview"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send</span></div>
         </a>
 
-        <a href="/examples/#test-before-deploy" class="rule-card">
+        <a href={`${import.meta.env.BASE_URL}examples/#test-before-deploy`} class="rule-card">
           <div class="rule-name">test-before-deploy</div>
           <h3>Don't ship broken code</h3>
           <p>Tests gate staging. Staging gates production. Production requires a human.</p>
           <div class="rule-preview"><span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span></div>
         </a>
 
-        <a href="/examples/#research-before-share" class="rule-card">
+        <a href={`${import.meta.env.BASE_URL}examples/#research-before-share`} class="rule-card">
           <div class="rule-name">research-before-share</div>
           <h3>Don't share fabrications</h3>
           <p>Each fetch earns one share. Each share consumes one. No sources fetched, no sharing possible.</p>
           <div class="rule-preview"><span class="kw">limit</span> <span class="str">share</span> to <span class="str">1</span> per <span class="str">fetch</span></div>
         </a>
 
-        <a href="/examples/#backup-before-delete" class="rule-card">
+        <a href={`${import.meta.env.BASE_URL}examples/#backup-before-delete`} class="rule-card">
           <div class="rule-name">backup-before-delete</div>
           <h3>Don't destroy without a safety net</h3>
           <p>Destructive commands blocked until a backup covers the target path. The backup must actually succeed.</p>

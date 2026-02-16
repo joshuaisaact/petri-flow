@@ -235,7 +235,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       ]} />
 
       <p>Tools without an <code>execute</code> method (schema-only) pass through unchanged. The return type is preserved: <code>wrapTools</code> returns the same <code>T</code> you pass in, so type inference works everywhere.</p>
-      <p>For details on the rule DSL (sequences, blocks, limits, tool mapping), see the <a href="/docs/rules/" style="color:var(--accent-text)">rules engine docs</a>.</p>
+      <p>For details on the rule DSL (sequences, blocks, limits, tool mapping), see the <a href={`${import.meta.env.BASE_URL}docs/rules/`} style="color:var(--accent-text)">rules engine docs</a>.</p>
     </div>
 
     <!-- Using with @petriflow/rules -->
@@ -243,7 +243,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <h2>Using with rules</h2>
       <p>The full pipeline: write rules in the DSL, compile them, create a gate, wrap your tools. Three imports, four steps.</p>
       <Code code={rulesExample} lang="typescript" />
-      <p>Each rule compiles to an independent Petri net. The gate checks all nets on every tool call. A tool fires only if every net allows it. Rules compose by intersection, the same way they do in <code>@petriflow/rules</code> directly. See <a href="/docs/rules/#composition" style="color:var(--accent-text)">how rules compose</a>.</p>
+      <p>Each rule compiles to an independent Petri net. The gate checks all nets on every tool call. A tool fires only if every net allows it. Rules compose by intersection, the same way they do in <code>@petriflow/rules</code> directly. See <a href={`${import.meta.env.BASE_URL}docs/rules/#composition`} style="color:var(--accent-text)">how rules compose</a>.</p>
     </div>
 
     <!-- Manual confirmation -->
