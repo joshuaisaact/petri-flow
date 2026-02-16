@@ -1489,16 +1489,13 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
   font-weight: 500;
 }
 
-.doc-breadcrumb > a:last-child {
+.doc-breadcrumb-sep {
   margin-left: auto;
-  color: var(--accent-text);
-  font-size: 13px;
 }
 
-.doc-breadcrumb > a:last-child::before {
-  content: "Also: ";
-  color: var(--text-muted);
-  font-weight: 400;
+.doc-breadcrumb-sep ~ a {
+  color: var(--accent-text);
+  font-size: 13px;
 }
 
 /* ───── FADE IN ON SCROLL ───── */

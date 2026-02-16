@@ -1,0 +1,231 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const hooksConfig = `{
+  "hooks": {
+    "SessionStart": [{
+      "hooks": [{ "type": "command", "command": "bun run node_modules/@petriflow/claude-code/src/hook.ts" }]
+    }],
+    "PreToolUse": [{
+      "hooks": [{ "type": "command", "command": "bun run node_modules/@petriflow/claude-code/src/hook.ts" }]
+    }],
+    "PostToolUse": [{
+      "hooks": [{ "type": "command", "command": "bun run node_modules/@petriflow/claude-code/src/hook.ts" }]
+    }],
+    "PostToolUseFailure": [{
+      "hooks": [{ "type": "command", "command": "bun run node_modules/@petriflow/claude-code/src/hook.ts" }]
+    }]
+  }
+}`;
+
+const configureExample = `import { configure } from "@petriflow/claude-code";
+
+const config = configure("/path/to/project");
+// Merge config.hooks into your .claude/settings.json`;
+
+const defaultNet = `// Built-in: safeCodingNet
+{
+  freeTools: ["Read", "Glob", "Grep", "WebSearch"],
+  gated:     ["Write", "Edit", "WebFetch", "Task"],
+  blocked:   ["Bash"],
+}`;
+
+const customConfigBasic = `// .claude/petriflow.config.ts
+import { safeCodingNet } from "@petriflow/claude-code";
+
+export default { nets: [safeCodingNet], mode: "enforce" as const };`;
+
+const shadowMode = `// .claude/petriflow.config.ts
+import { safeCodingNet } from "@petriflow/claude-code";
+
+export default { nets: [safeCodingNet], mode: "shadow" as const };
+// Tools always execute. Decisions logged to stderr.`;
+
+const customNetExample = `// .claude/petriflow.config.ts
+import { defineSkillNet, safeCodingNet } from "@petriflow/claude-code";
+
+// Allow Bash but require human approval first
+const approvedBash = defineSkillNet({
+  name: "approved-bash",
+  places: ["idle", "ready"],
+  terminalPlaces: [],
+  freeTools: [],
+  initialMarking: { idle: 1, ready: 0 },
+  transitions: [
+    { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
+    { name: "runBash", type: "manual", inputs: ["ready"], outputs: ["ready"], tools: ["Bash"] },
+  ],
+});
+
+export default { nets: [approvedBash], mode: "enforce" as const };`;
+
+const multiNetExample = `// .claude/petriflow.config.ts
+import { defineSkillNet, safeCodingNet } from "@petriflow/claude-code";
+import { compile } from "@petriflow/rules";
+
+// Use the DSL for simple rules
+const { nets: ruleNets } = compile(\`
+  require Read before Edit
+  limit Write to 5 per session
+\`);
+
+export default {
+  nets: [...ruleNets, safeCodingNet],
+  mode: "enforce" as const,
+};`;
+
+const apiConfigureSignature = `function configure(projectDir: string): HooksConfig`;
+---
+<Layout title="Claude Code | PetriFlow" description="Hook PetriFlow into Claude Code to enforce safety constraints on tool calls. Block Bash, gate writes, require approvals.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Claude Code</span>
+        <a href={`${base}docs/rules/`}>Rules Engine</a>
+      </nav>
+      <h1>Claude Code</h1>
+      <p>Hook into Claude Code's tool pipeline to enforce safety constraints. Every tool call passes through a Petri net gate before it executes. No prompt engineering can bypass it.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#quick-start">Quick start</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#default-net">Default net</a>
+        <a href="#custom-config">Custom config</a>
+        <a href="#shadow-mode">Shadow mode</a>
+        <a href="#custom-nets">Custom nets</a>
+        <a href="#composing-with-rules">Composing with rules</a>
+        <a href="#api-reference">API reference</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <!-- Quick start -->
+    <div class="doc-section" id="quick-start">
+      <h2>Quick start</h2>
+      <Code code="bun add @petriflow/claude-code" lang="bash" />
+      <p>Add hooks to your project's <code>.claude/settings.json</code>:</p>
+      <Code code={hooksConfig} lang="json" />
+      <p>That's it. The default net blocks <code>Bash</code>, gates file mutations (<code>Write</code>, <code>Edit</code>), and lets read-only tools through freely. State persists across hook invocations automatically.</p>
+    </div>
+
+    <!-- How it works -->
+    <div class="doc-section" id="how-it-works">
+      <h2>How it works</h2>
+      <p>Claude Code hooks spawn a <strong style="color:var(--text-secondary)">new process per event</strong>. There's no persistent connection. The adapter handles this by persisting gate state to a JSON file between invocations:</p>
+
+      <Trace label="// hook lifecycle for each Claude Code session" steps={[
+        { icon: "ok", html: `<strong>SessionStart</strong><br><span class="ok-text">Clear stale state</span> delete /tmp/petriflow-claude-code-{session_id}.json` },
+        { icon: "ok", html: `<strong>PreToolUse</strong><br>Restore state &rarr; gate the tool call &rarr; persist state &rarr; output allow/deny` },
+        { icon: "ok", html: `<strong>PostToolUse</strong><br>Restore state &rarr; resolve deferred transitions on success &rarr; persist state` },
+        { icon: "ok", html: `<strong>PostToolUseFailure</strong><br>Restore state &rarr; clear pending (tool failed, marking unchanged) &rarr; persist state` },
+      ]} />
+
+      <p>On <code>PreToolUse</code>, the hook reads stdin (the tool call event), checks it against all active nets, and writes a JSON response to stdout. If the tool is blocked, the response includes <code>permissionDecision: "deny"</code> and Claude Code stops the tool from executing.</p>
+      <p>On <code>PostToolUse</code>, deferred transitions fire. If a tool was allowed but its execution is needed to advance the net (like a backup before delete), the marking only moves forward after confirmed success.</p>
+    </div>
+
+    <!-- Default net -->
+    <div class="doc-section" id="default-net">
+      <h2>Default net</h2>
+      <p>With no config file, the adapter uses <code>safeCodingNet</code>:</p>
+
+      <div class="net-structure" set:html={`<span class="dim">free tools:</span>     Read, Glob, Grep, WebSearch
+<span class="dim">gated tools:</span>    Write, Edit, WebFetch, Task
+<span class="dim">blocked tools:</span>  Bash
+
+<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)  <span class="place">locked</span>(0)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             writeFile(<span class="place">ready</span>&rarr;<span class="place">ready</span>)  <span class="comment">tools: Write</span>
+             editFile(<span class="place">ready</span>&rarr;<span class="place">ready</span>)   <span class="comment">tools: Edit</span>
+             webFetch(<span class="place">ready</span>&rarr;<span class="place">ready</span>)   <span class="comment">tools: WebFetch</span>
+             spawnTask(<span class="place">ready</span>&rarr;<span class="place">ready</span>)  <span class="comment">tools: Task</span>
+             bashBlocked(<span class="place">locked</span>&rarr;<span class="place">locked</span>) <span class="comment">tools: Bash — never fires</span>`} />
+
+      <p>Free tools pass through with no gate check. Gated tools consume and restore the <code>ready</code> token. Bash requires a token in <code>locked</code>, which starts at 0 and never receives one.</p>
+
+      <Trace label="// default net in action" steps={[
+        { icon: "ok", html: `Claude calls <strong>Read</strong> (file.ts)<br><span class="ok-text">OK</span> free tool, always allowed` },
+        { icon: "ok", html: `Claude calls <strong>Edit</strong> (file.ts)<br><span class="ok-text">OK</span> gated, ready token present` },
+        { icon: "blocked", html: `Claude calls <strong>Bash</strong> (npm install)<br><span class="blocked-text">BLOCKED</span> locked place has no token, structurally impossible` },
+        { icon: "ok", html: `Claude calls <strong>Grep</strong> ("TODO")<br><span class="ok-text">OK</span> free tool` },
+      ]} />
+    </div>
+
+    <!-- Custom config -->
+    <div class="doc-section" id="custom-config">
+      <h2>Custom config</h2>
+      <p>Create <code>.claude/petriflow.config.ts</code> in your project root to override the defaults:</p>
+      <Code code={customConfigBasic} lang="typescript" />
+      <p>The hook script checks for this file on every invocation. Export a default object with <code>nets</code> (array of skill nets) and <code>mode</code> (<code>"enforce"</code> or <code>"shadow"</code>).</p>
+    </div>
+
+    <!-- Shadow mode -->
+    <div class="doc-section" id="shadow-mode">
+      <h2>Shadow mode</h2>
+      <p>Set <code>mode: "shadow"</code> to observe gating decisions without blocking anything. Tools always execute. Decisions are logged to stderr so you can review what <em>would</em> have been blocked.</p>
+      <Code code={shadowMode} lang="typescript" />
+      <p>Use this to evaluate rules against a real session before switching to <code>"enforce"</code>. The stderr output shows every tool call, its decision, and the current net marking.</p>
+    </div>
+
+    <!-- Custom nets -->
+    <div class="doc-section" id="custom-nets">
+      <h2>Custom nets</h2>
+      <p>Replace the default net entirely by exporting your own. This example allows Bash but requires manual approval for every invocation:</p>
+      <Code code={customNetExample} lang="typescript" />
+      <p>The <code>type: "manual"</code> transition means the tool can only fire with external confirmation. In Claude Code hooks, manual transitions are always denied (the hook has no UI for human approval), so this effectively blocks Bash unless you pair it with a custom approval flow.</p>
+      <p>For tools not mentioned in any net, the gate abstains and the tool passes through freely.</p>
+    </div>
+
+    <!-- Composing with rules -->
+    <div class="doc-section" id="composing-with-rules">
+      <h2>Composing with rules</h2>
+      <p>Combine the <a href={`${base}docs/rules/`} style="color:var(--accent-text)">rules DSL</a> with the default net. DSL rules and custom nets compose independently via AND logic.</p>
+      <Code code={multiNetExample} lang="typescript" />
+      <p>Each rule compiles to its own net. The gate manager checks all nets on every tool call. A tool fires only if every net allows it. <code>safeCodingNet</code> blocks Bash, and the DSL rules enforce ordering and limits on top.</p>
+    </div>
+
+    <!-- API reference -->
+    <div class="doc-section" id="api-reference">
+      <h2>API reference</h2>
+
+      <h3><code>safeCodingNet</code></h3>
+      <p>The default safety net for Claude Code. Free: Read, Glob, Grep, WebSearch. Gated: Write, Edit, WebFetch, Task. Blocked: Bash.</p>
+
+      <h3><code>configure(projectDir)</code></h3>
+      <p>Generates the hooks configuration to merge into <code>.claude/settings.json</code>. The command path is resolved relative to the project's <code>node_modules</code>.</p>
+      <Code code={apiConfigureSignature} lang="typescript" />
+
+      <h3><code>defineSkillNet(config)</code></h3>
+      <p>Re-exported from <code>@petriflow/gate</code>. Build custom nets for things the default doesn't cover. See the <a href={`${base}docs/rules/#api-reference`} style="color:var(--accent-text)">rules API reference</a> for the full <code>SkillNet</code> type.</p>
+
+      <h3><code>createGateManager(nets, opts)</code></h3>
+      <p>Re-exported from <code>@petriflow/gate</code>. Creates a runtime gate manager. Modes: <code>"enforce"</code> blocks disallowed calls, <code>"shadow"</code> logs but never blocks.</p>
+
+      <h3>Config file format</h3>
+      <p>Place at <code>.claude/petriflow.config.ts</code>. The hook loads this on every invocation.</p>
+      <div class="net-structure" set:html={`<span class="dim">type</span> PetriflowConfig = {
+  nets: SkillNet<span class="dim">&lt;</span>string<span class="dim">&gt;</span>[];
+  mode: <span class="place">"enforce"</span> | <span class="place">"shadow"</span>;
+}`} />
+
+      <h3>State persistence</h3>
+      <p>Gate state is persisted to <code>/tmp/petriflow-claude-code-{"{session_id}"}.json</code> between hook invocations. Cleared on <code>SessionStart</code>. Contains net markings, metadata, and pending deferred transitions.</p>
+    </div>
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>
