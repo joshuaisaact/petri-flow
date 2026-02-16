@@ -1,0 +1,38 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+<Layout title="Documentation | PetriFlow" description="Get started with PetriFlow — safety rules for AI agents, formally verified and structurally enforced.">
+  <Nav currentPage="docs" />
+
+  <div class="container-narrow">
+    <div class="page-header">
+      <h1>Documentation</h1>
+      <p>Safety rules for AI agents. Write rules in a simple DSL, the compiler verifies them, the runtime enforces them.</p>
+    </div>
+
+    <div class="doc-install">
+      <code>bun add @petriflow/gate @petriflow/rules</code>
+    </div>
+
+    <div class="doc-cards">
+      <a href={`${base}docs/rules/`} class="doc-card">
+        <div class="doc-card-label">@petriflow/rules</div>
+        <h2>Rules Engine</h2>
+        <p>DSL reference, composition model, and internals. Learn how to write safety rules and how they compile to verified Petri nets.</p>
+        <span class="doc-card-link">Read docs &rarr;</span>
+      </a>
+      <a href={`${base}docs/vercel-ai/`} class="doc-card">
+        <div class="doc-card-label">@petriflow/vercel-ai</div>
+        <h2>Vercel AI SDK</h2>
+        <p>Wrap your Vercel AI SDK tools with Petri net gating. One function call instruments every tool with safety checks the model cannot bypass.</p>
+        <span class="doc-card-link">Read docs &rarr;</span>
+      </a>
+    </div>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

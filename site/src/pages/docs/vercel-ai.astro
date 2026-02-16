@@ -190,6 +190,12 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
 
   <div class="doc-wrapper">
     <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${import.meta.env.BASE_URL}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Vercel AI SDK</span>
+        <a href={`${import.meta.env.BASE_URL}docs/rules/`}>Rules Engine</a>
+      </nav>
       <h1>Vercel AI SDK</h1>
       <p>Wrap your Vercel AI SDK tools with Petri net gating. One function call instruments every tool's <code>execute</code> method with safety checks that the model cannot bypass.</p>
     </div>

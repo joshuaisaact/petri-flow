@@ -126,6 +126,12 @@ const manager = createGateManager([...dslNets, pathGuard], { mode: "enforce" });
 
   <div class="doc-wrapper">
     <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${import.meta.env.BASE_URL}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Rules</span>
+        <a href={`${import.meta.env.BASE_URL}docs/vercel-ai/`}>Vercel AI SDK</a>
+      </nav>
       <h1>Rules Engine</h1>
       <p>Write safety rules. The compiler verifies them. The runtime enforces them.<br />This page covers the DSL, how rules compose, and what happens under the hood.</p>
     </div>

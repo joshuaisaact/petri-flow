@@ -1389,6 +1389,118 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
 .net-structure .comment { color: rgba(255,255,255,0.35); }
 .net-structure .dim { color: rgba(255,255,255,0.25); }
 
+/* ───── DOCS LANDING PAGE ───── */
+
+.doc-install {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.doc-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 60px;
+}
+
+.doc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+.doc-card-label {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-text);
+  margin-bottom: 8px;
+}
+
+.doc-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.doc-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.doc-card-link {
+  margin-top: auto;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-text);
+}
+
+/* ───── DOCS BREADCRUMB NAV ───── */
+
+.doc-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.doc-breadcrumb a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.doc-breadcrumb a:hover {
+  color: var(--text-secondary);
+}
+
+.doc-breadcrumb > span {
+  color: var(--text-muted);
+}
+
+.doc-breadcrumb > span[aria-hidden] {
+  color: rgba(255,255,255,0.15);
+}
+
+.doc-breadcrumb > span:not([aria-hidden]) {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.doc-breadcrumb > a:last-child {
+  margin-left: auto;
+  color: var(--accent-text);
+  font-size: 13px;
+}
+
+.doc-breadcrumb > a:last-child::before {
+  content: "Also: ";
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
 /* ───── FADE IN ON SCROLL ───── */
 [data-animate] {
   opacity: 0;
@@ -1490,5 +1602,9 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
 
   .under-hood-stats {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .doc-cards {
+    grid-template-columns: 1fr;
   }
 }
