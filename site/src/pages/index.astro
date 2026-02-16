@@ -15,7 +15,8 @@ import { Code } from "astro:components";
     <div class="container">
       <h1>Provably Safe<br /><span class="hero-accent">AI Agents.</span></h1>
       <p class="hero-sub">
-        Rules your agent <strong style="color:var(--text)">cannot</strong> break. Any framework. One safety layer from <strong style="color:var(--text)">Petri<span style="color:var(--accent-text)">Flow</span></strong>.
+        AI agents decide which tools to call &mdash; shell commands, APIs, databases.
+        <strong style="color:var(--text)">Petri<span style="color:var(--accent-text)">Flow</span></strong> intercepts every call and enforces rules they <strong style="color:var(--text)">cannot</strong> break.
       </p>
       <div class="hero-buttons">
         <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
@@ -46,11 +47,11 @@ import { Code } from "astro:components";
   <!-- PROBLEM -->
   <section class="problem" id="problem" data-animate aria-labelledby="problem-heading">
     <div class="container">
-      <h2 id="problem-heading" class="section-title">Your agent's safety net<br />is a <code style="font-family:var(--mono);color:var(--orange)">.md</code> file.</h2>
+      <h2 id="problem-heading" class="section-title">AI agents call tools.<br />Nothing controls the order.</h2>
       <p class="section-sub">
-        Agent skills are markdown files. The model reads them, follows the instructions,
-        and calls tools. There is nothing between "the skill says don't do that" and
-        the model doing it anyway.
+        An AI agent works by calling tools &mdash; functions that send messages, run shell commands,
+        query databases, deploy code. The model picks which tools to call and in what order.
+        There is no runtime layer between the model&rsquo;s decision and the tool executing.
       </p>
 
       <blockquote>
@@ -60,20 +61,20 @@ import { Code } from "astro:components";
 
       <div class="problem-grid">
         <div class="problem-card">
-          <h3>Skills are just prompts</h3>
-          <p>A <code>SKILL.md</code> is natural language instructions the model reads and hopefully follows. "Run tests before deploying" is a <strong style="color:var(--red)">suggestion</strong>, not a constraint. Nothing enforces it.</p>
+          <h3>Prompts don&rsquo;t enforce</h3>
+          <p>You can write &ldquo;always back up before deleting&rdquo; in your system prompt. The model reads it. The model might follow it. Instructions are <strong style="color:var(--red)">suggestions</strong>, not constraints.</p>
         </div>
         <div class="problem-card">
           <h3>Deny-lists are never complete</h3>
-          <p>You block <code>rm -rf</code> but miss <code>find -delete</code>. You block <code>DROP TABLE</code> but miss <code>TRUNCATE</code>. The agent finds <strong style="color:var(--red)">the gap you didn't think of</strong>.</p>
+          <p>You block <code>rm -rf</code> but miss <code>find -delete</code>. You block <code>DROP TABLE</code> but miss <code>TRUNCATE</code>. The agent finds <strong style="color:var(--red)">the gap you didn&rsquo;t think of</strong>.</p>
         </div>
         <div class="problem-card">
-          <h3>Nothing between intent and action</h3>
-          <p>Skills have no runtime. The model reads markdown, decides what to do, and calls tools directly. There's <strong style="color:var(--red)">no gate</strong> between what the agent wants to do and doing it.</p>
+          <h3>IAM controls who, not when</h3>
+          <p>Identity management controls which users can call a tool. It doesn&rsquo;t control the <strong style="color:var(--red)">order</strong>. &ldquo;This agent can run bash&rdquo; doesn&rsquo;t prevent it deleting without backing up first.</p>
         </div>
         <div class="problem-card">
-          <h3>More skills = more trust</h3>
-          <p>Every new skill hands the model more tools and more instructions to follow correctly. You're <strong style="color:var(--red)">scaling capability while scaling risk</strong>, with nothing but the prompt standing between them.</p>
+          <h3>More tools, more risk</h3>
+          <p>Every tool you hand an agent is a tool it can misuse. You&rsquo;re <strong style="color:var(--red)">scaling capability and risk together</strong>, with nothing constraining the interaction between tools.</p>
         </div>
       </div>
     </div>
@@ -82,9 +83,9 @@ import { Code } from "astro:components";
   <!-- SOLUTION -->
   <section class="solution" id="solution" data-animate aria-labelledby="solution-heading">
     <div class="container">
-      <h2 id="solution-heading" class="section-title">Your skills are prompts.<br />Make them enforceable.</h2>
+      <h2 id="solution-heading" class="section-title">Your instructions are prompts.<br />Make them enforceable.</h2>
       <p class="section-sub">
-        Skills make your agent powerful. Rules make it <strong style="color:var(--accent-text)">safe</strong>.
+        Tools make your agent powerful. Rules make it <strong style="color:var(--accent-text)">safe</strong>.
       </p>
 
       <div class="solution-compare">
