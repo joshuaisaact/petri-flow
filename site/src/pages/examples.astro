@@ -75,18 +75,26 @@ import Trace from "../components/Trace.astro";
     <div class="example" id="backup-before-delete">
       <div class="example-name">backup-before-delete</div>
       <h2>Don't destroy without a safety net</h2>
-      <p>Every destructive command is blocked until a backup covers the target path. The backup must actually succeed (deferred check).</p>
+      <p>Only mapped bash commands can reach the shell. Everything else is blocked. The backup must actually succeed before delete is unlocked (deferred check).</p>
 
-      <div class="example-rule"><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span></div>
+      <div class="example-rule" set:html={`<span class="comment"># allow only these bash commands:</span>
+<span class="kw">map</span> bash.command <span class="str">cp</span> as <span class="fn">backup</span>
+<span class="kw">map</span> bash.command <span class="str">rm</span> as <span class="fn">delete</span>
+
+<span class="comment"># block everything else:</span>
+<span class="kw">block</span> <span class="str">bash</span>
+
+<span class="comment"># enforce ordering:</span>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>`} />
 
       <Trace label="// agent tries to clean up a data directory" steps={[
-        { icon: "blocked", html: `Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br><span class="blocked-text">BLOCKED</span> no backup covers data/` },
-        { icon: "ok", html: `Agent calls <strong>bash({ command: "cp -r data/ /tmp/data-backup" })</strong><br><span class="ok-text">OK</span> backup covers data/, deferred until confirmed` },
-        { icon: "ok", html: `Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br><span class="ok-text">ALLOWED</span> backup verified, delete permitted` },
-        { icon: "blocked", html: `Agent calls <strong>bash({ command: "rm -rf logs/" })</strong><br><span class="blocked-text">BLOCKED</span> backup covered data/, not logs/` },
+        { icon: "blocked", html: `Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br><span class="blocked-text">BLOCKED</span> rm maps to delete, no backup yet` },
+        { icon: "blocked", html: `Agent calls <strong>bash({ command: "unlink data/temp.log" })</strong><br><span class="blocked-text">BLOCKED</span> unlink is unmapped, caught by block bash` },
+        { icon: "ok", html: `Agent calls <strong>bash({ command: "cp -r data/ /tmp/data-backup" })</strong><br><span class="ok-text">OK</span> cp maps to backup, deferred until confirmed` },
+        { icon: "ok", html: `Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br><span class="ok-text">ALLOWED</span> backup succeeded, delete unlocked` },
       ]} />
 
-      <p class="example-note"><strong>Path coverage is validated semantically.</strong> <code style="font-family:var(--mono);font-size:12px">git stash</code> covers everything. <code style="font-family:var(--mono);font-size:12px">cp data/ bak/</code> only covers <code style="font-family:var(--mono);font-size:12px">data/</code>. The agent can't back up one directory and delete another.</p>
+      <p class="example-note"><strong>Allowlist, not deny-list.</strong> <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, <code style="font-family:var(--mono);font-size:12px">find -delete</code> &mdash; anything unmapped is blocked. Only <code style="font-family:var(--mono);font-size:12px">cp</code> and <code style="font-family:var(--mono);font-size:12px">rm</code> can reach the shell, and only in the right order.</p>
     </div>
 
     <!-- whatsapp (bonus) -->
