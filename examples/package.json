@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "bun test",
     "check": "tsc --noEmit",
     "lint": "oxlint ."
   },
