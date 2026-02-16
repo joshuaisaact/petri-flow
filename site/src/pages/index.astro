@@ -121,6 +121,73 @@ Never delete without a backup.
     </div>
   </section>
 
+  <!-- REAL WORLD EXAMPLE -->
+  <section class="real-world" id="example" data-animate aria-labelledby="example-heading">
+    <div class="container">
+      <h2 id="example-heading" class="section-title">A <span style="background:linear-gradient(135deg,#25D366,#128C7E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">WhatsApp</span> bot that<br />can't message the wrong person.</h2>
+      <p class="section-sub">
+        A real agent skill for sending WhatsApp messages via CLI.
+        The skill tells the model how to send messages.
+        Three rules make it safe.
+      </p>
+
+      <div class="rw-layout">
+        <!-- Left: the skill -->
+        <div class="rw-panel">
+          <div class="rw-panel-header">
+            <div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div>
+            SKILL.md
+          </div>
+          <div class="rw-panel-body" set:html={`<span class="heading"># WhatsApp CLI</span>
+<span class="dim">---</span>
+<span class="dim">name: whatsapp</span>
+<span class="dim">description: Send WhatsApp messages</span>
+<span class="dim">---</span>
+
+<span class="heading">## Safety</span>
+Require explicit recipient + message text.
+Confirm recipient + message before sending.
+If anything is ambiguous, ask first.
+
+<span class="heading">## Send</span>
+<span class="fn">wacli send text</span> --to <span class="str">"+1415..."</span> --message <span class="str">"..."</span>
+<span class="fn">wacli send file</span> --to <span class="str">"+1415..."</span> --file <span class="str">/path</span>
+
+<span class="comment"># the model reads these instructions.</span>
+<span class="comment"># nothing enforces them.</span>`} />
+        </div>
+
+        <!-- Right: the rules -->
+        <div class="rw-panel">
+          <div class="rw-panel-header">
+            <div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div>
+            <span><span style="color:#25D366">whatsapp</span>.rules</span>
+          </div>
+          <div class="rw-panel-body" set:html={`<span class="comment"># look up the recipient first.</span>
+<span class="comment"># no guessing phone numbers from memory.</span>
+<span class="kw">require</span>  <span class="str">whatsapp.lookup</span>  before  <span class="str">whatsapp.send</span>
+
+<span class="comment"># human confirms recipient + message.</span>
+<span class="comment"># manual gate &mdash; no auto-bypass possible.</span>
+<span class="kw">require</span>  <span class="str">human-approval</span>  before  <span class="str">whatsapp.send</span>
+
+<span class="comment"># one send per lookup cycle.</span>
+<span class="comment"># no batch-firing after a single lookup.</span>
+<span class="kw">limit</span>    <span class="str">whatsapp.send</span>  to  <span class="str">1</span>  per  <span class="str">whatsapp.lookup</span>`} />
+        </div>
+      </div>
+
+      <Trace label="// what happens when the agent tries to send a message" steps={[
+        { icon: "blocked", html: `Agent calls <strong>whatsapp { action: "send", to: "+1415...", message: "Hey!" }</strong><br><span class="blocked-text">BLOCKED</span> no recipient lookup yet` },
+        { icon: "ok", html: `Agent calls <strong>whatsapp { action: "lookup", query: "Sarah" }</strong><br><span class="ok-text">OK</span> resolves to +14155551212` },
+        { icon: "blocked", html: `Agent tries <strong>whatsapp { action: "send" }</strong> again<br><span class="blocked-text">BLOCKED</span> human hasn't approved yet` },
+        { icon: "wait", html: `PetriFlow prompts: <strong>"Send 'Hey!' to Sarah (+14155551212)?"</strong><br>Human approves &rarr; manual gate opens` },
+        { icon: "ok", html: `Agent calls <strong>whatsapp { action: "send", to: "+14155551212", message: "Hey!" }</strong><br><span class="ok-text">ALLOWED</span> lookup done, human approved, token consumed` },
+        { icon: "blocked", html: `Agent tries to send another message<br><span class="blocked-text">BLOCKED</span> budget consumed, must look up again` },
+      ]} />
+    </div>
+  </section>
+
   <!-- COMPARISON TABLE -->
   <section class="comparison" id="comparison" data-animate aria-labelledby="comparison-heading">
     <div class="container">
@@ -187,73 +254,6 @@ Never delete without a backup.
           </tbody>
         </table>
       </div>
-    </div>
-  </section>
-
-  <!-- REAL WORLD EXAMPLE -->
-  <section class="real-world" id="example" data-animate aria-labelledby="example-heading">
-    <div class="container">
-      <h2 id="example-heading" class="section-title">A <span style="background:linear-gradient(135deg,#25D366,#128C7E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">WhatsApp</span> bot that<br />can't message the wrong person.</h2>
-      <p class="section-sub">
-        A real agent skill for sending WhatsApp messages via CLI.
-        The skill tells the model how to send messages.
-        Three rules make it safe.
-      </p>
-
-      <div class="rw-layout">
-        <!-- Left: the skill -->
-        <div class="rw-panel">
-          <div class="rw-panel-header">
-            <div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div>
-            SKILL.md
-          </div>
-          <div class="rw-panel-body" set:html={`<span class="heading"># WhatsApp CLI</span>
-<span class="dim">---</span>
-<span class="dim">name: whatsapp</span>
-<span class="dim">description: Send WhatsApp messages</span>
-<span class="dim">---</span>
-
-<span class="heading">## Safety</span>
-Require explicit recipient + message text.
-Confirm recipient + message before sending.
-If anything is ambiguous, ask first.
-
-<span class="heading">## Send</span>
-<span class="fn">wacli send text</span> --to <span class="str">"+1415..."</span> --message <span class="str">"..."</span>
-<span class="fn">wacli send file</span> --to <span class="str">"+1415..."</span> --file <span class="str">/path</span>
-
-<span class="comment"># the model reads these instructions.</span>
-<span class="comment"># nothing enforces them.</span>`} />
-        </div>
-
-        <!-- Right: the rules -->
-        <div class="rw-panel">
-          <div class="rw-panel-header">
-            <div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div><div class="rw-dot" aria-hidden="true"></div>
-            <span><span style="color:#25D366">whatsapp</span>.rules</span>
-          </div>
-          <div class="rw-panel-body" set:html={`<span class="comment"># look up the recipient first.</span>
-<span class="comment"># no guessing phone numbers from memory.</span>
-<span class="kw">require</span>  <span class="str">whatsapp.lookup</span>  before  <span class="str">whatsapp.send</span>
-
-<span class="comment"># human confirms recipient + message.</span>
-<span class="comment"># manual gate &mdash; no auto-bypass possible.</span>
-<span class="kw">require</span>  <span class="str">human-approval</span>  before  <span class="str">whatsapp.send</span>
-
-<span class="comment"># one send per lookup cycle.</span>
-<span class="comment"># no batch-firing after a single lookup.</span>
-<span class="kw">limit</span>    <span class="str">whatsapp.send</span>  to  <span class="str">1</span>  per  <span class="str">whatsapp.lookup</span>`} />
-        </div>
-      </div>
-
-      <Trace label="// what happens when the agent tries to send a message" steps={[
-        { icon: "blocked", html: `Agent calls <strong>whatsapp { action: "send", to: "+1415...", message: "Hey!" }</strong><br><span class="blocked-text">BLOCKED</span> no recipient lookup yet` },
-        { icon: "ok", html: `Agent calls <strong>whatsapp { action: "lookup", query: "Sarah" }</strong><br><span class="ok-text">OK</span> resolves to +14155551212` },
-        { icon: "blocked", html: `Agent tries <strong>whatsapp { action: "send" }</strong> again<br><span class="blocked-text">BLOCKED</span> human hasn't approved yet` },
-        { icon: "wait", html: `PetriFlow prompts: <strong>"Send 'Hey!' to Sarah (+14155551212)?"</strong><br>Human approves &rarr; manual gate opens` },
-        { icon: "ok", html: `Agent calls <strong>whatsapp { action: "send", to: "+14155551212", message: "Hey!" }</strong><br><span class="ok-text">ALLOWED</span> lookup done, human approved, token consumed` },
-        { icon: "blocked", html: `Agent tries to send another message<br><span class="blocked-text">BLOCKED</span> budget consumed, must look up again` },
-      ]} />
     </div>
   </section>
 
@@ -514,25 +514,15 @@ const gates = composeGates(
         Don't take our word for it. Clone the repo, run the tests, verify the claims.
       </p>
 
-      <div class="benchmarks-grid">
-        <a href="https://github.com/joshuaisaact/petri-flow/blob/main/BENCHMARK.md" class="benchmark-card">
-          <h3>PetriFlow vs n8n vs ReAct</h3>
-          <p>An LLM agent with 3 tools modeled three ways. Same call efficiency. Only one proves termination, human gates, join semantics, and bounded iterations.</p>
-          <div class="benchmark-stats">
-            <span><strong style="color:var(--green)">196</strong> states verified</span>
-            <span><strong style="color:var(--green)">4/4</strong> safety proofs</span>
-          </div>
-        </a>
-
-        <a href="https://github.com/joshuaisaact/petri-flow/blob/main/comparisons/openclaw-safety/README.md" class="benchmark-card">
-          <h3>Structural vs policy-based safety</h3>
-          <p>Four OpenClaw safety scenarios. Policy checks that can be bypassed vs Petri net topology that makes bypass impossible. Same requirements, different guarantees.</p>
-          <div class="benchmark-stats">
-            <span><strong style="color:var(--green)">4</strong> scenarios</span>
-            <span><strong style="color:var(--green)">0</strong> bypassable</span>
-          </div>
-        </a>
-      </div>
+      <a href="https://github.com/joshuaisaact/petri-flow/blob/main/BENCHMARK.md" class="benchmark-card">
+        <h3>PetriFlow vs n8n vs ReAct</h3>
+        <p>An LLM agent with 3 tools modeled three ways. Same call efficiency. Only one proves termination, human gates, join semantics, and bounded iterations.</p>
+        <div class="benchmark-stats">
+          <span><strong style="color:var(--green)">196</strong> states verified</span>
+          <span><strong style="color:var(--green)">4/4</strong> safety proofs</span>
+          <span><strong style="color:var(--green)">81.8%</strong> fewer LLM calls vs ReAct</span>
+        </div>
+      </a>
     </div>
   </section>
   </main>

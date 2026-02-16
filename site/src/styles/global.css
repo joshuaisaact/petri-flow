@@ -1010,14 +1010,9 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 
 /* ───── BENCHMARKS ───── */
 
-.benchmarks-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 40px;
-}
-
 .benchmark-card {
+  max-width: 640px;
+  margin-top: 40px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -1425,8 +1420,7 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
   .rw-layout,
   .rules-grid,
   .integrations-grid,
-  .under-hood-content,
-  .benchmarks-grid {
+  .under-hood-content {
     grid-template-columns: 1fr;
   }
 
