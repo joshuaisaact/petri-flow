@@ -91,7 +91,10 @@ const apiConfigureSignature = `function configure(projectDir: string): HooksConf
         <a href={`${base}docs/`}>Docs</a>
         <span aria-hidden="true">/</span>
         <span>Claude Code</span>
-        <a href={`${base}docs/rules/`}>Rules Engine</a>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/rules/`}>Rules</a>
+        <a href={`${base}docs/gate/`}>Gate</a>
+        <a href={`${base}docs/vercel-ai/`}>Vercel AI</a>
       </nav>
       <h1>Claude Code</h1>
       <p>Hook into Claude Code's tool pipeline to enforce safety constraints. Every tool call passes through a Petri net gate before it executes. No prompt engineering can bypass it.</p>

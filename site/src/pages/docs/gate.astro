@@ -1,0 +1,430 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const defineNetExample = `import { defineSkillNet } from "@petriflow/gate";
+
+const toolApproval = defineSkillNet({
+  name: "tool-approval",
+  places: ["idle", "ready"],
+  terminalPlaces: [],
+  freeTools: ["ls", "read", "grep", "find"],
+  initialMarking: { idle: 1, ready: 0 },
+  transitions: [
+    { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
+    { name: "execShell", type: "manual", inputs: ["ready"], outputs: ["ready"], tools: ["bash"] },
+    { name: "execWrite", type: "manual", inputs: ["ready"], outputs: ["ready"], tools: ["write", "edit"] },
+  ],
+});`;
+
+const singleNetExample = `import { handleToolCall, handleToolResult, createGateState, autoAdvance } from "@petriflow/gate";
+
+const state = createGateState(autoAdvance(net, { ...net.initialMarking }));
+
+const decision = await handleToolCall(
+  { toolCallId: "1", toolName: "bash", input: { command: "rm -rf build/" } },
+  { hasUI: true, confirm: async (title, msg) => window.confirm(msg) },
+  net,
+  state,
+);
+
+if (decision?.block) {
+  console.log(\`Blocked: \${decision.reason}\`);
+}`;
+
+const managerStaticExample = `import { createGateManager } from "@petriflow/gate";
+
+const manager = createGateManager([netA, netB]);
+
+// Gate a tool call — returns { block: true, reason } or undefined
+const decision = await manager.handleToolCall(
+  { toolCallId: "1", toolName: "delete", input: { path: "/data" } },
+  { hasUI: false, confirm: async () => false },
+);
+
+// Feed results back for deferred transitions
+manager.handleToolResult({
+  toolCallId: "1",
+  toolName: "delete",
+  input: { path: "/data" },
+  isError: false,
+});`;
+
+const managerRegistryExample = `import { createGateManager } from "@petriflow/gate";
+
+const manager = createGateManager({
+  registry: { safety: netA, deploy: netB, approval: netC },
+  active: ["safety"],
+});
+
+// Activate nets at runtime
+manager.addNet("deploy");
+// { ok: true, message: "Activated 'deploy'" }
+
+// Deactivate — state is preserved for later reactivation
+manager.removeNet("safety");
+// { ok: true, message: "Deactivated 'safety' (state preserved)" }
+
+// Inspect
+manager.formatStatus();
+// "safety (inactive): ready:1\\ndeploy (active): idle:1\\napproval (inactive): idle:1"`;
+
+const toolMapperExample = `const net = defineSkillNet({
+  name: "git-flow",
+  places: ["working", "committed"],
+  terminalPlaces: [],
+  freeTools: ["bash"],
+  initialMarking: { working: 1, committed: 0 },
+  toolMapper: (event) => {
+    if (event.toolName !== "bash") return event.toolName;
+    const cmd = event.input.command as string;
+    if (/\\bgit\\s+commit\\b/.test(cmd)) return "git-commit";
+    if (/\\bgit\\s+push\\b/.test(cmd))   return "git-push";
+    return "bash";
+  },
+  transitions: [
+    { name: "commit", type: "auto", inputs: ["working"], outputs: ["committed"], tools: ["git-commit"] },
+    { name: "push", type: "auto", inputs: ["committed"], outputs: ["working"], tools: ["git-push"] },
+  ],
+});`;
+
+const deferredExample = `const backupNet = defineSkillNet({
+  name: "backup-before-delete",
+  places: ["idle", "ready", "backedUp"],
+  terminalPlaces: [],
+  freeTools: [],
+  initialMarking: { idle: 1, ready: 0, backedUp: 0 },
+  transitions: [
+    { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
+    {
+      name: "backup",
+      type: "auto",
+      inputs: ["ready"],
+      outputs: ["backedUp"],
+      tools: ["backup"],
+      deferred: true, // fires on successful tool_result, not tool_call
+    },
+    { name: "delete", type: "auto", inputs: ["backedUp"], outputs: ["ready"], tools: ["delete"] },
+  ],
+});`;
+
+const validateExample = `const pathGuard = defineSkillNet({
+  name: "write-path-guard",
+  places: ["idle", "ready"],
+  terminalPlaces: [],
+  freeTools: [],
+  initialMarking: { idle: 1, ready: 0 },
+  transitions: [
+    { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
+    { name: "write", type: "auto", inputs: ["ready"], outputs: ["ready"], tools: ["write-file"] },
+  ],
+  validateToolCall: (event, resolvedTool, transition, state) => {
+    const path = event.input.path as string;
+    if (!path.startsWith("/workspace/")) {
+      return { block: true, reason: \`writes restricted to /workspace/, got \${path}\` };
+    }
+  },
+});`;
+
+const onDeferredExample = `const smartBackup = defineSkillNet({
+  name: "smart-backup",
+  places: ["idle", "ready", "backedUp"],
+  // ...transitions omitted for brevity
+  onDeferredResult: (event, resolvedTool, transition, state) => {
+    // Record which paths have been backed up
+    const paths = (state.meta.backedUpPaths as string[]) ?? [];
+    paths.push(event.input.path as string);
+    state.meta.backedUpPaths = paths;
+  },
+  validateToolCall: (event, resolvedTool, transition, state) => {
+    if (resolvedTool === "delete") {
+      const paths = (state.meta.backedUpPaths as string[]) ?? [];
+      const target = event.input.path as string;
+      if (!paths.some((p) => target.startsWith(p))) {
+        return { block: true, reason: \`\${target} not backed up\` };
+      }
+    }
+  },
+});`;
+
+const shadowExample = `const manager = createGateManager([netA, netB], {
+  mode: "shadow",
+  onDecision: (event, decision) => {
+    if (decision?.block) {
+      console.warn(\`[AUDIT] \${event.toolName} would be blocked: \${decision.reason}\`);
+    }
+  },
+});
+// Tools always execute. onDecision fires on every call.`;
+
+const skillNetType = `type SkillNet<Place extends string> = {
+  name: string;
+  places: Place[];
+  transitions: GatedTransition<Place>[];
+  initialMarking: Marking<Place>;
+  terminalPlaces: Place[];
+  freeTools: string[];
+  toolMapper?: (event: ToolEvent) => string;
+  validateToolCall?(event, resolvedTool, transition, state): { block: true; reason: string } | void;
+  onDeferredResult?(event, resolvedTool, transition, state): void;
+};`;
+
+const gatedTransitionType = `type GatedTransition<Place extends string> = {
+  name: string;
+  type: "auto" | "manual";
+  inputs: Place[];
+  outputs: Place[];
+  tools?: string[];
+  deferred?: boolean;
+};`;
+
+const gateManagerType = `type GateManager = {
+  handleToolCall(event: GateToolCall, ctx: GateContext): Promise<GateDecision>;
+  handleToolResult(event: GateToolResult): void;
+  addNet(name: string): { ok: boolean; message: string };
+  removeNet(name: string): { ok: boolean; message: string };
+  getActiveNets(): Array<{ name: string; net: SkillNet<string>; state: GateState<string> }>;
+  formatStatus(): string;
+  formatSystemPrompt(): string;
+  isDynamic: boolean;
+};`;
+
+const eventTypes = `type GateToolCall = {
+  toolCallId: string;
+  toolName: string;
+  input: Record<string, unknown>;
+};
+
+type GateToolResult = {
+  toolCallId: string;
+  toolName: string;
+  input: Record<string, unknown>;
+  isError: boolean;
+};
+
+type GateContext = {
+  hasUI: boolean;
+  confirm: (title: string, message: string) => Promise<boolean>;
+};
+
+type GateDecision = { block: true; reason: string } | undefined;`;
+---
+<Layout title="Gate | PetriFlow" description="Framework-agnostic Petri net gating for AI agent tool access control. The core safety primitive that all PetriFlow adapters build on.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Gate</span>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/rules/`}>Rules</a>
+        <a href={`${base}docs/vercel-ai/`}>Vercel AI</a>
+        <a href={`${base}docs/claude-code/`}>Claude Code</a>
+      </nav>
+      <h1>Gate</h1>
+      <p>Framework-agnostic Petri net gating for AI agent tool access control. Define safety constraints as Petri nets — tools fire only when an enabled transition permits them. This is the core primitive that <a href={`${base}docs/rules/`} style="color:var(--accent-text)">@petriflow/rules</a>, <a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">@petriflow/vercel-ai</a>, and <a href={`${base}docs/claude-code/`} style="color:var(--accent-text)">@petriflow/claude-code</a> build on.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#defining-a-net">Defining a net</a>
+        <a href="#transition-types">Transition types</a>
+        <a href="#free-tools">Free tools</a>
+        <a href="#tool-mapping">Tool mapping</a>
+        <a href="#deferred-transitions">Deferred transitions</a>
+        <a href="#semantic-validation">Semantic validation</a>
+        <a href="#single-net">Single-net usage</a>
+        <a href="#gate-manager">Gate manager</a>
+        <a href="#composition">Composition semantics</a>
+        <a href="#shadow-mode">Shadow mode</a>
+        <a href="#api-reference">API reference</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <!-- Defining a net -->
+    <div class="doc-section" id="defining-a-net">
+      <h2>Defining a net</h2>
+      <Code code="bun add @petriflow/gate" lang="bash" />
+      <p>A skill net defines places, transitions, and which tools each transition gates. <code>defineSkillNet</code> is a type-safe identity function — it validates the place/marking types at compile time.</p>
+      <Code code={defineNetExample} lang="typescript" />
+      <p>Read-only tools go in <code>freeTools</code>. Transitions with <code>tools</code> gate those tool names. Transitions without <code>tools</code> are structural (like the <code>start</code> transition that auto-fires on creation).</p>
+    </div>
+
+    <!-- Transition types -->
+    <div class="doc-section" id="transition-types">
+      <h2>Transition types</h2>
+
+      <h3><code>auto</code></h3>
+      <p>Fires immediately when the tool is called and the transition is enabled (its input places have tokens). No human involvement.</p>
+
+      <h3><code>manual</code></h3>
+      <p>Requires human approval via <code>ctx.confirm()</code> before firing. The runtime calls the confirm callback and waits. If approved, the transition fires. If rejected, the tool is blocked. If no UI is available (<code>ctx.hasUI === false</code>), manual transitions are always blocked.</p>
+
+      <Trace label="// manual transition flow" steps={[
+        { icon: "wait", html: `Agent calls <strong>bash</strong> (gated by manual transition)<br>Runtime calls ctx.confirm() — waits for human` },
+        { icon: "ok", html: `Human approves<br><span class="ok-text">OK</span> transition fires, tool executes` },
+        { icon: "blocked", html: `Human rejects<br><span class="blocked-text">BLOCKED</span> tool never executes` },
+      ]} />
+    </div>
+
+    <!-- Free tools -->
+    <div class="doc-section" id="free-tools">
+      <h2>Free tools</h2>
+      <p>Tools listed in <code>freeTools</code> are always allowed regardless of net state. They bypass all transition checks. Use this for read-only, side-effect-free operations where gating adds no safety value.</p>
+      <p>A tool can be free in one net and gated in another. When nets are composed, the tool is only free if <strong style="color:var(--text-secondary)">no net blocks it</strong>. A free verdict from one net doesn't override a blocked verdict from another.</p>
+    </div>
+
+    <!-- Tool mapping -->
+    <div class="doc-section" id="tool-mapping">
+      <h2>Tool mapping</h2>
+      <p>Split one physical tool into multiple virtual tool names based on input content. The mapper runs before any gate check, so transitions reference the virtual name.</p>
+      <Code code={toolMapperExample} lang="typescript" />
+
+      <Trace label="// tool mapping resolves bash into virtual tools" steps={[
+        { icon: "ok", html: `Agent calls <strong>bash({ command: "ls -la" })</strong><br>Mapper returns "bash" &rarr; <span class="ok-text">FREE</span>` },
+        { icon: "ok", html: `Agent calls <strong>bash({ command: "git commit -m fix" })</strong><br>Mapper returns "git-commit" &rarr; <span class="ok-text">OK</span> working&rarr;committed` },
+        { icon: "blocked", html: `Agent calls <strong>bash({ command: "git push" })</strong><br>Mapper returns "git-push" &rarr; <span class="blocked-text">BLOCKED</span> needs committed token` },
+        { icon: "ok", html: `After commit succeeds, agent calls <strong>bash({ command: "git push" })</strong><br>Mapper returns "git-push" &rarr; <span class="ok-text">OK</span> committed&rarr;working` },
+      ]} />
+
+      <p>Tools that don't match any mapper pattern return the original tool name. If that name doesn't appear in any transition, the net abstains — no opinion, no block.</p>
+      <p>The <a href={`${base}docs/rules/`} style="color:var(--accent-text)">rules DSL</a> generates tool mappers automatically from dot notation (<code>discord.sendMessage</code>) and <code>map</code> statements.</p>
+    </div>
+
+    <!-- Deferred transitions -->
+    <div class="doc-section" id="deferred-transitions">
+      <h2>Deferred transitions</h2>
+      <p>Set <code>deferred: true</code> to allow the tool call immediately but only advance the net when the tool succeeds:</p>
+      <Code code={deferredExample} lang="typescript" />
+
+      <Trace label="// deferred: net waits for tool result" steps={[
+        { icon: "ok", html: `Agent calls <strong>backup</strong><br><span class="ok-text">ALLOWED</span> tool executes. Transition recorded as pending. Marking unchanged.` },
+        { icon: "ok", html: `Tool result: <strong>success</strong><br>Deferred transition fires. ready&rarr;backedUp. Delete now available.` },
+        { icon: "ok", html: `Agent calls <strong>delete</strong><br><span class="ok-text">ALLOWED</span> backedUp&rarr;ready. Cycle resets.` },
+      ]} />
+
+      <p>If the tool fails (<code>isError: true</code>), the pending entry is cleared and the marking stays unchanged. The tool was allowed but the net didn't advance — the prerequisite wasn't met.</p>
+      <p>This matters for safety. Without deferral, the token moves the moment the tool is called, before knowing whether it succeeded. A failed backup would still unlock delete. Deferral closes that gap.</p>
+    </div>
+
+    <!-- Semantic validation -->
+    <div class="doc-section" id="semantic-validation">
+      <h2>Semantic validation</h2>
+      <p>Net structure alone can't express input-level constraints like "only write to /workspace/". Use <code>validateToolCall</code> for domain-specific checks that run after the structural check passes:</p>
+      <Code code={validateExample} lang="typescript" />
+      <p>The validator receives the full event, resolved tool name, matched transition, and current state (including <code>meta</code>). Return <code>{`{ block: true, reason }`}</code> to reject, or <code>void</code> to allow.</p>
+
+      <h3><code>onDeferredResult</code></h3>
+      <p>Record metadata when deferred transitions resolve. Combined with <code>validateToolCall</code>, this enables path-aware safety checks:</p>
+      <Code code={onDeferredExample} lang="typescript" />
+      <p>The <code>state.meta</code> object persists across tool calls within a session. Use it to track information the net structure can't represent — backed-up paths, approved targets, running totals.</p>
+    </div>
+
+    <!-- Single-net usage -->
+    <div class="doc-section" id="single-net">
+      <h2>Single-net usage</h2>
+      <p>For simple cases or when building a custom adapter, use the low-level single-net API directly:</p>
+      <Code code={singleNetExample} lang="typescript" />
+      <p><code>autoAdvance</code> fires structural transitions (those without <code>tools</code>) immediately after creation and after each tool call. <code>createGateState</code> initializes the state with the marking, an empty <code>meta</code> object, and an empty <code>pending</code> map.</p>
+    </div>
+
+    <!-- Gate manager -->
+    <div class="doc-section" id="gate-manager">
+      <h2>Gate manager</h2>
+      <p>For multi-net composition, use <code>createGateManager</code>. Two modes:</p>
+
+      <h3>Static</h3>
+      <p>Pass an array of nets. All are always active. No runtime changes.</p>
+      <Code code={managerStaticExample} lang="typescript" />
+
+      <h3>Registry</h3>
+      <p>Pass a config with all nets registered upfront. Activate a subset. Add or remove at runtime.</p>
+      <Code code={managerRegistryExample} lang="typescript" />
+      <p>Net state is preserved on deactivation. When reactivated, the net resumes from where it left off. Inactive nets don't participate in gating decisions.</p>
+    </div>
+
+    <!-- Composition semantics -->
+    <div class="doc-section" id="composition">
+      <h2>Composition semantics</h2>
+      <p>When multiple nets are composed, each independently classifies a tool call into one of four verdicts:</p>
+
+      <div class="net-structure" set:html={`<span class="place">free</span>     tool is in freeTools — always allowed
+<span class="place">abstain</span>  tool doesn't appear in any transition — no opinion
+<span class="place">gated</span>    an enabled transition covers this tool — allowed
+<span class="comment">blocked</span>  net has jurisdiction but no enabled transition — rejected`} />
+
+      <p>One <strong style="color:var(--red)">blocked</strong> verdict from any net rejects the call. If no net blocks, gated nets fire their transitions. If all nets are free or abstain, the call passes through.</p>
+      <p>The gate manager runs a 4-phase pipeline on every tool call:</p>
+
+      <div class="net-structure" set:html={`<span class="dim">Phase 1:</span> <span class="place">Structural check</span>  — classify all nets (non-mutating)
+<span class="dim">Phase 2:</span> <span class="place">Manual approvals</span> — prompt for human confirmation if needed
+<span class="dim">Phase 3:</span> <span class="place">Semantic validation</span> — run validateToolCall on gated nets
+<span class="dim">Phase 4:</span> <span class="place">Commit</span> — fire transitions, record deferred`} />
+
+      <p>If any phase rejects, later phases don't run. Phase 3 includes meta rollback: if a validator rejects after earlier validators mutated <code>state.meta</code>, all mutations are reverted.</p>
+    </div>
+
+    <!-- Shadow mode -->
+    <div class="doc-section" id="shadow-mode">
+      <h2>Shadow mode</h2>
+      <p>Pass <code>mode: "shadow"</code> to observe gating decisions without blocking anything. The <code>onDecision</code> callback fires on every call.</p>
+      <Code code={shadowExample} lang="typescript" />
+      <p>In shadow mode, blocked decisions are converted to <code>undefined</code> (allow) after the callback fires. Use this for auditing before switching to <code>"enforce"</code>.</p>
+    </div>
+
+    <!-- API reference -->
+    <div class="doc-section" id="api-reference">
+      <h2>API reference</h2>
+
+      <h3><code>SkillNet&lt;Place&gt;</code></h3>
+      <Code code={skillNetType} lang="typescript" />
+
+      <h3><code>GatedTransition&lt;Place&gt;</code></h3>
+      <Code code={gatedTransitionType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">type</strong>: <code>"auto"</code> fires immediately, <code>"manual"</code> requires human approval</li>
+        <li><strong style="color:var(--text-secondary)">tools</strong>: tool names this transition gates. Omit for structural transitions.</li>
+        <li><strong style="color:var(--text-secondary)">deferred</strong>: if true, tool is allowed immediately but transition fires on successful result</li>
+      </ul>
+
+      <h3><code>GateManager</code></h3>
+      <Code code={gateManagerType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">handleToolCall</strong>: gate a tool call. Returns <code>{`{ block: true, reason }`}</code> or <code>undefined</code>.</li>
+        <li><strong style="color:var(--text-secondary)">handleToolResult</strong>: feed results back for deferred transitions.</li>
+        <li><strong style="color:var(--text-secondary)">addNet / removeNet</strong>: registry mode only. State preserved on deactivation.</li>
+        <li><strong style="color:var(--text-secondary)">formatStatus</strong>: current marking of all nets, one line each.</li>
+        <li><strong style="color:var(--text-secondary)">formatSystemPrompt</strong>: markdown for LLM context — active nets, available tools, current state.</li>
+      </ul>
+
+      <h3>Event types</h3>
+      <Code code={eventTypes} lang="typescript" />
+
+      <h3>Utility functions</h3>
+      <ul>
+        <li><code>defineSkillNet(config)</code> — type-safe net constructor (identity function)</li>
+        <li><code>createGateManager(input, opts?)</code> — multi-net manager (array or registry config)</li>
+        <li><code>handleToolCall(event, ctx, net, state)</code> — single-net gating</li>
+        <li><code>handleToolResult(event, net, state)</code> — single-net deferred resolution</li>
+        <li><code>autoAdvance(net, marking)</code> — fire structural auto transitions</li>
+        <li><code>createGateState(marking)</code> — initialize state with marking, empty meta and pending</li>
+        <li><code>classifyNets(nets, states, event)</code> — phase 1 structural check (non-mutating)</li>
+        <li><code>formatMarking(marking)</code> — format as <code>"ready:1, working:0"</code></li>
+        <li><code>getEnabledToolTransitions(net, marking)</code> — list currently fireable tool transitions</li>
+        <li><code>resolveTool(net, event)</code> — apply tool mapper</li>
+      </ul>
+    </div>
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>
