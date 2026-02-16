@@ -3,6 +3,7 @@ dist
 *.db
 .turbo
 .env
+.pi
 
 # Build artifacts in src directories
 packages/*/src/**/*.js
