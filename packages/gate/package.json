@@ -20,6 +20,15 @@
   "dependencies": {
     "@petriflow/engine": "workspace:*"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuaisaact/petri-flow.git",
+    "directory": "packages/gate"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/bun": "^1",
     "typescript": "^5.7"
