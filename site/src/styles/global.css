@@ -423,7 +423,7 @@ blockquote cite {
   padding: 28px;
 }
 
-.solution-panel.bad { border-color: rgba(248,113,113,0.15); opacity: 0.55; }
+.solution-panel.bad { border-color: rgba(248,113,113,0.15); opacity: 0.7; }
 .solution-panel.good { border-color: rgba(52,211,153,0.15); box-shadow: 0 0 40px rgba(52,211,153,0.06), 0 4px 24px rgba(0,0,0,0.2); }
 
 .solution-panel-label {
