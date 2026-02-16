@@ -1,8 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
-  <line x1="9" y1="8.5" x2="11" y2="14.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
-  <line x1="15" y1="8.5" x2="13" y2="14.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
-  <circle cx="6" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
-  <circle cx="18" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
-  <circle cx="12" cy="19" r="4" stroke="#34d399" stroke-width="1.5" fill="none"/>
-  <circle cx="6" cy="6" r="1.5" fill="#8b5cf6"/>
+  <!-- arcs -->
+  <line x1="7.5" y1="7" x2="9.5" y2="10.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
+  <line x1="16.5" y1="7" x2="14.5" y2="10.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
+  <line x1="12" y1="13.5" x2="12" y2="16.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
+  <!-- transition -->
+  <rect x="7" y="11" width="10" height="2.5" rx="0.5" fill="#34d399" opacity="0.8"/>
+  <!-- places -->
+  <circle cx="6" cy="4.5" r="3" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
+  <circle cx="18" cy="4.5" r="3" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
+  <circle cx="12" cy="20" r="3" stroke="#8b5cf6" stroke-width="1.5" fill="none"/>
+  <!-- token -->
+  <circle cx="6" cy="4.5" r="1.5" fill="#8b5cf6"/>
 </svg>

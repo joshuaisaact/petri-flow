@@ -5,18 +5,17 @@ interface Props {
 const { size = 24 } = Astro.props;
 ---
 <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
-  <defs>
-    <marker id="arrow" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="4" markerHeight="4" orient="auto">
-      <path d="M0,0.5 L5,3 L0,5.5" fill="rgba(139,92,246,0.6)" />
-    </marker>
-  </defs>
-  <!-- arcs with arrowheads -->
-  <line x1="9" y1="8.5" x2="11" y2="14.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <line x1="15" y1="8.5" x2="13" y2="14.5" stroke="rgba(139,92,246,0.45)" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <!-- places -->
-  <circle cx="6" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
-  <circle cx="18" cy="6" r="4" stroke="#8b5cf6" stroke-width="1.5"/>
-  <circle cx="12" cy="19" r="4" stroke="#34d399" stroke-width="1.5"/>
+  <!-- arcs: input places to transition -->
+  <line x1="7.5" y1="7" x2="9.5" y2="11" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
+  <line x1="16.5" y1="7" x2="14.5" y2="11" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
+  <!-- arc: transition to output place -->
+  <line x1="12" y1="13.5" x2="12" y2="17" stroke="rgba(139,92,246,0.45)" stroke-width="1.5"/>
+  <!-- transition (rectangle) -->
+  <rect x="7" y="11" width="10" height="2.5" rx="0.5" fill="#34d399" opacity="0.8"/>
+  <!-- places (circles) -->
+  <circle cx="6" cy="4.5" r="3" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="18" cy="4.5" r="3" stroke="#8b5cf6" stroke-width="1.5"/>
+  <circle cx="12" cy="20" r="3" stroke="#8b5cf6" stroke-width="1.5"/>
   <!-- token -->
-  <circle cx="6" cy="6" r="1.5" fill="#8b5cf6"/>
+  <circle cx="6" cy="4.5" r="1.5" fill="#8b5cf6"/>
 </svg><span class="logo-text">Petri<span>Flow</span></span>
