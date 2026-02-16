@@ -54,7 +54,7 @@ type RegisteredWorkflow = {
   name: string;
   places: string[];
   transitions: string[];
-  scheduler: Scheduler<any, any>;
+  scheduler: Scheduler<string, Record<string, unknown>>;
 };
 
 type InstanceRow = {
