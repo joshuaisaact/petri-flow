@@ -481,9 +481,6 @@ const gates = composeGates(
             </div>
           </div>
 
-          <p style="margin-top:1.5rem">
-            See the full benchmarks: <a href="https://github.com/joshuaisaact/petri-flow/blob/main/BENCHMARK.md" style="color:var(--accent-text)">PetriFlow vs n8n vs ReAct</a> and <a href="https://github.com/joshuaisaact/petri-flow/blob/main/comparisons/openclaw-safety/README.md" style="color:var(--accent-text)">structural vs policy-based safety</a>. Clone the repo, run the tests, verify the claims.
-          </p>
         </div>
 
         <div class="under-hood-visual">
@@ -505,6 +502,36 @@ const gates = composeGates(
             <span style="color:var(--accent-text);font-weight:600">0 violations across 196 states.</span>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENCHMARKS -->
+  <section class="benchmarks" id="benchmarks" data-animate aria-labelledby="benchmarks-heading">
+    <div class="container">
+      <h2 id="benchmarks-heading" class="section-title">Benchmarks.</h2>
+      <p class="section-sub">
+        Don't take our word for it. Clone the repo, run the tests, verify the claims.
+      </p>
+
+      <div class="benchmarks-grid">
+        <a href="https://github.com/joshuaisaact/petri-flow/blob/main/BENCHMARK.md" class="benchmark-card">
+          <h3>PetriFlow vs n8n vs ReAct</h3>
+          <p>An LLM agent with 3 tools modeled three ways. Same call efficiency. Only one proves termination, human gates, join semantics, and bounded iterations.</p>
+          <div class="benchmark-stats">
+            <span><strong style="color:var(--green)">196</strong> states verified</span>
+            <span><strong style="color:var(--green)">4/4</strong> safety proofs</span>
+          </div>
+        </a>
+
+        <a href="https://github.com/joshuaisaact/petri-flow/blob/main/comparisons/openclaw-safety/README.md" class="benchmark-card">
+          <h3>Structural vs policy-based safety</h3>
+          <p>Four OpenClaw safety scenarios. Policy checks that can be bypassed vs Petri net topology that makes bypass impossible. Same requirements, different guarantees.</p>
+          <div class="benchmark-stats">
+            <span><strong style="color:var(--green)">4</strong> scenarios</span>
+            <span><strong style="color:var(--green)">0</strong> bypassable</span>
+          </div>
+        </a>
       </div>
     </div>
   </section>
