@@ -451,18 +451,18 @@ const gates = composeGates(
   <!-- UNDER THE HOOD -->
   <section class="under-hood" id="under-hood" data-animate aria-labelledby="under-hood-heading">
     <div class="container">
-      <h2 id="under-hood-heading" class="section-title">Formal verification.<br />Not just testing.</h2>
+      <h2 id="under-hood-heading" class="section-title">A type system<br />for agent tools.</h2>
 
       <div class="under-hood-content">
         <div class="under-hood-text">
           <p>
-            Every safety rule compiles down to a <strong style="color:var(--accent-text)">verifiable state machine</strong>.
-            Before your agent runs, PetriFlow enumerates every reachable state and
-            checks your invariants across all of them.
+            TypeScript catches <code style="font-family:var(--mono);font-size:0.85em">undefined is not a function</code> before your code runs.
+            PetriFlow catches <strong style="color:var(--accent-text)">"agent deleted without backing up"</strong> before your agent runs.
+            Same idea: compile-time proof, not runtime hope.
           </p>
           <p>
-            This isn't sampling. It's not fuzzing. It's <strong style="color:var(--accent-text)">exhaustive proof</strong>.
-            If the verifier says "safe," it means safe in every possible execution,
+            Every rule compiles to a state machine. Every reachable state is enumerated.
+            If the verifier says "safe," it means safe in <strong style="color:var(--accent-text)">every possible execution</strong>,
             not just the ones you tested.
           </p>
 
