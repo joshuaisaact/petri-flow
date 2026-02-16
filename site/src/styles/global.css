@@ -1391,6 +1391,16 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
 
 /* ───── DOCS LANDING PAGE ───── */
 
+.docs-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.docs-title .logo-text {
+  display: none;
+}
+
 .doc-install {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
+import Logo from "../../components/Logo.astro";
 
 const base = import.meta.env.BASE_URL;
 ---
@@ -10,7 +11,7 @@ const base = import.meta.env.BASE_URL;
 
   <div class="container-narrow">
     <div class="page-header">
-      <h1>Documentation</h1>
+      <h1 class="docs-title"><Logo size={36} /> Documentation</h1>
       <p>Safety rules for AI agents. Write rules in a simple DSL, the compiler verifies them, the runtime enforces them.</p>
     </div>
 
