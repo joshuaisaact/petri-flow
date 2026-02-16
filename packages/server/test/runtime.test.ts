@@ -4,7 +4,7 @@ import { defineWorkflow } from "@petriflow/engine/workflow";
 import { WorkflowRuntime, type RuntimeEvent } from "../src/runtime.js";
 
 // Simple inline workflow for tests — no file imports needed
-const coffeeDefinition = defineWorkflow({
+const coffeeDefinition = defineWorkflow<string, Record<string, unknown>>({
   name: "coffee",
   places: [
     "waterCold",

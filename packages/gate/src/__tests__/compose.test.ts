@@ -3,6 +3,7 @@ import type { GateToolCall, GateToolResult, GateContext } from "../events.js";
 import { autoAdvance } from "../advance.js";
 import { createGateState } from "../gate.js";
 import { defineSkillNet } from "../types.js";
+import type { SkillNet } from "../types.js";
 import { classifyNets } from "../compose.js";
 import { createGateManager } from "../manager.js";
 
@@ -111,7 +112,7 @@ const netE = defineSkillNet({
 });
 
 // Validation nets for meta rollback test
-const validatorA = defineSkillNet({
+const validatorA: SkillNet<string> = defineSkillNet({
   name: "validatorA",
   places: ["idle", "ready"],
   terminalPlaces: [],
@@ -129,7 +130,7 @@ const validatorA = defineSkillNet({
   },
 });
 
-const validatorB = defineSkillNet({
+const validatorB: SkillNet<string> = defineSkillNet({
   name: "validatorB",
   places: ["idle", "ready"],
   terminalPlaces: [],
@@ -575,6 +576,7 @@ describe("createGateManager — shadow mode", () => {
   it("onDecision callback fires for every decision", async () => {
     const decisions: Array<{ toolName: string; blocked: boolean }> = [];
     const manager = createGateManager([netA, netE], {
+      mode: "enforce",
       onDecision: (event, decision) => {
         decisions.push({ toolName: event.toolName, blocked: !!decision?.block });
       },
@@ -606,6 +608,7 @@ describe("createGateManager — shadow mode", () => {
   it("onDecision without shadow mode still blocks", async () => {
     const decisions: Array<{ toolName: string; blocked: boolean }> = [];
     const manager = createGateManager([netA, netE], {
+      mode: "enforce",
       onDecision: (event, decision) => {
         decisions.push({ toolName: event.toolName, blocked: !!decision?.block });
       },

@@ -41,23 +41,27 @@ export type SkillNet<Place extends string> = {
    * Called after the net confirms a matching transition exists.
    * Return { block, reason } to reject, or void to allow.
    * Use this for domain-specific checks (e.g. path coverage).
+   *
+   * Method syntax is intentional — bivariant so SkillNet<Place> widens to SkillNet<string>.
    */
-  validateToolCall?: (
+  validateToolCall?(
     event: ToolEvent,
     resolvedTool: string,
     transition: GatedTransition<Place>,
     state: { marking: Marking<Place>; meta: Record<string, unknown> },
-  ) => { block: true; reason: string } | void;
+  ): { block: true; reason: string } | void;
   /**
    * Called when a deferred transition's tool_result arrives.
    * Use this to record metadata (e.g. backed-up paths).
+   *
+   * Method syntax is intentional — bivariant so SkillNet<Place> widens to SkillNet<string>.
    */
-  onDeferredResult?: (
+  onDeferredResult?(
     event: { toolCallId: string; input: Record<string, unknown>; isError: boolean },
     resolvedTool: string,
     transition: GatedTransition<Place>,
     state: { marking: Marking<Place>; meta: Record<string, unknown> },
-  ) => void;
+  ): void;
 };
 
 /** Type-safe helper — validates places/marking at the type level */

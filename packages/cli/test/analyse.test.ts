@@ -7,8 +7,8 @@ const definition = defineWorkflow<Place, Record<string, unknown>>({
   name: "simple-pipeline",
   places: ["idle", "processing", "done"],
   transitions: [
-    { name: "start", inputs: ["idle"], outputs: ["processing"] },
-    { name: "finish", inputs: ["processing"], outputs: ["done"] },
+    { name: "start", type: "automatic", guard: null, inputs: ["idle"], outputs: ["processing"] },
+    { name: "finish", type: "automatic", guard: null, inputs: ["processing"], outputs: ["done"] },
   ],
   initialMarking: { idle: 1, processing: 0, done: 0 },
   initialContext: {},
@@ -50,8 +50,8 @@ describe("analyse", () => {
       name: "cycle",
       places: ["a", "b"],
       transitions: [
-        { name: "forward", inputs: ["a"], outputs: ["b"] },
-        { name: "back", inputs: ["b"], outputs: ["a"] },
+        { name: "forward", type: "automatic", guard: null, inputs: ["a"], outputs: ["b"] },
+        { name: "back", type: "automatic", guard: null, inputs: ["b"], outputs: ["a"] },
       ],
       initialMarking: { a: 1, b: 0 },
       initialContext: {},

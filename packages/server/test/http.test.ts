@@ -14,7 +14,7 @@ const simpleDefinition = defineWorkflow({
   terminalPlaces: ["end"],
 });
 
-const coffeeDefinition = defineWorkflow({
+const coffeeDefinition = defineWorkflow<string, Record<string, unknown>>({
   name: "coffee",
   places: [
     "waterCold",
