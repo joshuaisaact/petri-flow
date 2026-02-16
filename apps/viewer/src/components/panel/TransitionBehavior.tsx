@@ -59,8 +59,6 @@ function EntryRow({ entry }: { entry: Entry }) {
 }
 
 export function TransitionBehavior({ definition }: Props) {
-  const { t } = useTheme();
-
   const entries: Entry[] = [];
   for (const tr of definition.net.transitions) {
     const badges: Badge[] = [];

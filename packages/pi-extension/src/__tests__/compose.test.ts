@@ -26,17 +26,6 @@ function makeBashEvent(command: string): ToolCallEvent {
   return makeEvent("bash", { command });
 }
 
-function makeResult(callEvent: ToolCallEvent, isError: boolean): ToolResultEvent {
-  return {
-    type: "tool_result",
-    toolCallId: callEvent.toolCallId,
-    toolName: callEvent.toolName,
-    input: callEvent.input,
-    content: [],
-    isError,
-    details: undefined,
-  } as unknown as ToolResultEvent;
-}
 
 function makeCtx(confirmResult = true): ExtensionContext {
   return {

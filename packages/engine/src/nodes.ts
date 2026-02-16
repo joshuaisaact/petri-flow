@@ -1,5 +1,3 @@
-import type { Marking } from "petri-ts";
-
 export interface NodeExecutor {
   validate(config: Record<string, unknown>): void;
   execute(params: {

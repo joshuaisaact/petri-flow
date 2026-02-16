@@ -12,7 +12,6 @@ import type {
   GateToolResult,
   GateContext,
   SkillNet,
-  GateDecision,
 } from "@petriflow/gate";
 
 // ---------------------------------------------------------------------------

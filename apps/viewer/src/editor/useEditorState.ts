@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import type { SerializedDefinition } from "@petriflow/engine";
 import type { Node, Edge } from "@xyflow/react";
 import type { PlaceNodeData, TransitionNodeData } from "../layout/dagre";

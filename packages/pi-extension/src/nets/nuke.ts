@@ -1,7 +1,7 @@
 import type { Marking } from "@petriflow/engine";
 import { defineSkillNet } from "@petriflow/gate";
-import type { ToolEvent, GatedTransition } from "@petriflow/gate";
-import { resolve, normalize } from "node:path";
+import type { ToolEvent } from "@petriflow/gate";
+import { normalize } from "node:path";
 
 // -----------------------------------------------------------------------
 // Path extraction

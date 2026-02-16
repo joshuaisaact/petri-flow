@@ -41,7 +41,7 @@ export function PetriNetCanvas({
   initialEdges,
   marking,
   enabled,
-  onFire,
+  onFire: _onFire,
   tokenDisplay,
   lastFired,
   isTerminal,

@@ -5,7 +5,6 @@ import {
   defineWorkflow,
   sqliteAdapter,
   createDefinitionStore,
-  serializeDefinition,
   CREATE_WORKFLOW_INSTANCES,
   CREATE_TIMEOUT_ENTRIES,
 } from "@petriflow/engine";

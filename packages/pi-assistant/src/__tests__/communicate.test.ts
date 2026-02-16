@@ -5,7 +5,6 @@ import {
   handleToolResult,
   createGateState,
   autoAdvance,
-  formatMarking,
 } from "@petriflow/gate";
 
 // -----------------------------------------------------------------------

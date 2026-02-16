@@ -1,4 +1,4 @@
-import type { Transition, PetriNet, Marking } from "petri-ts";
+import type { Transition, Marking } from "petri-ts";
 
 export type GuardFn<
   Place extends string,
@@ -19,7 +19,7 @@ export type ExecuteFn<
  */
 export type WorkflowTransition<
   Place extends string,
-  Ctx extends Record<string, unknown> = Record<string, unknown>,
+  _Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = Transition<Place> & {
   type: string;
   guard: string | null;
