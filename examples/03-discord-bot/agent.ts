@@ -1,4 +1,4 @@
-import { generateText, tool } from "ai";
+import { generateText, tool, stepCountIs } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { loadRules } from "@petriflow/rules";
@@ -27,7 +27,7 @@ const tools = gate.wrapTools({
   discord: tool({
     description:
       "Interact with Discord: read messages, send messages, add reactions, or create threads",
-    parameters: z.object({
+    inputSchema: z.object({
       action: z.enum([
         "readMessages",
         "sendMessage",
@@ -72,7 +72,7 @@ const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
   system: `You are a Discord bot agent that manages channel communications.\n\n${gate.systemPrompt()}`,
   tools,
-  maxSteps: 15,
+  stopWhen: stepCountIs(15),
   prompt:
     "In channel dev-general: send a greeting, read messages, reply about the build failure, and send a few follow-up messages.",
 });

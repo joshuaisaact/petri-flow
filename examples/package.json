@@ -2,6 +2,10 @@
   "name": "@petriflow/examples",
   "private": true,
   "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "lint": "oxlint ."
+  },
   "dependencies": {
     "@petriflow/rules": "workspace:*",
     "@petriflow/vercel-ai": "workspace:*",

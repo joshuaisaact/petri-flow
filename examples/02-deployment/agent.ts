@@ -1,4 +1,4 @@
-import { generateText, tool } from "ai";
+import { generateText, tool, stepCountIs } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { loadRules } from "@petriflow/rules";
@@ -30,7 +30,7 @@ const gate = createPetriflowGate(nets, {
 const tools = gate.wrapTools({
   lint: tool({
     description: "Run the linter on the codebase",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       console.log("> lint");
       return { passed: true, warnings: 0, errors: 0 };
@@ -38,7 +38,7 @@ const tools = gate.wrapTools({
   }),
   test: tool({
     description: "Run the test suite",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
     execute: async () => {
       console.log("> test");
       return { passed: true, total: 42, failed: 0 };
@@ -46,7 +46,7 @@ const tools = gate.wrapTools({
   }),
   deploy: tool({
     description: "Deploy to an environment",
-    parameters: z.object({
+    inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
     execute: async ({ environment }) => {
@@ -56,7 +56,7 @@ const tools = gate.wrapTools({
   }),
   checkStatus: tool({
     description: "Check the current deployment status",
-    parameters: z.object({
+    inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
     execute: async ({ environment }) => {
@@ -66,7 +66,7 @@ const tools = gate.wrapTools({
   }),
   rollback: tool({
     description: "Rollback to the previous deployment",
-    parameters: z.object({
+    inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
     execute: async ({ environment }) => {
@@ -80,7 +80,7 @@ const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
   system: `You are a deployment agent that manages CI/CD pipelines.\n\n${gate.systemPrompt()}`,
   tools,
-  maxSteps: 15,
+  stopWhen: stepCountIs(15),
   prompt:
     "Deploy the latest version to production. Then deploy again to staging.",
 });

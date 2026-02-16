@@ -1,4 +1,4 @@
-import { generateText, tool } from "ai";
+import { generateText, tool, stepCountIs } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { loadRules } from "@petriflow/rules";
@@ -26,7 +26,7 @@ const gate = createPetriflowGate(nets, {
 const tools = gate.wrapTools({
   listFiles: tool({
     description: "List files in a directory",
-    parameters: z.object({ path: z.string() }),
+    inputSchema: z.object({ path: z.string() }),
     execute: async ({ path }) => {
       console.log(`> listFiles ${path}`);
       return {
@@ -36,7 +36,7 @@ const tools = gate.wrapTools({
   }),
   readFile: tool({
     description: "Read a file's contents",
-    parameters: z.object({ path: z.string() }),
+    inputSchema: z.object({ path: z.string() }),
     execute: async ({ path }) => {
       console.log(`> readFile ${path}`);
       return { content: `Contents of ${path}` };
@@ -44,7 +44,7 @@ const tools = gate.wrapTools({
   }),
   backup: tool({
     description: "Create a backup of a file before modifying it",
-    parameters: z.object({ path: z.string() }),
+    inputSchema: z.object({ path: z.string() }),
     execute: async ({ path }) => {
       console.log(`> backup ${path}`);
       return { backedUp: `${path}.bak` };
@@ -52,7 +52,7 @@ const tools = gate.wrapTools({
   }),
   delete: tool({
     description: "Delete a file (requires backup first)",
-    parameters: z.object({ path: z.string() }),
+    inputSchema: z.object({ path: z.string() }),
     execute: async ({ path }) => {
       console.log(`> delete ${path}`);
       return { deleted: path };
@@ -60,7 +60,7 @@ const tools = gate.wrapTools({
   }),
   rm: tool({
     description: "Remove a file with force",
-    parameters: z.object({ path: z.string() }),
+    inputSchema: z.object({ path: z.string() }),
     execute: async ({ path }) => {
       console.log(`> rm ${path}`);
       return { removed: path };
@@ -72,7 +72,7 @@ const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
   system: `You are a file management agent that helps clean up directories.\n\n${gate.systemPrompt()}`,
   tools,
-  maxSteps: 10,
+  stopWhen: stepCountIs(10),
   prompt:
     "Clean up /tmp/project: list the files, delete temp.log, and rm old-backup.tar.gz",
 });
