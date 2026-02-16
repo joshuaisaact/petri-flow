@@ -10,6 +10,7 @@
       "default": "./dist/index.js"
     }
   },
+  "keywords": ["petri-net", "ai-agent", "guardrails", "tool-use", "access-control", "safety"],
   "files": ["dist", "README.md"],
   "scripts": {
     "test": "bun test",

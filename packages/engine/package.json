@@ -26,6 +26,7 @@
       "default": "./dist/decision.js"
     }
   },
+  "keywords": ["petri-net", "workflow", "state-machine", "formal-verification", "ai-agent", "guardrails"],
   "files": ["dist", "README.md"],
   "scripts": {
     "test": "bun test",

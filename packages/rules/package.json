@@ -10,6 +10,7 @@
       "default": "./dist/index.js"
     }
   },
+  "keywords": ["petri-net", "ai-agent", "guardrails", "dsl", "rules-engine", "safety"],
   "files": ["dist", "README.md"],
   "scripts": {
     "test": "bun test",
