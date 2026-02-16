@@ -6,7 +6,7 @@ import Logo from "../components/Logo.astro";
 import Trace from "../components/Trace.astro";
 import { Code } from "astro:components";
 ---
-<Layout title="PetriFlow — Provably Safe AI Agents">
+<Layout title="PetriFlow - Provably Safe AI Agents">
   <Nav currentPage="index" />
 
   <!-- HERO -->
@@ -15,7 +15,7 @@ import { Code } from "astro:components";
     <div class="container">
       <h1>Provably Safe<br /><span class="hero-accent">AI Agents.</span></h1>
       <p class="hero-sub">
-        AI agents decide which tools to call &mdash; shell commands, APIs, databases.
+        AI agents decide which tools to call: shell commands, APIs, databases.
         <strong style="color:var(--text)">Petri<span style="color:var(--accent-text)">Flow</span></strong> intercepts every call and enforces rules they <strong style="color:var(--text)">cannot</strong> break.
       </p>
       <div class="hero-buttons">
@@ -49,14 +49,14 @@ import { Code } from "astro:components";
     <div class="container">
       <h2 id="problem-heading" class="section-title">AI agents call tools.<br />Nothing controls the order.</h2>
       <p class="section-sub">
-        An AI agent works by calling tools &mdash; functions that send messages, run shell commands,
+        An AI agent works by calling tools: functions that send messages, run shell commands,
         query databases, deploy code. The model picks which tools to call and in what order.
         There is no runtime layer between the model&rsquo;s decision and the tool executing.
       </p>
 
       <blockquote>
         "Most failures are not fancy exploits. Someone messaged the bot, and the bot did what they asked."
-        <cite>&mdash; OpenClaw safety documentation</cite>
+        <cite>- OpenClaw safety documentation</cite>
       </blockquote>
 
       <div class="problem-grid">
@@ -118,7 +118,7 @@ Never delete without a backup.
 
 <span class="comment"># enforce ordering:</span>
 <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>`} />
-          <p class="panel-note">Only mapped commands can reach the shell. <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, anything unmapped &mdash; blocked.<br /><br /><strong>Allowlist, not deny-list.</strong></p>
+          <p class="panel-note">Only mapped commands can reach the shell. <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, anything unmapped is blocked.<br /><br /><strong>Allowlist, not deny-list.</strong></p>
         </div>
       </div>
     </div>
@@ -171,7 +171,7 @@ If anything is ambiguous, ask first.
 <span class="kw">require</span>  <span class="str">whatsapp.lookup</span>  before  <span class="str">whatsapp.send</span>
 
 <span class="comment"># human confirms recipient + message.</span>
-<span class="comment"># manual gate &mdash; no auto-bypass possible.</span>
+<span class="comment"># manual gate. no auto-bypass possible.</span>
 <span class="kw">require</span>  <span class="str">human-approval</span>  before  <span class="str">whatsapp.send</span>
 
 <span class="comment"># one send per lookup cycle.</span>
@@ -354,7 +354,7 @@ const manager = createGateManager(
         <a href="/examples/#observe-before-send" class="rule-card">
           <div class="rule-name">observe-before-send</div>
           <h3>Don't message blindly</h3>
-          <p>Read a channel before you can send to it. One read, one send. Channel-matched&thinsp;&mdash;&thinsp;reading #general doesn't unlock #production.</p>
+          <p>Read a channel before you can send to it. One read, one send. Channel-matched: reading #general doesn't unlock #production.</p>
           <div class="rule-preview"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send</span></div>
         </a>
 
@@ -493,13 +493,13 @@ const gates = composeGates(
             <span class="dim">&nbsp;&nbsp;</span>states: <span class="str">196</span> &middot; terminal: <span class="str">4</span> &middot; deadlocks: <span class="str">0</span><br />
             <br />
             <span class="dim">&nbsp;&nbsp;</span><span class="kw">invariant</span> "no unguarded delete"<br />
-            <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; holds in all reachable states<br />
+            <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> holds in all reachable states<br />
             <br />
             <span class="dim">&nbsp;&nbsp;</span><span class="kw">invariant</span> "privilege escalation impossible"<br />
-            <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; transition provably dead<br />
+            <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> transition provably dead<br />
             <br />
             <span class="dim">&nbsp;&nbsp;</span><span class="kw">invariant</span> "human gate required for prod"<br />
-            <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> &mdash; no auto path exists<br />
+            <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="pass">PASS</span> no auto path exists<br />
             <br />
             <span class="pass">All invariants verified.</span><br />
             <span style="color:var(--accent-text);font-weight:600">0 violations across 196 states.</span>
