@@ -7,7 +7,8 @@
   },
   "scripts": {
     "test": "bun test",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "lint": "oxlint src/"
   },
   "dependencies": {
     "@petriflow/engine": "workspace:*"

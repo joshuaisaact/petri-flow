@@ -14,6 +14,10 @@
   "peerDependencies": {
     "ai": "^6.0.0"
   },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "lint": "oxlint src/"
+  },
   "devDependencies": {
     "@types/bun": "^1",
     "typescript": "^5.7"

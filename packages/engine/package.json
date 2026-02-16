@@ -30,7 +30,8 @@
   "scripts": {
     "test": "bun test",
     "build": "tsc -p tsconfig.build.json",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "lint": "oxlint src/"
   },
   "dependencies": {
     "filtrex": "^3.1.0",

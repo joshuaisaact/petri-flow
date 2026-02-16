@@ -15,6 +15,9 @@ type Tool = {
  * - After success: `manager.handleToolResult({ isError: false })`
  * - After error: `manager.handleToolResult({ isError: true })`, re-throws
  * - Tools without `execute` (schema-only) pass through unchanged
+ *
+ * Note: tool execution is not wrapped with a timeout. If `execute` hangs,
+ * `handleToolResult` is never called and the net state will stall.
  */
 export function wrapTools<T extends Record<string, Tool>>(
   tools: T,
@@ -34,6 +37,9 @@ export function wrapTools<T extends Record<string, Tool>>(
       ...tool,
       execute: async (input: any, options: { toolCallId: string; [key: string]: any }) => {
         const toolCallId = options.toolCallId;
+        if (!toolCallId) {
+          throw new Error(`wrapTools: missing toolCallId for tool "${name}"`);
+        }
 
         const decision = await manager.handleToolCall(
           { toolCallId, toolName: name, input: input ?? {} },
