@@ -115,8 +115,9 @@ Never delete without a backup.
 <span class="comment"># but now, add rules:</span>
 <span class="kw">map</span> bash.command <span class="str">cp</span> as <span class="fn">backup</span>
 <span class="kw">map</span> bash.command <span class="str">rm</span> as <span class="fn">delete</span>
+<span class="kw">block</span> <span class="str">bash</span>
 <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>`} />
-          <p class="panel-note">The model can try to skip the backup. The <code style="font-family:var(--mono);font-size:12px">rm</code> call is intercepted and blocked before it reaches the shell.<br /><br /><strong>No code path can bypass it.</strong></p>
+          <p class="panel-note">Only mapped commands can reach the shell. <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, anything unmapped &mdash; blocked.<br /><br /><strong>Allowlist, not deny-list.</strong></p>
         </div>
       </div>
     </div>
