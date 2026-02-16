@@ -109,13 +109,14 @@ Never delete without a backup.
 
         <div class="solution-panel good">
           <div class="solution-panel-label">Skill + <span style="color:var(--text)">Petri</span><span style="color:var(--accent-text)">Flow</span> rule</div>
-          <div class="code-block" set:html={`<span class="comment"># same SKILL.md as before</span>
-<span class="comment"># same instructions, same tools</span>
-
-<span class="comment"># but now, add rules:</span>
+          <div class="code-block" set:html={`<span class="comment"># allow only these bash commands:</span>
 <span class="kw">map</span> bash.command <span class="str">cp</span> as <span class="fn">backup</span>
 <span class="kw">map</span> bash.command <span class="str">rm</span> as <span class="fn">delete</span>
+
+<span class="comment"># block everything else:</span>
 <span class="kw">block</span> <span class="str">bash</span>
+
+<span class="comment"># enforce ordering:</span>
 <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>`} />
           <p class="panel-note">Only mapped commands can reach the shell. <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, anything unmapped &mdash; blocked.<br /><br /><strong>Allowlist, not deny-list.</strong></p>
         </div>
