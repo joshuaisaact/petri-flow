@@ -444,7 +444,7 @@ blockquote cite {
   font-size: 13px;
   line-height: 1.8;
   overflow-x: auto;
-  color: var(--text-muted);
+  color: var(--text);
   white-space: pre-wrap;
 }
 
