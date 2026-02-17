@@ -1234,6 +1234,10 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
   border-top: 1px solid var(--border);
 }
 
+.example:first-of-type {
+  border-top: none;
+}
+
 .example-name {
   font-family: var(--mono);
   font-size: 13px;
