@@ -515,10 +515,20 @@ const gates = composeGates(
   <!-- BENCHMARKS -->
   <section class="benchmarks" id="benchmarks" data-animate aria-labelledby="benchmarks-heading">
     <div class="container">
-      <h2 id="benchmarks-heading" class="section-title">Benchmarks.</h2>
+      <h2 id="benchmarks-heading" class="section-title">Deep dives.</h2>
       <p class="section-sub">
-        Don't take our word for it. Clone the repo, run the tests, verify the claims.
+        The theory, the benchmarks, and why this approach works.
       </p>
+
+      <a href="https://joshtuddenham.dev/blog/petri-nets/" class="benchmark-card">
+        <h3>You're already building Petri nets. You're just building them badly.</h3>
+        <p>The 1962 formalism behind PetriFlow. 30 lines of TypeScript, three worked examples, and proofs you can run yourself.</p>
+      </a>
+
+      <a href="https://joshtuddenham.dev/blog/agent-safety/" class="benchmark-card">
+        <h3>Why AI agents need more than prompts</h3>
+        <p>The problem with prompt-based safety, and how Petri nets solve it.</p>
+      </a>
 
       <a href="https://github.com/joshuaisaact/petri-flow/blob/main/BENCHMARK.md" class="benchmark-card">
         <h3>PetriFlow vs n8n vs ReAct</h3>
@@ -528,11 +538,6 @@ const gates = composeGates(
           <span><strong style="color:var(--green)">4/4</strong> safety proofs</span>
           <span><strong style="color:var(--green)">81.8%</strong> fewer LLM calls vs ReAct</span>
         </div>
-      </a>
-
-      <a href="https://joshtuddenham.dev/blog/agent-safety/" class="benchmark-card">
-        <h3>Why AI agents need more than prompts</h3>
-        <p>The problem with prompt-based safety, and how Petri nets solve it.</p>
       </a>
     </div>
   </section>
