@@ -134,7 +134,7 @@ nav .container {
 }
 
 .nav-links a {
-  color: var(--text-muted);
+  color: var(--text);
   text-decoration: none;
   font-size: 13px;
   font-weight: 500;
@@ -144,8 +144,8 @@ nav .container {
 .nav-links a:hover { color: var(--text-secondary); }
 
 .nav-github { display: flex; align-items: center; gap: 0.375rem; }
-.nav-github svg { opacity: 0.45; }
-.nav-github:hover svg { opacity: 0.7; }
+.nav-github svg { opacity: 0.7; }
+.nav-github:hover svg { opacity: 1; }
 
 /* ───── BUTTONS ───── */
 .btn {
