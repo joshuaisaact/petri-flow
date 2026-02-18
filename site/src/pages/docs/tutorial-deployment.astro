@@ -244,11 +244,11 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
-      <ul>
-        <li><a href={`${base}docs/tutorial-discord-bot/`} style="color:var(--accent-text)">Tutorial 3: Discord Bot</a>. Dot notation tool mapping and action-dispatch tools.</li>
-        <li><a href={`${base}docs/vercel-ai/#manual-confirmation`} style="color:var(--accent-text)">Manual confirmation docs</a>. CLI prompts, React dialogs, and other confirm patterns.</li>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax and composition model.</li>
-      </ul>
+      <DocTable borderless rows={[
+        [`<a href="${base}docs/tutorial-discord-bot/">Tutorial 3: Discord Bot</a>`, "Dot notation tool mapping and action-dispatch tools."],
+        [`<a href="${base}docs/vercel-ai/#manual-confirmation">Manual confirmation docs</a>`, "CLI prompts, React dialogs, and other confirm patterns."],
+        [`<a href="${base}docs/rules/">Rules Engine reference</a>`, "Full DSL syntax and composition model."],
+      ]} />
     </div>
 
     </main>

@@ -321,11 +321,11 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
-      <ul>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax, composition model, and how rules compile to nets.</li>
-        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a>. Skill nets, deferred transitions, multi-net composition internals.</li>
-        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a>. Shadow mode, registry mode, error handling patterns.</li>
-      </ul>
+      <DocTable borderless rows={[
+        [`<a href="${base}docs/rules/">Rules Engine reference</a>`, "Full DSL syntax, composition model, and how rules compile to nets."],
+        [`<a href="${base}docs/gate/">Gate reference</a>`, "Skill nets, deferred transitions, multi-net composition internals."],
+        [`<a href="${base}docs/vercel-ai/">Vercel AI SDK docs</a>`, "Shadow mode, registry mode, error handling patterns."],
+      ]} />
     </div>
 
     </main>

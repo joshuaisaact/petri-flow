@@ -231,12 +231,12 @@ limit discord.sendMessage to 5 per session`;
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
-      <ul>
-        <li><a href={`${base}docs/tutorial-devops-assistant/`} style="color:var(--accent-text)">Tutorial 4: DevOps Assistant</a>. One agent, 13 tools, 5 domains. See how all the concepts compose at production scale.</li>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax including <code>map</code> for custom tool mapping.</li>
-        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a>. Skill nets, deferred transitions, multi-net composition.</li>
-        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a>. Shadow mode, registry mode, error handling.</li>
-      </ul>
+      <DocTable borderless rows={[
+        [`<a href="${base}docs/tutorial-devops-assistant/">Tutorial 4: DevOps Assistant</a>`, "One agent, 13 tools, 5 domains. See how all the concepts compose at production scale."],
+        [`<a href="${base}docs/rules/">Rules Engine reference</a>`, "Full DSL syntax including <code>map</code> for custom tool mapping."],
+        [`<a href="${base}docs/gate/">Gate reference</a>`, "Skill nets, deferred transitions, multi-net composition."],
+        [`<a href="${base}docs/vercel-ai/">Vercel AI SDK docs</a>`, "Shadow mode, registry mode, error handling."],
+      ]} />
     </div>
 
     </main>

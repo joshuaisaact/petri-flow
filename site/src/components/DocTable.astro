@@ -60,6 +60,13 @@ const { headers, rows, borderless = false } = Astro.props;
     color: var(--text-secondary);
     white-space: nowrap;
   }
+  .doc-table tbody td:first-child :global(a) {
+    color: var(--accent-text);
+    text-decoration: none;
+  }
+  .doc-table tbody td:first-child :global(a:hover) {
+    text-decoration: underline;
+  }
   .borderless {
     border: none;
   }
