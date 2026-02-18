@@ -3,6 +3,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { loadRules } from "@petriflow/rules";
 import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { pipeline } from "./tools";
 
 // Load rules from file
 const { nets, verification } = await loadRules(
@@ -31,48 +32,33 @@ const tools = gate.wrapTools({
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
-    execute: async () => {
-      console.log("> lint");
-      return { passed: true, warnings: 0, errors: 0 };
-    },
+    execute: async () => pipeline.lint(),
   }),
   test: tool({
     description: "Run the test suite",
     inputSchema: z.object({}),
-    execute: async () => {
-      console.log("> test");
-      return { passed: true, total: 42, failed: 0 };
-    },
+    execute: async () => pipeline.test(),
   }),
   deploy: tool({
     description: "Deploy to an environment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      console.log(`> deploy ${environment}`);
-      return { deployed: true, environment, version: "1.4.2" };
-    },
+    execute: async ({ environment }) => pipeline.deploy(environment),
   }),
   checkStatus: tool({
     description: "Check the current deployment status",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      console.log(`> checkStatus ${environment}`);
-      return { environment, status: "healthy", version: "1.4.1" };
-    },
+    execute: async ({ environment }) => pipeline.checkStatus(environment),
   }),
   rollback: tool({
     description: "Rollback to the previous deployment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      console.log(`> rollback ${environment}`);
-      return { rolledBack: true, environment, version: "1.4.0" };
-    },
+    execute: async ({ environment }) => pipeline.rollback(environment),
   }),
 });
 

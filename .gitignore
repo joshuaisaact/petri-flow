@@ -4,6 +4,7 @@ dist
 .turbo
 .env
 .pi
+.deploy-state.json
 
 # Build artifacts in src directories
 packages/*/src/**/*.js
