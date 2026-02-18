@@ -62,6 +62,24 @@ const tutorials = [
       "Composing limits with sequencing",
     ],
   },
+  {
+    href: `${base}docs/tutorial-devops-assistant/`,
+    number: 4,
+    title: "DevOps Assistant",
+    description: "One agent, five domains, ten rules. Everything composes.",
+    rules: [
+      `${kw("require")} ${str("slack.readMessages")} before ${str("slack.sendMessage")}`,
+      `${kw("require")} ${str("lint")} before ${str("test")}`,
+      `${kw("require")} ${str("human-approval")} before ${str("deploy")}`,
+      `${kw("block")} ${str("rm")}`,
+    ].join("\n"),
+    concepts: [
+      "Cross-domain composition",
+      "Independent verification",
+      "Free tools",
+      "Production-scale safety",
+    ],
+  },
 ];
 ---
 <Layout title="Tutorials — PetriFlow" description="Step-by-step tutorials for building safe AI agents with PetriFlow. Learn sequencing, blocking, human approval gates, rate limits, and tool mapping.">

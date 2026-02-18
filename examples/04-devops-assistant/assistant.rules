@@ -1,0 +1,17 @@
+# Slack — read channel context before sending, rate limited
+require slack.readMessages before slack.sendMessage
+limit slack.sendMessage to 10 per session
+
+# Email — human approves every send, rate limited
+require human-approval before sendEmail
+limit sendEmail to 3 per session
+
+# Deployment pipeline
+require lint before test
+require test before deploy
+require human-approval before deploy
+limit deploy to 2 per session
+
+# File safety
+require backup before delete
+block rm

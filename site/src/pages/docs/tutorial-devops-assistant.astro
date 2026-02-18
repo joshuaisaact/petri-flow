@@ -1,0 +1,338 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const rulesFile = `# Slack — read channel context before sending, rate limited
+require slack.readMessages before slack.sendMessage
+limit slack.sendMessage to 10 per session
+
+# Email — human approves every send, rate limited
+require human-approval before sendEmail
+limit sendEmail to 3 per session
+
+# Deployment pipeline
+require lint before test
+require test before deploy
+require human-approval before deploy
+limit deploy to 2 per session
+
+# File safety
+require backup before delete
+block rm`;
+
+const toolDefs = `import { tool } from "ai";
+import { z } from "zod";
+
+const myTools = {
+  // --- Research (free — no rules mention it) ---
+  webSearch: tool({
+    description: "Search the web for information",
+    inputSchema: z.object({ query: z.string() }),
+    execute: async ({ query }) => {
+      return { results: [/* ... */] };
+    },
+  }),
+
+  // --- Slack (dot notation: slack.readMessages, slack.sendMessage) ---
+  slack: tool({
+    description: "Interact with Slack: read messages or send a message",
+    inputSchema: z.object({
+      action: z.enum(["readMessages", "sendMessage"]),
+      channel: z.string().describe("Channel name"),
+      content: z.string().optional().describe("Message content"),
+    }),
+    execute: async (input) => {
+      switch (input.action) {
+        case "readMessages":
+          return { messages: [/* ... */] };
+        case "sendMessage":
+          return { sent: true, channel: input.channel };
+      }
+    },
+  }),
+
+  // --- Email ---
+  readInbox: tool({
+    description: "Read email inbox for recent messages",
+    inputSchema: z.object({}),
+    execute: async () => ({ emails: [/* ... */] }),
+  }),
+  sendEmail: tool({
+    description: "Send an email (requires human approval)",
+    inputSchema: z.object({
+      to: z.string(),
+      subject: z.string(),
+      body: z.string(),
+    }),
+    execute: async ({ to, subject }) => ({ sent: true }),
+  }),
+
+  // --- Deployment ---
+  lint: tool({
+    description: "Run the linter on the codebase",
+    inputSchema: z.object({}),
+    execute: async () => ({ passed: true, warnings: 0, errors: 0 }),
+  }),
+  test: tool({
+    description: "Run the test suite",
+    inputSchema: z.object({}),
+    execute: async () => ({ passed: true, total: 42, failed: 0 }),
+  }),
+  deploy: tool({
+    description: "Deploy to an environment",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => ({
+      deployed: true,
+      environment,
+      version: "2.1.0",
+    }),
+  }),
+  checkStatus: tool({
+    description: "Check the current deployment status",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => ({
+      environment,
+      status: "healthy",
+    }),
+  }),
+
+  // --- Files ---
+  listFiles: tool({
+    description: "List files in a directory",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ files: ["temp.log", "cache.json"] }),
+  }),
+  readFile: tool({
+    description: "Read a file's contents",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ content: \`Contents of \${path}\` }),
+  }),
+  backup: tool({
+    description: "Create a backup of a file",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ backedUp: \`\${path}.bak\` }),
+  }),
+  delete: tool({
+    description: "Delete a file (requires backup first)",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ deleted: path }),
+  }),
+  rm: tool({
+    description: "Remove a file with force",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ removed: path }),
+  }),
+};`;
+
+const fullExample = `import { loadRules } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { generateText, tool, stepCountIs } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { createInterface } from "readline";
+import { z } from "zod";
+
+// Interactive terminal prompt — blocks until the user types y/n
+async function askApproval(title: string, message: string): Promise<boolean> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question(\`\\n--- APPROVAL REQUIRED ---\\n\${title}\\n\${message}\\nApprove? (y/n) \`, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase() === "y");
+    });
+  });
+}
+
+// 1. Load and verify rules
+const { nets, verification } = await loadRules("./assistant.rules");
+console.log(verification);
+// [
+//   { name: "require-slack.readMessages-before-slack.sendMessage", ... },
+//   { name: "limit-slack.sendMessage-10", ... },
+//   { name: "require-human-approval-before-sendEmail", ... },
+//   { name: "limit-sendEmail-3", ... },
+//   { name: "require-lint-before-test", ... },
+//   { name: "require-test-before-deploy", ... },
+//   { name: "require-human-approval-before-deploy", ... },
+//   { name: "limit-deploy-2", ... },
+//   { name: "require-backup-before-delete", ... },
+//   { name: "block-rm", ... },
+// ]
+
+// 2. Create the gate — deploy and sendEmail pause for real human approval
+const gate = createPetriflowGate(nets, {
+  confirm: askApproval,
+});
+
+// 3. Define and wrap all 13 tools (see "Define the tools" above)
+const tools = gate.wrapTools({
+  webSearch: tool({ /* ... */ }),
+  slack: tool({ /* ... */ }),
+  readInbox: tool({ /* ... */ }),
+  sendEmail: tool({ /* ... */ }),
+  lint: tool({ /* ... */ }),
+  test: tool({ /* ... */ }),
+  deploy: tool({ /* ... */ }),
+  checkStatus: tool({ /* ... */ }),
+  listFiles: tool({ /* ... */ }),
+  readFile: tool({ /* ... */ }),
+  backup: tool({ /* ... */ }),
+  delete: tool({ /* ... */ }),
+  rm: tool({ /* ... */ }),
+});
+
+// 4. Run the agent
+const { text } = await generateText({
+  model: anthropic("claude-sonnet-4-5-20250929"),
+  tools,
+  system: \`You are a DevOps assistant.\\n\\n\${gate.systemPrompt()}\`,
+  stopWhen: stepCountIs(20),
+  prompt:
+    "Check my inbox for dependency update notifications, research the latest " +
+    "Node.js 22 release, let the team know on Slack, run the deployment pipeline " +
+    "for production, email my manager a status update, and clean up temp files.",
+});`;
+
+const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/anthropic zod`;
+---
+<Layout title="Tutorial: DevOps Assistant | PetriFlow" description="Build a DevOps assistant with 13 tools across 5 domains, all governed by 10 independently-verified safety rules. Learn cross-domain composition.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Tutorial: DevOps Assistant</span>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/tutorial-discord-bot/`}>&larr; Discord Bot</a>
+      </nav>
+      <h1>Tutorial: DevOps Assistant</h1>
+      <p>One agent, <strong>13 tools</strong>, <strong>5 domains</strong>, <strong>10 rules</strong>. The key insight: rules from different domains compose automatically without interference. A Slack rate limit doesn't affect the deployment pipeline. A file safety rule doesn't block email.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#what-youll-build">What you'll build</a>
+        <a href="#prerequisites">Prerequisites</a>
+        <a href="#write-the-rules">Write the rules</a>
+        <a href="#define-the-tools">Define the tools</a>
+        <a href="#wire-it-up">Wire it up</a>
+        <a href="#see-it-in-action">See it in action</a>
+        <a href="#what-you-learned">What you learned</a>
+        <a href="#next-steps">Next steps</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <div class="doc-section" id="what-youll-build">
+      <h2>What you'll build</h2>
+      <p>A DevOps assistant that monitors dependency updates, researches releases, notifies the team on Slack, runs the deployment pipeline, emails the manager, and cleans up files. Five independent safety domains, all enforced simultaneously:</p>
+      <table>
+        <thead>
+          <tr><th>Domain</th><th>Tools</th><th>Rules</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Research</td><td>webSearch</td><td>None (free)</td></tr>
+          <tr><td>Slack</td><td>slack (readMessages, sendMessage)</td><td>Read before send, limit 10</td></tr>
+          <tr><td>Email</td><td>readInbox, sendEmail</td><td>Human approval, limit 3</td></tr>
+          <tr><td>Deployment</td><td>lint, test, deploy, checkStatus</td><td>lint &rarr; test &rarr; deploy + approval, limit 2</td></tr>
+          <tr><td>Files</td><td>listFiles, readFile, backup, delete, rm</td><td>Backup before delete, rm blocked</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Concepts covered:</strong> cross-domain composition, independent verification, abstaining nets, free tools, production-scale safety.</p>
+    </div>
+
+    <div class="doc-section" id="prerequisites">
+      <h2>Prerequisites</h2>
+      <Code code={installCmd} lang="bash" />
+      <p>This tutorial builds on concepts from the previous three tutorials: <a href={`${base}docs/tutorial-file-safety/`} style="color:var(--accent-text)">File Safety</a> (sequencing, blocking), <a href={`${base}docs/tutorial-deployment/`} style="color:var(--accent-text)">Deployment</a> (chained dependencies, approval, limits), and <a href={`${base}docs/tutorial-discord-bot/`} style="color:var(--accent-text)">Discord Bot</a> (dot notation, action dispatch).</p>
+    </div>
+
+    <div class="doc-section" id="write-the-rules">
+      <h2>Write the rules</h2>
+      <p>Create a file called <code>assistant.rules</code>:</p>
+      <Code code={rulesFile} lang="bash" />
+
+      <h3>How composition works</h3>
+      <p>Each rule compiles to its own small, independently verified Petri net. At runtime, every net is checked on every tool call. A tool is allowed only if <strong>all</strong> nets agree.</p>
+      <p>The critical insight: <strong>nets that don't mention a tool abstain</strong>. The file safety net (<code>require backup before delete</code>) has no opinion on <code>slack.sendMessage</code>. The Slack rate limit net has no opinion on <code>deploy</code>. Each domain enforces its own rules without interference.</p>
+      <p>Notice that <code>webSearch</code> appears nowhere in the rules. No net mentions it, so every net abstains, and it's always allowed. Not every tool needs a rule — the safety is on the <em>output</em> channels (Slack, email, deploy), not the research tool.</p>
+    </div>
+
+    <div class="doc-section" id="define-the-tools">
+      <h2>Define the tools</h2>
+      <p>13 tools across 5 domains. Each tool is a standard Vercel AI SDK <code>tool()</code> definition — PetriFlow handles the gating automatically.</p>
+      <Code code={toolDefs} lang="typescript" />
+      <p>The <code>slack</code> tool uses dot notation (same pattern as the Discord bot tutorial). The compiler auto-generates a <code>toolMapper</code> from the <code>action</code> field.</p>
+    </div>
+
+    <div class="doc-section" id="wire-it-up">
+      <h2>Wire it up</h2>
+      <p>Same three-step pattern as every tutorial: load rules, create gate, wrap tools.</p>
+      <Code code={fullExample} lang="typescript" />
+      <p>10 rules compile to 10 nets. Each is verified in isolation — the compiler reports reachable states for every net. All 13 tools go through the gate on every call.</p>
+    </div>
+
+    <div class="doc-section" id="see-it-in-action">
+      <h2>See it in action</h2>
+      <p>The agent tackles a complex multi-domain task. Watch how rules from different domains enforce independently:</p>
+
+      <Trace label="// DevOps assistant across 5 domains" steps={[
+        { icon: "blocked", html: `Agent calls <strong>sendEmail({ to: "manager@co.com", ... })</strong><br><span class="blocked-text">BLOCKED</span> human approval required` },
+        { icon: "blocked", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="blocked-text">BLOCKED</span> lint and test required first` },
+        { icon: "ok", html: `Agent calls <strong>webSearch({ query: "Node.js 22 release" })</strong><br><span class="ok-text">OK</span> free tool — no rules mention it` },
+        { icon: "ok", html: `Agent calls <strong>readInbox({})</strong><br><span class="ok-text">OK</span> free tool — no rules mention it` },
+        { icon: "ok", html: `Agent calls <strong>slack({ action: "readMessages", channel: "#devops" })</strong><br><span class="ok-text">OK</span> earns sendMessage token` },
+        { icon: "ok", html: `Agent calls <strong>slack({ action: "sendMessage", channel: "#devops", content: "Node 22 LTS..." })</strong><br><span class="ok-text">ALLOWED</span> budget: 9/10 remaining` },
+        { icon: "ok", html: `Agent calls <strong>backup({ path: "/tmp/project/temp.log" })</strong><br><span class="ok-text">OK</span> earns delete token` },
+        { icon: "ok", html: `Agent calls <strong>delete({ path: "/tmp/project/temp.log" })</strong><br><span class="ok-text">OK</span> backup was done` },
+        { icon: "ok", html: `Agent calls <strong>lint({})</strong> then <strong>test({})</strong><br><span class="ok-text">OK</span> pipeline prerequisites satisfied` },
+        { icon: "ok", html: `Human approves deploy &rarr; <strong>deploy({ environment: "production" })</strong><br><span class="ok-text">DEPLOYED</span> v2.1.0 — budget: 1/2 remaining` },
+        { icon: "ok", html: `Human approves sendEmail &rarr; <strong>sendEmail({ to: "manager@co.com", ... })</strong><br><span class="ok-text">SENT</span> budget: 2/3 remaining` },
+        { icon: "blocked", html: `Agent calls <strong>rm({ path: "/tmp/project/cache.json" })</strong><br><span class="blocked-text">BLOCKED</span> permanently — agent must use backup + delete instead` },
+      ]} />
+
+      <p>Key observations:</p>
+      <ul>
+        <li>Each domain operates independently. The file backup doesn't need to happen before Slack messages. Deployment doesn't wait for email.</li>
+        <li><code>webSearch</code> and <code>readInbox</code> work immediately — free tools need no prerequisites.</li>
+        <li>The agent interleaves across domains freely. The only constraints are <em>within</em> each domain.</li>
+        <li><code>rm</code> is permanently blocked regardless of what happens in other domains.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="what-you-learned">
+      <h2>What you learned</h2>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">Cross-domain composition</strong> — 10 rules, 5 domains, zero interference. Each rule compiles to an independent net that only cares about the tools it mentions.</li>
+        <li><strong style="color:var(--text-secondary)">Independent verification</strong> — each net is verified in isolation. The Slack rate limit net has 12 reachable states; the file safety net has 3. Neither affects the other's verification.</li>
+        <li><strong style="color:var(--text-secondary)">Abstaining nets</strong> — nets ignore tools they don't mention. This is why composition works: adding a new rule for a new domain doesn't interfere with existing rules.</li>
+        <li><strong style="color:var(--text-secondary)">Free tools</strong> — not every tool needs a rule. <code>webSearch</code> is ungated because the safety is on output channels, not research.</li>
+        <li><strong style="color:var(--text-secondary)">Production scale</strong> — add more rules for new capabilities (e.g. a database domain) without affecting existing rules. Each new rule is a new net that composes automatically.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="next-steps">
+      <h2>Next steps</h2>
+      <ul>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax, composition model, and how rules compile to nets.</li>
+        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a> — skill nets, deferred transitions, multi-net composition internals.</li>
+        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a> — shadow mode, registry mode, error handling patterns.</li>
+      </ul>
+    </div>
+
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

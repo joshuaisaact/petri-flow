@@ -77,13 +77,14 @@ Full docs: [petriflow.joshtuddenham.dev](https://petriflow.joshtuddenham.dev)
 
 ### Examples
 
-Three runnable Vercel AI SDK agents in `examples/`:
+Four runnable Vercel AI SDK agents in `examples/`:
 
 | Example | What it demonstrates | |
 |---|---|---|
 | `01-file-management` | Deferred transitions (backup must succeed), permanent blocks (`rm`), sequence gates | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-file-safety/) |
 | `02-deployment` | Human approval gates, multi-rule composition (`lint → test → deploy`) | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-deployment/) |
 | `03-discord-bot` | Dot-notation action dispatch, session rate limiting | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-discord-bot/) |
+| `04-devops-assistant` | Cross-domain composition: 13 tools, 5 domains, 10 independently-verified rules | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-devops-assistant/) |
 
 ---
 
