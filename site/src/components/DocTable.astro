@@ -1,18 +1,21 @@
 ---
 interface Props {
-  headers: string[];
+  headers?: string[];
   rows: string[][];
+  borderless?: boolean;
 }
 
-const { headers, rows } = Astro.props;
+const { headers, rows, borderless = false } = Astro.props;
 ---
-<div class="doc-table-wrap">
+<div class:list={["doc-table-wrap", { borderless }]}>
   <table class="doc-table">
-    <thead>
-      <tr>
-        {headers.map((h) => <th>{h}</th>)}
-      </tr>
-    </thead>
+    {headers && headers.length > 0 && (
+      <thead>
+        <tr>
+          {headers.map((h) => <th>{h}</th>)}
+        </tr>
+      </thead>
+    )}
     <tbody>
       {rows.map((row) => (
         <tr>
@@ -56,5 +59,11 @@ const { headers, rows } = Astro.props;
     font-weight: 500;
     color: var(--text-secondary);
     white-space: nowrap;
+  }
+  .borderless {
+    border: none;
+  }
+  .borderless .doc-table tbody td {
+    border-bottom: none;
   }
 </style>

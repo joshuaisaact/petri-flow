@@ -5,6 +5,7 @@ import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import ConceptTags from "../../components/ConceptTags.astro";
 import Icon from "../../components/Icon.astro";
+import DocTable from "../../components/DocTable.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -135,7 +136,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
         <a href="#define-the-tools">Define the tools</a>
         <a href="#wire-it-up">Wire it up</a>
         <a href="#see-it-in-action">See it in action</a>
-        <a href="#what-you-learned">What you learned</a>
+        <a href="#concepts">Concepts</a>
         <a href="#next-steps">Next steps</a>
       </nav>
     </aside>
@@ -204,15 +205,15 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       </ul>
     </div>
 
-    <div class="doc-section" id="what-you-learned">
-      <h2>What you learned</h2>
-      <ul>
-        <li><strong style="color:var(--text-secondary)">require A before B</strong>: enforces ordering via a Petri net. B is structurally unreachable without A.</li>
-        <li><strong style="color:var(--text-secondary)">block X</strong>: makes a tool permanently unreachable in all states.</li>
-        <li><strong style="color:var(--text-secondary)">Deferred transitions</strong>: the net only advances when the tool's execute succeeds. Failures don't unlock gated tools.</li>
-        <li><strong style="color:var(--text-secondary)">Free tools</strong>: tools not mentioned in any rule pass through the gate without checks.</li>
-        <li><strong style="color:var(--text-secondary)">The wiring pattern</strong>: <code>loadRules</code> &rarr; <code>createPetriflowGate</code> &rarr; <code>wrapTools</code> &rarr; <code>generateText</code>.</li>
-      </ul>
+    <div class="doc-section" id="concepts">
+      <h2>Concepts</h2>
+      <DocTable borderless rows={[
+        ["require A before B", "Enforces ordering via a Petri net. B is structurally unreachable without A."],
+        ["block X", "Makes a tool permanently unreachable in all states."],
+        ["Deferred transitions", "The net only advances when the tool's execute succeeds. Failures don't unlock gated tools."],
+        ["Free tools", "Tools not mentioned in any rule pass through the gate without checks."],
+        ["The wiring pattern", "<code>loadRules</code> &rarr; <code>createPetriflowGate</code> &rarr; <code>wrapTools</code> &rarr; <code>generateText</code>."],
+      ]} />
     </div>
 
     <div class="doc-section" id="next-steps">

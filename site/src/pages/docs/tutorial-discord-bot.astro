@@ -5,6 +5,7 @@ import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import ConceptTags from "../../components/ConceptTags.astro";
 import Icon from "../../components/Icon.astro";
+import DocTable from "../../components/DocTable.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -148,7 +149,7 @@ limit discord.sendMessage to 5 per session`;
         <a href="#define-the-tools">Define the tools</a>
         <a href="#wire-it-up">Wire it up</a>
         <a href="#see-it-in-action">See it in action</a>
-        <a href="#what-you-learned">What you learned</a>
+        <a href="#concepts">Concepts</a>
         <a href="#next-steps">Next steps</a>
       </nav>
     </aside>
@@ -218,14 +219,14 @@ limit discord.sendMessage to 5 per session`;
       </ul>
     </div>
 
-    <div class="doc-section" id="what-you-learned">
-      <h2>What you learned</h2>
-      <ul>
-        <li><strong style="color:var(--text-secondary)">Dot notation</strong>: <code>tool.action</code> in rules auto-generates a toolMapper that resolves virtual tool names from the input's <code>action</code> field.</li>
-        <li><strong style="color:var(--text-secondary)">Action-dispatch tools</strong>: one physical tool can have actions gated independently. Only the actions mentioned in rules are controlled.</li>
-        <li><strong style="color:var(--text-secondary)">Cycling dependencies</strong>: sequencing rules reset after each use, creating a read-send-read-send pattern that prevents spam.</li>
-        <li><strong style="color:var(--text-secondary)">Composing limits with sequencing</strong>: rate limits and sequencing rules compose via AND logic. Both constraints must be satisfied.</li>
-      </ul>
+    <div class="doc-section" id="concepts">
+      <h2>Concepts</h2>
+      <DocTable borderless rows={[
+        ["Dot notation", "<code>tool.action</code> in rules auto-generates a toolMapper that resolves virtual tool names from the input's <code>action</code> field."],
+        ["Action-dispatch tools", "One physical tool can have actions gated independently. Only the actions mentioned in rules are controlled."],
+        ["Cycling dependencies", "Sequencing rules reset after each use, creating a read-send-read-send pattern that prevents spam."],
+        ["Composing limits with sequencing", "Rate limits and sequencing rules compose via AND logic. Both constraints must be satisfied."],
+      ]} />
     </div>
 
     <div class="doc-section" id="next-steps">

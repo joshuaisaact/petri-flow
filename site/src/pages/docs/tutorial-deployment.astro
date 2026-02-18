@@ -5,6 +5,7 @@ import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import ConceptTags from "../../components/ConceptTags.astro";
 import Icon from "../../components/Icon.astro";
+import DocTable from "../../components/DocTable.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -155,7 +156,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
         <a href="#define-the-tools">Define the tools</a>
         <a href="#wire-it-up">Wire it up</a>
         <a href="#see-it-in-action">See it in action</a>
-        <a href="#what-you-learned">What you learned</a>
+        <a href="#concepts">Concepts</a>
         <a href="#next-steps">Next steps</a>
       </nav>
     </aside>
@@ -230,15 +231,15 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       </ul>
     </div>
 
-    <div class="doc-section" id="what-you-learned">
-      <h2>What you learned</h2>
-      <ul>
-        <li><strong style="color:var(--text-secondary)">Chained sequencing</strong>: multiple <code>require ... before ...</code> rules compose into a pipeline. Each step must complete in order.</li>
-        <li><strong style="color:var(--text-secondary)">Human approval gates</strong>: <code>require human-approval before X</code> creates a manual transition. The <code>confirm</code> callback controls the gate.</li>
-        <li><strong style="color:var(--text-secondary)">Rate limits</strong>: <code>limit X to N per session</code> places N tokens in a budget. Each call consumes one. Budget exhaustion is permanent.</li>
-        <li><strong style="color:var(--text-secondary)">Pipeline reset</strong>: sequencing rules cycle. After each deploy, the pipeline resets and the agent must lint and test again.</li>
-        <li><strong style="color:var(--text-secondary)">AND composition</strong>: all rules (all nets) must agree. Deploy requires passing lint, test, approval, <em>and</em> having budget remaining.</li>
-      </ul>
+    <div class="doc-section" id="concepts">
+      <h2>Concepts</h2>
+      <DocTable borderless rows={[
+        ["Chained sequencing", "Multiple <code>require ... before ...</code> rules compose into a pipeline. Each step must complete in order."],
+        ["Human approval gates", "<code>require human-approval before X</code> creates a manual transition. The <code>confirm</code> callback controls the gate."],
+        ["Rate limits", "<code>limit X to N per session</code> places N tokens in a budget. Each call consumes one. Budget exhaustion is permanent."],
+        ["Pipeline reset", "Sequencing rules cycle. After each deploy, the pipeline resets and the agent must lint and test again."],
+        ["AND composition", "All rules (all nets) must agree. Deploy requires passing lint, test, approval, <em>and</em> having budget remaining."],
+      ]} />
     </div>
 
     <div class="doc-section" id="next-steps">

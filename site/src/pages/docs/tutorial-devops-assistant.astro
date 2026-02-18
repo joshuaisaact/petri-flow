@@ -209,7 +209,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
         <a href="#define-the-tools">Define the tools</a>
         <a href="#wire-it-up">Wire it up</a>
         <a href="#see-it-in-action">See it in action</a>
-        <a href="#what-you-learned">What you learned</a>
+        <a href="#concepts">Concepts</a>
         <a href="#next-steps">Next steps</a>
       </nav>
     </aside>
@@ -308,15 +308,15 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
       </ul>
     </div>
 
-    <div class="doc-section" id="what-you-learned">
-      <h2>What you learned</h2>
-      <ul>
-        <li><strong style="color:var(--text-secondary)">Cross-domain composition</strong>: 10 rules, 5 domains, zero interference. Each rule compiles to an independent net that only cares about the tools it mentions.</li>
-        <li><strong style="color:var(--text-secondary)">Independent verification</strong>: each net is verified in isolation. The Slack rate limit net has 12 reachable states; the file safety net has 3. Neither affects the other's verification.</li>
-        <li><strong style="color:var(--text-secondary)">Abstaining nets</strong>: nets ignore tools they don't mention. This is why composition works: adding a new rule for a new domain doesn't interfere with existing rules.</li>
-        <li><strong style="color:var(--text-secondary)">Free tools</strong>: not every tool needs a rule. <code>webSearch</code> is ungated because the safety is on output channels, not research.</li>
-        <li><strong style="color:var(--text-secondary)">Production scale</strong>: add more rules for new capabilities (e.g. a database domain) without affecting existing rules. Each new rule is a new net that composes automatically.</li>
-      </ul>
+    <div class="doc-section" id="concepts">
+      <h2>Concepts</h2>
+      <DocTable borderless rows={[
+        ["Cross-domain composition", "10 rules, 5 domains, zero interference. Each rule compiles to an independent net that only cares about the tools it mentions."],
+        ["Independent verification", "Each net is verified in isolation. The Slack rate limit net has 12 reachable states; the file safety net has 3. Neither affects the other's verification."],
+        ["Abstaining nets", "Nets ignore tools they don't mention. This is why composition works: adding a new rule for a new domain doesn't interfere with existing rules."],
+        ["Free tools", "Not every tool needs a rule. <code>webSearch</code> is ungated because the safety is on output channels, not research."],
+        ["Production scale", "Add more rules for new capabilities (e.g. a database domain) without affecting existing rules. Each new rule is a new net that composes automatically."],
+      ]} />
     </div>
 
     <div class="doc-section" id="next-steps">
