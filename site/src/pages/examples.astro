@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import Trace from "../components/Trace.astro";
+import InstallBar from "../components/InstallBar.astro";
 ---
 <Layout title="Examples — PetriFlow">
   <Nav currentPage="examples" />
@@ -10,11 +11,13 @@ import Trace from "../components/Trace.astro";
   <div class="container-narrow">
     <div class="page-header">
       <h1>Examples</h1>
-      <p>Step-by-step execution traces showing how each rule gates tool calls. Every blocked action here is <strong style="color:var(--text-secondary)">structurally impossible</strong>, not a policy check that might fail. <a href={import.meta.env.BASE_URL}>&larr; Back to overview</a></p>
+      <p>Step-by-step execution traces showing how each rule gates tool calls. Every blocked action here is <strong style="color:var(--text-secondary)">structurally impossible</strong>, not a policy check that might fail.</p>
     </div>
 
+    <InstallBar />
+
     <!-- read-before-send (Discord) -->
-    <div class="example" id="read-before-send">
+    <div class="example border-t-0!" id="read-before-send">
       <div class="example-name">read-before-send</div>
       <h2>Don't message blindly</h2>
       <p>The agent must read messages before it can send. Each read earns one send. The sequencing rule cycles &mdash; after each send, the agent must read again.</p>
