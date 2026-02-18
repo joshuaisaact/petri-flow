@@ -266,6 +266,25 @@ const manager = createGateManager([...dslNets, pathGuard], { mode: "enforce" });
       <p>Each net is small enough to verify exhaustively. A sequence rule has 3 reachable states. But their combined enforcement covers arbitrarily complex policies. Compositional guarantees without combinatorial explosion.</p>
 
       <p>You can add rules incrementally. Adding <code>require human-approval before deploy</code> doesn't change any existing net. It adds a third independent check. Now deploy requires lint, test, <em>and</em> human approval.</p>
+
+      <div class="example-rule" set:html={`<span class="comment"># These rules are completely unrelated.</span>
+<span class="comment"># They enforce independently in the same agent.</span>
+
+<span class="comment"># File safety</span>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+<span class="kw">block</span> <span class="str">rm</span>
+
+<span class="comment"># Deployment pipeline</span>
+<span class="kw">require</span> <span class="str">lint</span> before <span class="str">test</span>
+<span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">limit</span> <span class="str">deploy</span> to <span class="str">2</span> per <span class="str">session</span>
+
+<span class="comment"># Messaging</span>
+<span class="kw">require</span> <span class="str">discord.readMessages</span> before <span class="str">discord.sendMessage</span>
+<span class="kw">limit</span> <span class="str">discord.sendMessage</span> to <span class="str">5</span> per <span class="str">session</span>`} />
+
+      <p class="example-note"><strong>Rules don't need to be related.</strong> Each rule compiles to its own Petri net. Nets that don't mention a tool simply abstain. A file safety net has no opinion on <code>discord.sendMessage</code>, and a messaging net has no opinion on <code>deploy</code>. Put all your rules in one file, give the agent all its tools, and every constraint is enforced simultaneously without interference.</p>
     </div>
 
     <!-- Under the hood -->
