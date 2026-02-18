@@ -147,7 +147,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
     <div class="doc-section" id="what-youll-build">
       <h2>What you'll build</h2>
-      <p>A file management agent with 5 tools: <code>listFiles</code>, <code>readFile</code>, <code>backup</code>, <code>delete</code>, and <code>rm</code>. Two rules control the agent's behavior: <code>backup</code> must succeed before <code>delete</code> is allowed, and <code>rm</code> is permanently blocked. The other tools are free — no rules mention them, so they always work.</p>
+      <p>A file management agent with 5 tools: <code>listFiles</code>, <code>readFile</code>, <code>backup</code>, <code>delete</code>, and <code>rm</code>. Two rules control the agent's behavior: <code>backup</code> must succeed before <code>delete</code> is allowed, and <code>rm</code> is permanently blocked. The other tools are free. No rules mention them, so they always work.</p>
     </div>
 
     <div class="doc-section" id="prerequisites">
@@ -165,17 +165,17 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
       <p>Two rules, two different mechanisms:</p>
       <ul>
-        <li><strong style="color:var(--text-secondary)">require backup before delete</strong> — compiles to a Petri net where <code>delete</code> is only reachable after <code>backup</code> succeeds. The transition is <em>deferred</em>: the net only advances when the tool's <code>execute</code> completes without error. If backup fails, delete stays locked.</li>
-        <li><strong style="color:var(--text-secondary)">block rm</strong> — compiles to a net where the <code>rm</code> transition is provably dead in all reachable states. No sequence of tool calls can ever unlock it.</li>
+        <li><strong style="color:var(--text-secondary)">require backup before delete</strong>: compiles to a Petri net where <code>delete</code> is only reachable after <code>backup</code> succeeds. The transition is <em>deferred</em>: the net only advances when the tool's <code>execute</code> completes without error. If backup fails, delete stays locked.</li>
+        <li><strong style="color:var(--text-secondary)">block rm</strong>: compiles to a net where the <code>rm</code> transition is provably dead in all reachable states. No sequence of tool calls can ever unlock it.</li>
       </ul>
-      <p>Tools not mentioned in any rule (<code>listFiles</code>, <code>readFile</code>) are <strong>free tools</strong> — they pass through the gate without checks.</p>
+      <p>Tools not mentioned in any rule (<code>listFiles</code>, <code>readFile</code>) are <strong>free tools</strong>. They pass through the gate without checks.</p>
     </div>
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>Define your tools using the Vercel AI SDK's <code>tool()</code> function. These are standard tool definitions — PetriFlow doesn't change how you write them.</p>
+      <p>Define your tools using the Vercel AI SDK's <code>tool()</code> function. These are standard tool definitions. PetriFlow doesn't change how you write them.</p>
       <Code code={toolDefs} lang="typescript" />
-      <p>Each tool has a <code>description</code> (for the model), a <code>parameters</code> schema (validated by the SDK), and an <code>execute</code> function (your implementation). PetriFlow wraps <code>execute</code> with gate checks — the tool definitions themselves stay the same.</p>
+      <p>Each tool has a <code>description</code> (for the model), a <code>parameters</code> schema (validated by the SDK), and an <code>execute</code> function (your implementation). PetriFlow wraps <code>execute</code> with gate checks. The tool definitions themselves stay the same.</p>
     </div>
 
     <div class="doc-section" id="wire-it-up">
@@ -190,40 +190,40 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       <p>Here's what happens when the agent tries to clean up a directory:</p>
 
       <Trace label="// agent cleans up /tmp/project" steps={[
-        { icon: "ok", html: `Agent calls <strong>listFiles({ path: "/tmp/project" })</strong><br><span class="ok-text">OK</span> free tool — no rules mention listFiles` },
+        { icon: "ok", html: `Agent calls <strong>listFiles({ path: "/tmp/project" })</strong><br><span class="ok-text">OK</span> free tool, no rules mention listFiles` },
         { icon: "blocked", html: `Agent calls <strong>delete({ path: "temp.log" })</strong><br><span class="blocked-text">BLOCKED</span> backup required first` },
-        { icon: "ok", html: `Agent calls <strong>backup({ path: "temp.log" })</strong><br><span class="ok-text">OK</span> deferred — net advances after execute succeeds` },
+        { icon: "ok", html: `Agent calls <strong>backup({ path: "temp.log" })</strong><br><span class="ok-text">OK</span> deferred: net advances after execute succeeds` },
         { icon: "ok", html: `Agent calls <strong>delete({ path: "temp.log" })</strong><br><span class="ok-text">ALLOWED</span> backup succeeded, delete is now unlocked` },
-        { icon: "blocked", html: `Agent calls <strong>rm({ path: "old-backup.tar.gz" })</strong><br><span class="blocked-text">BLOCKED</span> permanently blocked — transition provably dead` },
+        { icon: "blocked", html: `Agent calls <strong>rm({ path: "old-backup.tar.gz" })</strong><br><span class="blocked-text">BLOCKED</span> permanently blocked, transition provably dead` },
         { icon: "ok", html: `Agent explains it cannot use <strong>rm</strong> and suggests using <strong>backup</strong> then <strong>delete</strong> instead` },
       ]} />
 
       <p>Key observations:</p>
       <ul>
-        <li><code>listFiles</code> works immediately — it's a free tool, not mentioned in any rule.</li>
+        <li><code>listFiles</code> works immediately. It's a free tool, not mentioned in any rule.</li>
         <li><code>delete</code> is blocked until <code>backup</code> <em>succeeds</em>. If backup threw an error, delete would stay locked.</li>
         <li><code>rm</code> is permanently blocked. The model sees the block reason in the error and adjusts its plan.</li>
-        <li>The backup/delete cycle is repeatable — after deleting, you need to backup again before the next delete.</li>
+        <li>The backup/delete cycle is repeatable. After deleting, you need to backup again before the next delete.</li>
       </ul>
     </div>
 
     <div class="doc-section" id="what-you-learned">
       <h2>What you learned</h2>
       <ul>
-        <li><strong style="color:var(--text-secondary)">require A before B</strong> — enforces ordering via a Petri net. B is structurally unreachable without A.</li>
-        <li><strong style="color:var(--text-secondary)">block X</strong> — makes a tool permanently unreachable in all states.</li>
-        <li><strong style="color:var(--text-secondary)">Deferred transitions</strong> — the net only advances when the tool's execute succeeds. Failures don't unlock gated tools.</li>
-        <li><strong style="color:var(--text-secondary)">Free tools</strong> — tools not mentioned in any rule pass through the gate without checks.</li>
-        <li><strong style="color:var(--text-secondary)">The wiring pattern</strong> — <code>loadRules</code> &rarr; <code>createPetriflowGate</code> &rarr; <code>wrapTools</code> &rarr; <code>generateText</code>.</li>
+        <li><strong style="color:var(--text-secondary)">require A before B</strong>: enforces ordering via a Petri net. B is structurally unreachable without A.</li>
+        <li><strong style="color:var(--text-secondary)">block X</strong>: makes a tool permanently unreachable in all states.</li>
+        <li><strong style="color:var(--text-secondary)">Deferred transitions</strong>: the net only advances when the tool's execute succeeds. Failures don't unlock gated tools.</li>
+        <li><strong style="color:var(--text-secondary)">Free tools</strong>: tools not mentioned in any rule pass through the gate without checks.</li>
+        <li><strong style="color:var(--text-secondary)">The wiring pattern</strong>: <code>loadRules</code> &rarr; <code>createPetriflowGate</code> &rarr; <code>wrapTools</code> &rarr; <code>generateText</code>.</li>
       </ul>
     </div>
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
       <ul>
-        <li><a href={`${base}docs/tutorial-deployment/`} style="color:var(--accent-text)">Tutorial 2: Deployment Agent</a> — chained dependencies, human approval gates, and rate limits.</li>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax and composition model.</li>
-        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a> — shadow mode, registry mode, error handling.</li>
+        <li><a href={`${base}docs/tutorial-deployment/`} style="color:var(--accent-text)">Tutorial 2: Deployment Agent</a>. Chained dependencies, human approval gates, and rate limits.</li>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax and composition model.</li>
+        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a>. Shadow mode, registry mode, error handling.</li>
       </ul>
     </div>
 

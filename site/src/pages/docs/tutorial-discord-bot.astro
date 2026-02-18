@@ -177,24 +177,24 @@ limit discord.sendMessage to 5 per session`;
 <span class="kw">limit</span> <span class="str">discord.sendMessage</span> to <span class="str">5</span> per <span class="str">session</span>`} />
 
       <h3>How dot notation works</h3>
-      <p>The rules reference <code>discord.readMessages</code> and <code>discord.sendMessage</code> — but your actual tool is just <code>discord</code>. The compiler sees the dot and auto-generates a <strong>toolMapper</strong> that resolves the virtual tool name from the <code>action</code> field in the tool's input:</p>
+      <p>The rules reference <code>discord.readMessages</code> and <code>discord.sendMessage</code>, but your actual tool is just <code>discord</code>. The compiler sees the dot and auto-generates a <strong>toolMapper</strong> that resolves the virtual tool name from the <code>action</code> field in the tool's input:</p>
       <Code code={dotNotation} lang="bash" />
-      <p>This means one physical tool (<code>discord</code>) can have different actions gated independently. <code>readMessages</code> and <code>sendMessage</code> are controlled by rules. <code>addReaction</code> and <code>createThread</code> are free — no rules mention them.</p>
+      <p>This means one physical tool (<code>discord</code>) can have different actions gated independently. <code>readMessages</code> and <code>sendMessage</code> are controlled by rules. <code>addReaction</code> and <code>createThread</code> are free. No rules mention them.</p>
 
       <h3>Cycling dependencies</h3>
-      <p>The sequencing rule <code>require discord.readMessages before discord.sendMessage</code> <em>cycles</em>: after each send, the agent must read again before the next send. This naturally interleaves reading context with sending replies — the agent can't spam messages without checking what's new.</p>
+      <p>The sequencing rule <code>require discord.readMessages before discord.sendMessage</code> <em>cycles</em>: after each send, the agent must read again before the next send. This naturally interleaves reading context with sending replies. The agent can't spam messages without checking what's new.</p>
     </div>
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>A single tool with an <code>action</code> enum. The tool definition is standard Vercel AI SDK — PetriFlow's dot notation handles the dispatch mapping automatically.</p>
+      <p>A single tool with an <code>action</code> enum. The tool definition is standard Vercel AI SDK. PetriFlow's dot notation handles the dispatch mapping automatically.</p>
       <Code code={toolDefs} lang="typescript" />
       <p>The <code>action</code> parameter is what PetriFlow uses for tool mapping. When the agent calls <code>discord({"{"} action: "sendMessage", ... {"}"})</code>, PetriFlow resolves it to the virtual tool <code>discord.sendMessage</code> and checks the rules against that name.</p>
     </div>
 
     <div class="doc-section" id="wire-it-up">
       <h2>Wire it up</h2>
-      <p>Same pattern as the previous tutorials. No special configuration needed — the dot notation toolMapper is auto-generated from the rules.</p>
+      <p>Same pattern as the previous tutorials. No special configuration needed. The dot notation toolMapper is auto-generated from the rules.</p>
       <Code code={fullExample} lang="typescript" />
     </div>
 
@@ -208,15 +208,15 @@ limit discord.sendMessage to 5 per session`;
         { icon: "ok", html: `Agent calls <strong>discord({ action: "sendMessage", channel: "#dev-general", content: "Looking at the build failure..." })</strong><br><span class="ok-text">ALLOWED</span> budget: 4/5 remaining` },
         { icon: "blocked", html: `Agent tries to send another message immediately<br><span class="blocked-text">BLOCKED</span> must readMessages again (rule cycles)` },
         { icon: "ok", html: `Agent calls <strong>discord({ action: "readMessages" })</strong> then <strong>discord({ action: "sendMessage" })</strong><br><span class="ok-text">OK</span> read-send cycle repeats. Budget: 3/5` },
-        { icon: "ok", html: `Agent calls <strong>discord({ action: "addReaction", emoji: "👍" })</strong><br><span class="ok-text">OK</span> free action — no rules mention addReaction` },
-        { icon: "blocked", html: `After 5 sends, agent tries to send again<br><span class="blocked-text">BLOCKED</span> rate limit reached — budget exhausted` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "addReaction", emoji: "👍" })</strong><br><span class="ok-text">OK</span> free action, no rules mention addReaction` },
+        { icon: "blocked", html: `After 5 sends, agent tries to send again<br><span class="blocked-text">BLOCKED</span> rate limit reached, budget exhausted` },
       ]} />
 
       <p>Key observations:</p>
       <ul>
-        <li>The sequencing rule <em>cycles</em> — after each send, readMessages is required again. The agent can't batch-fire messages.</li>
+        <li>The sequencing rule <em>cycles</em>. After each send, readMessages is required again. The agent can't batch-fire messages.</li>
         <li>The rate limit and sequencing compose via AND logic. A send needs <em>both</em> a prior read <em>and</em> remaining budget.</li>
-        <li><code>addReaction</code> and <code>createThread</code> work at any point — they're free actions.</li>
+        <li><code>addReaction</code> and <code>createThread</code> work at any point. They're free actions.</li>
         <li>After 5 sends, the budget is permanently exhausted. The agent can still read, react, and create threads.</li>
       </ul>
     </div>
@@ -224,20 +224,20 @@ limit discord.sendMessage to 5 per session`;
     <div class="doc-section" id="what-you-learned">
       <h2>What you learned</h2>
       <ul>
-        <li><strong style="color:var(--text-secondary)">Dot notation</strong> — <code>tool.action</code> in rules auto-generates a toolMapper that resolves virtual tool names from the input's <code>action</code> field.</li>
-        <li><strong style="color:var(--text-secondary)">Action-dispatch tools</strong> — one physical tool can have actions gated independently. Only the actions mentioned in rules are controlled.</li>
-        <li><strong style="color:var(--text-secondary)">Cycling dependencies</strong> — sequencing rules reset after each use, creating a read-send-read-send pattern that prevents spam.</li>
-        <li><strong style="color:var(--text-secondary)">Composing limits with sequencing</strong> — rate limits and sequencing rules compose via AND logic. Both constraints must be satisfied.</li>
+        <li><strong style="color:var(--text-secondary)">Dot notation</strong>: <code>tool.action</code> in rules auto-generates a toolMapper that resolves virtual tool names from the input's <code>action</code> field.</li>
+        <li><strong style="color:var(--text-secondary)">Action-dispatch tools</strong>: one physical tool can have actions gated independently. Only the actions mentioned in rules are controlled.</li>
+        <li><strong style="color:var(--text-secondary)">Cycling dependencies</strong>: sequencing rules reset after each use, creating a read-send-read-send pattern that prevents spam.</li>
+        <li><strong style="color:var(--text-secondary)">Composing limits with sequencing</strong>: rate limits and sequencing rules compose via AND logic. Both constraints must be satisfied.</li>
       </ul>
     </div>
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
       <ul>
-        <li><a href={`${base}docs/tutorial-devops-assistant/`} style="color:var(--accent-text)">Tutorial 4: DevOps Assistant</a> — one agent, 13 tools, 5 domains. See how all the concepts compose at production scale.</li>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax including <code>map</code> for custom tool mapping.</li>
-        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a> — skill nets, deferred transitions, multi-net composition.</li>
-        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a> — shadow mode, registry mode, error handling.</li>
+        <li><a href={`${base}docs/tutorial-devops-assistant/`} style="color:var(--accent-text)">Tutorial 4: DevOps Assistant</a>. One agent, 13 tools, 5 domains. See how all the concepts compose at production scale.</li>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax including <code>map</code> for custom tool mapping.</li>
+        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a>. Skill nets, deferred transitions, multi-net composition.</li>
+        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a>. Shadow mode, registry mode, error handling.</li>
       </ul>
     </div>
 

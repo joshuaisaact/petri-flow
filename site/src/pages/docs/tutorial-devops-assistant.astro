@@ -266,12 +266,12 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
       <h3>How composition works</h3>
       <p>Each rule compiles to its own small, independently verified Petri net. At runtime, every net is checked on every tool call. A tool is allowed only if <strong>all</strong> nets agree.</p>
       <p>The critical insight: <strong>nets that don't mention a tool abstain</strong>. The file safety net (<code>require backup before delete</code>) has no opinion on <code>slack.sendMessage</code>. The Slack rate limit net has no opinion on <code>deploy</code>. Each domain enforces its own rules without interference.</p>
-      <p>Notice that <code>webSearch</code> appears nowhere in the rules. No net mentions it, so every net abstains, and it's always allowed. Not every tool needs a rule — the safety is on the <em>output</em> channels (Slack, email, deploy), not the research tool.</p>
+      <p>Notice that <code>webSearch</code> appears nowhere in the rules. No net mentions it, so every net abstains, and it's always allowed. Not every tool needs a rule. The safety is on the <em>output</em> channels (Slack, email, deploy), not the research tool.</p>
     </div>
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>13 tools across 5 domains. Each tool is a standard Vercel AI SDK <code>tool()</code> definition — PetriFlow handles the gating automatically.</p>
+      <p>13 tools across 5 domains. Each tool is a standard Vercel AI SDK <code>tool()</code> definition. PetriFlow handles the gating automatically.</p>
       <Code code={toolDefs} lang="typescript" />
       <p>The <code>slack</code> tool uses dot notation (same pattern as the Discord bot tutorial). The compiler auto-generates a <code>toolMapper</code> from the <code>action</code> field.</p>
     </div>
@@ -280,7 +280,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
       <h2>Wire it up</h2>
       <p>Same three-step pattern as every tutorial: load rules, create gate, wrap tools.</p>
       <Code code={fullExample} lang="typescript" />
-      <p>10 rules compile to 10 nets. Each is verified in isolation — the compiler reports reachable states for every net. All 13 tools go through the gate on every call.</p>
+      <p>10 rules compile to 10 nets. Each is verified in isolation. The compiler reports reachable states for every net. All 13 tools go through the gate on every call.</p>
     </div>
 
     <div class="doc-section" id="see-it-in-action">
@@ -290,22 +290,22 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
       <Trace label="// DevOps assistant across 5 domains" steps={[
         { icon: "blocked", html: `Agent calls <strong>sendEmail({ to: "manager@co.com", ... })</strong><br><span class="blocked-text">BLOCKED</span> human approval required` },
         { icon: "blocked", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="blocked-text">BLOCKED</span> lint and test required first` },
-        { icon: "ok", html: `Agent calls <strong>webSearch({ query: "Node.js 22 release" })</strong><br><span class="ok-text">OK</span> free tool — no rules mention it` },
-        { icon: "ok", html: `Agent calls <strong>readInbox({})</strong><br><span class="ok-text">OK</span> free tool — no rules mention it` },
+        { icon: "ok", html: `Agent calls <strong>webSearch({ query: "Node.js 22 release" })</strong><br><span class="ok-text">OK</span> free tool, no rules mention it` },
+        { icon: "ok", html: `Agent calls <strong>readInbox({})</strong><br><span class="ok-text">OK</span> free tool, no rules mention it` },
         { icon: "ok", html: `Agent calls <strong>slack({ action: "readMessages", channel: "#devops" })</strong><br><span class="ok-text">OK</span> earns sendMessage token` },
         { icon: "ok", html: `Agent calls <strong>slack({ action: "sendMessage", channel: "#devops", content: "Node 22 LTS..." })</strong><br><span class="ok-text">ALLOWED</span> budget: 9/10 remaining` },
         { icon: "ok", html: `Agent calls <strong>backup({ path: "/tmp/project/temp.log" })</strong><br><span class="ok-text">OK</span> earns delete token` },
         { icon: "ok", html: `Agent calls <strong>delete({ path: "/tmp/project/temp.log" })</strong><br><span class="ok-text">OK</span> backup was done` },
         { icon: "ok", html: `Agent calls <strong>lint({})</strong> then <strong>test({})</strong><br><span class="ok-text">OK</span> pipeline prerequisites satisfied` },
-        { icon: "ok", html: `Human approves deploy &rarr; <strong>deploy({ environment: "production" })</strong><br><span class="ok-text">DEPLOYED</span> v2.1.0 — budget: 1/2 remaining` },
+        { icon: "ok", html: `Human approves deploy &rarr; <strong>deploy({ environment: "production" })</strong><br><span class="ok-text">DEPLOYED</span> v2.1.0, budget: 1/2 remaining` },
         { icon: "ok", html: `Human approves sendEmail &rarr; <strong>sendEmail({ to: "manager@co.com", ... })</strong><br><span class="ok-text">SENT</span> budget: 2/3 remaining` },
-        { icon: "blocked", html: `Agent calls <strong>rm({ path: "/tmp/project/cache.json" })</strong><br><span class="blocked-text">BLOCKED</span> permanently — agent must use backup + delete instead` },
+        { icon: "blocked", html: `Agent calls <strong>rm({ path: "/tmp/project/cache.json" })</strong><br><span class="blocked-text">BLOCKED</span> permanently, agent must use backup + delete instead` },
       ]} />
 
       <p>Key observations:</p>
       <ul>
         <li>Each domain operates independently. The file backup doesn't need to happen before Slack messages. Deployment doesn't wait for email.</li>
-        <li><code>webSearch</code> and <code>readInbox</code> work immediately — free tools need no prerequisites.</li>
+        <li><code>webSearch</code> and <code>readInbox</code> work immediately. Free tools need no prerequisites.</li>
         <li>The agent interleaves across domains freely. The only constraints are <em>within</em> each domain.</li>
         <li><code>rm</code> is permanently blocked regardless of what happens in other domains.</li>
       </ul>
@@ -314,20 +314,20 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
     <div class="doc-section" id="what-you-learned">
       <h2>What you learned</h2>
       <ul>
-        <li><strong style="color:var(--text-secondary)">Cross-domain composition</strong> — 10 rules, 5 domains, zero interference. Each rule compiles to an independent net that only cares about the tools it mentions.</li>
-        <li><strong style="color:var(--text-secondary)">Independent verification</strong> — each net is verified in isolation. The Slack rate limit net has 12 reachable states; the file safety net has 3. Neither affects the other's verification.</li>
-        <li><strong style="color:var(--text-secondary)">Abstaining nets</strong> — nets ignore tools they don't mention. This is why composition works: adding a new rule for a new domain doesn't interfere with existing rules.</li>
-        <li><strong style="color:var(--text-secondary)">Free tools</strong> — not every tool needs a rule. <code>webSearch</code> is ungated because the safety is on output channels, not research.</li>
-        <li><strong style="color:var(--text-secondary)">Production scale</strong> — add more rules for new capabilities (e.g. a database domain) without affecting existing rules. Each new rule is a new net that composes automatically.</li>
+        <li><strong style="color:var(--text-secondary)">Cross-domain composition</strong>: 10 rules, 5 domains, zero interference. Each rule compiles to an independent net that only cares about the tools it mentions.</li>
+        <li><strong style="color:var(--text-secondary)">Independent verification</strong>: each net is verified in isolation. The Slack rate limit net has 12 reachable states; the file safety net has 3. Neither affects the other's verification.</li>
+        <li><strong style="color:var(--text-secondary)">Abstaining nets</strong>: nets ignore tools they don't mention. This is why composition works: adding a new rule for a new domain doesn't interfere with existing rules.</li>
+        <li><strong style="color:var(--text-secondary)">Free tools</strong>: not every tool needs a rule. <code>webSearch</code> is ungated because the safety is on output channels, not research.</li>
+        <li><strong style="color:var(--text-secondary)">Production scale</strong>: add more rules for new capabilities (e.g. a database domain) without affecting existing rules. Each new rule is a new net that composes automatically.</li>
       </ul>
     </div>
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
       <ul>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax, composition model, and how rules compile to nets.</li>
-        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a> — skill nets, deferred transitions, multi-net composition internals.</li>
-        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a> — shadow mode, registry mode, error handling patterns.</li>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax, composition model, and how rules compile to nets.</li>
+        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a>. Skill nets, deferred transitions, multi-net composition internals.</li>
+        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a>. Shadow mode, registry mode, error handling patterns.</li>
       </ul>
     </div>
 

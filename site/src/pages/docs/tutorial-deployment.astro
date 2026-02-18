@@ -188,16 +188,16 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
       <p>Four rules, three different mechanisms:</p>
       <ul>
-        <li><strong style="color:var(--text-secondary)">require lint before test</strong> + <strong style="color:var(--text-secondary)">require test before deploy</strong> — chained sequencing. Deploy is two steps away from being reachable. The agent must complete lint, then test, in order.</li>
-        <li><strong style="color:var(--text-secondary)">require human-approval before deploy</strong> — compiles to a <em>manual transition</em>. The gate calls your <code>confirm</code> callback and waits. If the human approves, the transition fires and deploy unlocks. If they reject (or no callback is provided), deploy stays blocked.</li>
-        <li><strong style="color:var(--text-secondary)">limit deploy to 2 per session</strong> — places 2 tokens in a budget pool. Each successful deploy consumes one. After 2 deploys, the budget is empty and deploy is permanently blocked for the rest of the session.</li>
+        <li><strong style="color:var(--text-secondary)">require lint before test</strong> + <strong style="color:var(--text-secondary)">require test before deploy</strong>: chained sequencing. Deploy is two steps away from being reachable. The agent must complete lint, then test, in order.</li>
+        <li><strong style="color:var(--text-secondary)">require human-approval before deploy</strong>: compiles to a <em>manual transition</em>. The gate calls your <code>confirm</code> callback and waits. If the human approves, the transition fires and deploy unlocks. If they reject (or no callback is provided), deploy stays blocked.</li>
+        <li><strong style="color:var(--text-secondary)">limit deploy to 2 per session</strong>: places 2 tokens in a budget pool. Each successful deploy consumes one. After 2 deploys, the budget is empty and deploy is permanently blocked for the rest of the session.</li>
       </ul>
-      <p>Each rule compiles to an independent Petri net. All nets must agree for a tool call to proceed — this is AND composition.</p>
+      <p>Each rule compiles to an independent Petri net. All nets must agree for a tool call to proceed. This is AND composition.</p>
     </div>
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>Define your tools with <code>tool()</code> from the Vercel AI SDK. <code>checkStatus</code> and <code>rollback</code> are free tools — no rules mention them.</p>
+      <p>Define your tools with <code>tool()</code> from the Vercel AI SDK. <code>checkStatus</code> and <code>rollback</code> are free tools. No rules mention them.</p>
       <Code code={toolDefs} lang="typescript" />
     </div>
 
@@ -214,43 +214,43 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
       <Trace label="// deploy to production, then staging" steps={[
         { icon: "blocked", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="blocked-text">BLOCKED</span> lint hasn't run, test hasn't run, human hasn't approved` },
-        { icon: "ok", html: `Agent calls <strong>lint()</strong><br><span class="ok-text">OK</span> linter passes — test is now unlocked` },
-        { icon: "ok", html: `Agent calls <strong>test()</strong><br><span class="ok-text">OK</span> tests pass — deploy is one gate away` },
+        { icon: "ok", html: `Agent calls <strong>lint()</strong><br><span class="ok-text">OK</span> linter passes, test is now unlocked` },
+        { icon: "ok", html: `Agent calls <strong>test()</strong><br><span class="ok-text">OK</span> tests pass, deploy is one gate away` },
         { icon: "wait", html: `PetriFlow calls <strong>confirm</strong>: "Allow 'deploy'?"<br>Human approves &rarr; manual gate opens` },
         { icon: "ok", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="ok-text">ALLOWED</span> all gates satisfied. Budget: 1/2 remaining` },
         { icon: "ok", html: `Agent calls <strong>lint()</strong> then <strong>test()</strong><br><span class="ok-text">OK</span> pipeline resets for second deploy` },
         { icon: "wait", html: `PetriFlow calls <strong>confirm</strong>: "Allow 'deploy'?"<br>Human approves &rarr; manual gate opens` },
         { icon: "ok", html: `Agent calls <strong>deploy({ environment: "staging" })</strong><br><span class="ok-text">ALLOWED</span> Budget: 0/2 remaining` },
-        { icon: "blocked", html: `A third deploy attempt<br><span class="blocked-text">BLOCKED</span> rate limit reached — budget exhausted` },
+        { icon: "blocked", html: `A third deploy attempt<br><span class="blocked-text">BLOCKED</span> rate limit reached, budget exhausted` },
       ]} />
 
       <p>Key observations:</p>
       <ul>
         <li>The chained rules create a pipeline: lint &rarr; test &rarr; approval &rarr; deploy. You can't skip steps.</li>
-        <li>The pipeline <em>resets</em> after each deploy — the agent must lint and test again for the next deploy.</li>
+        <li>The pipeline <em>resets</em> after each deploy. The agent must lint and test again for the next deploy.</li>
         <li>Human approval fires every time deploy becomes reachable, not just once.</li>
         <li>After 2 deploys, the rate limit kicks in permanently for this session.</li>
-        <li><code>checkStatus</code> and <code>rollback</code> work at any point — they're free tools.</li>
+        <li><code>checkStatus</code> and <code>rollback</code> work at any point. They're free tools.</li>
       </ul>
     </div>
 
     <div class="doc-section" id="what-you-learned">
       <h2>What you learned</h2>
       <ul>
-        <li><strong style="color:var(--text-secondary)">Chained sequencing</strong> — multiple <code>require ... before ...</code> rules compose into a pipeline. Each step must complete in order.</li>
-        <li><strong style="color:var(--text-secondary)">Human approval gates</strong> — <code>require human-approval before X</code> creates a manual transition. The <code>confirm</code> callback controls the gate.</li>
-        <li><strong style="color:var(--text-secondary)">Rate limits</strong> — <code>limit X to N per session</code> places N tokens in a budget. Each call consumes one. Budget exhaustion is permanent.</li>
-        <li><strong style="color:var(--text-secondary)">Pipeline reset</strong> — sequencing rules cycle. After each deploy, the pipeline resets and the agent must lint and test again.</li>
-        <li><strong style="color:var(--text-secondary)">AND composition</strong> — all rules (all nets) must agree. Deploy requires passing lint, test, approval, <em>and</em> having budget remaining.</li>
+        <li><strong style="color:var(--text-secondary)">Chained sequencing</strong>: multiple <code>require ... before ...</code> rules compose into a pipeline. Each step must complete in order.</li>
+        <li><strong style="color:var(--text-secondary)">Human approval gates</strong>: <code>require human-approval before X</code> creates a manual transition. The <code>confirm</code> callback controls the gate.</li>
+        <li><strong style="color:var(--text-secondary)">Rate limits</strong>: <code>limit X to N per session</code> places N tokens in a budget. Each call consumes one. Budget exhaustion is permanent.</li>
+        <li><strong style="color:var(--text-secondary)">Pipeline reset</strong>: sequencing rules cycle. After each deploy, the pipeline resets and the agent must lint and test again.</li>
+        <li><strong style="color:var(--text-secondary)">AND composition</strong>: all rules (all nets) must agree. Deploy requires passing lint, test, approval, <em>and</em> having budget remaining.</li>
       </ul>
     </div>
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
       <ul>
-        <li><a href={`${base}docs/tutorial-discord-bot/`} style="color:var(--accent-text)">Tutorial 3: Discord Bot</a> — dot notation tool mapping and action-dispatch tools.</li>
-        <li><a href={`${base}docs/vercel-ai/#manual-confirmation`} style="color:var(--accent-text)">Manual confirmation docs</a> — CLI prompts, React dialogs, and other confirm patterns.</li>
-        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax and composition model.</li>
+        <li><a href={`${base}docs/tutorial-discord-bot/`} style="color:var(--accent-text)">Tutorial 3: Discord Bot</a>. Dot notation tool mapping and action-dispatch tools.</li>
+        <li><a href={`${base}docs/vercel-ai/#manual-confirmation`} style="color:var(--accent-text)">Manual confirmation docs</a>. CLI prompts, React dialogs, and other confirm patterns.</li>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a>. Full DSL syntax and composition model.</li>
       </ul>
     </div>
 
