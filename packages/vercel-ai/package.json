@@ -2,11 +2,25 @@
   "name": "@petriflow/vercel-ai",
   "version": "0.1.0",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./nets/tool-approval": "./src/nets/tool-approval.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./nets/tool-approval": {
+      "types": "./dist/nets/tool-approval.d.ts",
+      "default": "./dist/nets/tool-approval.js"
+    }
+  },
+  "keywords": ["petri-net", "vercel-ai", "ai-agent", "guardrails", "tool-use", "safety"],
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "oxlint src/"
   },
   "dependencies": {
     "@petriflow/gate": "workspace:*"
@@ -14,9 +28,14 @@
   "peerDependencies": {
     "ai": "^6.0.0"
   },
-  "scripts": {
-    "check": "tsc --noEmit",
-    "lint": "oxlint src/"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuaisaact/petri-flow.git",
+    "directory": "packages/vercel-ai"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/bun": "^1",
