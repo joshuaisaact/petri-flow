@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createInterface } from "readline";
 import { loadRules } from "@petriflow/rules";
 import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { web, slack, email, pipeline, files } from "./tools";
 
 // Interactive terminal prompt — blocks until the user types y/n
 async function askApproval(title: string, message: string): Promise<boolean> {
@@ -43,15 +44,7 @@ const tools = gate.wrapTools({
   webSearch: tool({
     description: "Search the web for information",
     inputSchema: z.object({ query: z.string() }),
-    execute: async ({ query }) => {
-      console.log(`> webSearch "${query}"`);
-      return {
-        results: [
-          { title: "Node.js 22 LTS Released", snippet: "Node.js 22 is now the active LTS release with stable fetch, WebSocket, and test runner." },
-          { title: "Breaking changes in Node.js 22", snippet: "V8 engine updated to 12.4, ESM loading changes, new permission model." },
-        ],
-      };
-    },
+    execute: async ({ query }) => web.search(query),
   }),
 
   // --- Slack (dot notation: slack.readMessages, slack.sendMessage) ---
@@ -63,17 +56,11 @@ const tools = gate.wrapTools({
       content: z.string().optional().describe("Message content (for sendMessage)"),
     }),
     execute: async (input) => {
-      console.log(`> slack.${input.action} #${input.channel}`);
       switch (input.action) {
         case "readMessages":
-          return {
-            messages: [
-              { author: "alice", content: "Dependency update PR merged" },
-              { author: "bob", content: "Tests passing on staging" },
-            ],
-          };
+          return slack.readMessages(input.channel);
         case "sendMessage":
-          return { sent: true, channel: input.channel };
+          return slack.sendMessage(input.channel, input.content!);
       }
     },
   }),
@@ -82,15 +69,7 @@ const tools = gate.wrapTools({
   readInbox: tool({
     description: "Read email inbox for recent messages",
     inputSchema: z.object({}),
-    execute: async () => {
-      console.log("> readInbox");
-      return {
-        emails: [
-          { from: "dependabot@github.com", subject: "Bump node from 20 to 22", date: "2024-01-15" },
-          { from: "ci@company.com", subject: "Nightly build passed", date: "2024-01-15" },
-        ],
-      };
-    },
+    execute: async () => email.readInbox(),
   }),
   sendEmail: tool({
     description: "Send an email (requires human approval)",
@@ -99,90 +78,60 @@ const tools = gate.wrapTools({
       subject: z.string(),
       body: z.string(),
     }),
-    execute: async ({ to, subject }) => {
-      console.log(`> sendEmail to=${to} subject="${subject}"`);
-      return { sent: true };
-    },
+    execute: async ({ to, subject, body }) => email.send(to, subject, body),
   }),
 
   // --- Deployment ---
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
-    execute: async () => {
-      console.log("> lint");
-      return { passed: true, warnings: 0, errors: 0 };
-    },
+    execute: async () => pipeline.lint(),
   }),
   test: tool({
     description: "Run the test suite",
     inputSchema: z.object({}),
-    execute: async () => {
-      console.log("> test");
-      return { passed: true, total: 42, failed: 0 };
-    },
+    execute: async () => pipeline.test(),
   }),
   deploy: tool({
     description: "Deploy to an environment (requires lint, test, and human approval)",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      console.log(`> deploy ${environment}`);
-      return { deployed: true, environment, version: "2.1.0" };
-    },
+    execute: async ({ environment }) => pipeline.deploy(environment),
   }),
   checkStatus: tool({
     description: "Check the current deployment status",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      console.log(`> checkStatus ${environment}`);
-      return { environment, status: "healthy", version: "2.0.9" };
-    },
+    execute: async ({ environment }) => pipeline.checkStatus(environment),
   }),
 
   // --- Files ---
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> listFiles ${path}`);
-      return { files: ["temp.log", "cache.json", "build-output.tar.gz", "config.yaml"] };
-    },
+    execute: async ({ path }) => files.list(path),
   }),
   readFile: tool({
     description: "Read a file's contents",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> readFile ${path}`);
-      return { content: `Contents of ${path}` };
-    },
+    execute: async ({ path }) => files.read(path),
   }),
   backup: tool({
     description: "Create a backup of a file before modifying it",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> backup ${path}`);
-      return { backedUp: `${path}.bak` };
-    },
+    execute: async ({ path }) => files.backup(path),
   }),
   delete: tool({
     description: "Delete a file (requires backup first)",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> delete ${path}`);
-      return { deleted: path };
-    },
+    execute: async ({ path }) => files.remove(path),
   }),
   rm: tool({
     description: "Remove a file with force",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> rm ${path}`);
-      return { removed: path };
-    },
+    execute: async ({ path }) => files.forceRemove(path),
   }),
 });
 
