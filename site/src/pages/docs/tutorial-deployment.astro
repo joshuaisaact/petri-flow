@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
+import ConceptTags from "../../components/ConceptTags.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -132,7 +133,7 @@ const { text } = await generateText({
 
 const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/openai zod`;
 ---
-<Layout title="Tutorial: Deployment Agent | PetriFlow" description="Build a deployment agent with chained dependencies, human approval gates, and rate limits.">
+<Layout title="Build a Deployment Agent | PetriFlow" description="Build a deployment agent with chained dependencies, human approval gates, and rate limits.">
   <Nav currentPage="docs" />
 
   <div class="doc-wrapper">
@@ -140,12 +141,13 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       <nav class="doc-breadcrumb" aria-label="Documentation navigation">
         <a href={`${base}docs/`}>Docs</a>
         <span aria-hidden="true">/</span>
-        <span>Tutorial: Deployment</span>
+        <span>Build a Deployment Agent</span>
         <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
         <a href={`${base}docs/tutorial-file-safety/`}>&larr; File Safety</a>
         <a href={`${base}docs/tutorial-discord-bot/`}>Next: Discord Bot &rarr;</a>
       </nav>
-      <h1>Tutorial: Deployment Agent</h1>
+      <h1>Build a Deployment Agent</h1>
+      <ConceptTags concepts={["Chained sequencing", "Human approval gates", "Confirm callback", "Session rate limits"]} />
       <p>Build a CI/CD agent where <strong>lint gates test</strong>, <strong>test gates deploy</strong>, <strong>a human approves every deploy</strong>, and <strong>deploys are capped at 2 per session</strong>. You'll learn chained dependencies, human approval gates, and rate limits.</p>
     </div>
 
@@ -167,7 +169,6 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
     <div class="doc-section" id="what-youll-build">
       <h2>What you'll build</h2>
       <p>A deployment agent with 5 tools: <code>lint</code>, <code>test</code>, <code>deploy</code>, <code>checkStatus</code>, and <code>rollback</code>. Four rules enforce a full CI/CD pipeline: lint before test, test before deploy, human approval before deploy, and a maximum of 2 deploys per session. <code>checkStatus</code> and <code>rollback</code> are free tools.</p>
-      <p><strong>Concepts covered:</strong> chained sequencing, human approval gates (<code>require human-approval</code>), the <code>confirm</code> callback, session rate limits (<code>limit ... to N per session</code>).</p>
     </div>
 
     <div class="doc-section" id="prerequisites">

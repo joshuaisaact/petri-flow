@@ -1,0 +1,29 @@
+---
+interface Props {
+  concepts: string[];
+}
+
+const { concepts } = Astro.props;
+---
+<div class="concept-tags">
+  {concepts.map((c) => <span class="concept-tag">{c}</span>)}
+</div>
+
+<style>
+  .concept-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 24px;
+  }
+  .concept-tag {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    white-space: nowrap;
+  }
+</style>

@@ -3,8 +3,6 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Logo from "../../components/Logo.astro";
-import InstallBar from "../../components/InstallBar.astro";
-
 const base = import.meta.env.BASE_URL;
 ---
 <Layout title="Documentation | PetriFlow" description="Get started with PetriFlow — safety rules for AI agents, formally verified and structurally enforced.">
@@ -15,8 +13,6 @@ const base = import.meta.env.BASE_URL;
       <h1 class="docs-title"><Logo size={36} /> Documentation</h1>
       <p>Safety rules for AI agents. Write rules in a simple DSL, the compiler verifies them, the runtime enforces them.</p>
     </div>
-
-    <InstallBar />
 
     <h2 class="docs-section-title">Tutorials</h2>
     <p class="docs-section-desc">Step-by-step guides that build working agents. Start here.</p>

@@ -4,6 +4,7 @@ import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import DocTable from "../../components/DocTable.astro";
+import ConceptTags from "../../components/ConceptTags.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -204,7 +205,7 @@ const { text } = await generateText({
 
 const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/anthropic zod`;
 ---
-<Layout title="Tutorial: DevOps Assistant | PetriFlow" description="Build a DevOps assistant with 13 tools across 5 domains, all governed by 10 independently-verified safety rules. Learn cross-domain composition.">
+<Layout title="Build a DevOps Assistant | PetriFlow" description="Build a DevOps assistant with 13 tools across 5 domains, all governed by 10 independently-verified safety rules. Learn cross-domain composition.">
   <Nav currentPage="docs" />
 
   <div class="doc-wrapper">
@@ -212,11 +213,12 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
       <nav class="doc-breadcrumb" aria-label="Documentation navigation">
         <a href={`${base}docs/`}>Docs</a>
         <span aria-hidden="true">/</span>
-        <span>Tutorial: DevOps Assistant</span>
+        <span>Build a DevOps Assistant</span>
         <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
         <a href={`${base}docs/tutorial-discord-bot/`}>&larr; Discord Bot</a>
       </nav>
-      <h1>Tutorial: DevOps Assistant</h1>
+      <h1>Build a DevOps Assistant</h1>
+      <ConceptTags concepts={["Cross-domain composition", "Independent verification", "Abstaining nets", "Free tools", "Production-scale safety"]} />
       <p>One agent, <strong>13 tools</strong>, <strong>5 domains</strong>, <strong>10 rules</strong>. The key insight: rules from different domains compose automatically without interference. A Slack rate limit doesn't affect the deployment pipeline. A file safety rule doesn't block email.</p>
     </div>
 
@@ -248,7 +250,6 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
           ["Files", "<code>listFiles</code>, <code>readFile</code>, <code>backup</code>, <code>delete</code>, <code>rm</code>", "Backup before delete, <code>rm</code> blocked"],
         ]}
       />
-      <p><strong>Concepts covered:</strong> cross-domain composition, independent verification, abstaining nets, free tools, production-scale safety.</p>
     </div>
 
     <div class="doc-section" id="prerequisites">

@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
+import ConceptTags from "../../components/ConceptTags.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -112,7 +113,7 @@ const { text } = await generateText({
 
 const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/openai zod`;
 ---
-<Layout title="Tutorial: File Safety Agent | PetriFlow" description="Build a file management agent with sequencing and blocking rules. Learn deferred transitions and free tools.">
+<Layout title="Build a File Safety Agent | PetriFlow" description="Build a file management agent with sequencing and blocking rules. Learn deferred transitions and free tools.">
   <Nav currentPage="docs" />
 
   <div class="doc-wrapper">
@@ -120,11 +121,12 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       <nav class="doc-breadcrumb" aria-label="Documentation navigation">
         <a href={`${base}docs/`}>Docs</a>
         <span aria-hidden="true">/</span>
-        <span>Tutorial: File Safety</span>
+        <span>Build a File Safety Agent</span>
         <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
         <a href={`${base}docs/tutorial-deployment/`}>Next: Deployment &rarr;</a>
       </nav>
-      <h1>Tutorial: File Safety Agent</h1>
+      <h1>Build a File Safety Agent</h1>
+      <ConceptTags concepts={["Sequencing", "Permanent blocking", "Deferred transitions", "Free tools"]} />
       <p>Build a file management agent that <strong>must</strong> back up before deleting and <strong>can never</strong> use <code>rm</code>. You'll learn sequencing rules, permanent blocks, deferred transitions, and free tools.</p>
     </div>
 
@@ -146,7 +148,6 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
     <div class="doc-section" id="what-youll-build">
       <h2>What you'll build</h2>
       <p>A file management agent with 5 tools: <code>listFiles</code>, <code>readFile</code>, <code>backup</code>, <code>delete</code>, and <code>rm</code>. Two rules control the agent's behavior: <code>backup</code> must succeed before <code>delete</code> is allowed, and <code>rm</code> is permanently blocked. The other tools are free — no rules mention them, so they always work.</p>
-      <p><strong>Concepts covered:</strong> sequencing (<code>require ... before ...</code>), permanent blocking (<code>block</code>), deferred transitions, free tools.</p>
     </div>
 
     <div class="doc-section" id="prerequisites">

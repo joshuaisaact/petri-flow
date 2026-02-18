@@ -12,8 +12,8 @@ const str = (s: string) => `<span class="str">${s}</span>`;
 const tutorials = [
   {
     href: `${base}docs/tutorial-file-safety/`,
-    number: 1,
-    title: "File Safety Agent",
+
+    title: "Build a File Safety Agent",
     description: `The agent must back up before deleting and can never use <code>rm</code>.`,
     rules: [
       `${kw("require")} ${str("backup")} before ${str("delete")}`,
@@ -28,8 +28,8 @@ const tutorials = [
   },
   {
     href: `${base}docs/tutorial-deployment/`,
-    number: 2,
-    title: "Deployment Agent",
+
+    title: "Build a Deployment Agent",
     description: "A full CI/CD pipeline the agent cannot skip. Lint, test, approval, deploy.",
     rules: [
       `${kw("require")} ${str("lint")} before ${str("test")}`,
@@ -46,8 +46,8 @@ const tutorials = [
   },
   {
     href: `${base}docs/tutorial-discord-bot/`,
-    number: 3,
-    title: "Discord Bot",
+
+    title: "Build a Discord Bot",
     description: "One tool, multiple actions, each gated independently.",
     rules: [
       `${kw("require")} ${str("discord.readMessages")}`,
@@ -64,8 +64,8 @@ const tutorials = [
   },
   {
     href: `${base}docs/tutorial-devops-assistant/`,
-    number: 4,
-    title: "DevOps Assistant",
+
+    title: "Build a DevOps Assistant",
     description: "One agent, five domains, ten rules. Everything composes.",
     rules: [
       `${kw("require")} ${str("slack.readMessages")} before ${str("slack.sendMessage")}`,

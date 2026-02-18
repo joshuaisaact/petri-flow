@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
+import ConceptTags from "../../components/ConceptTags.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -125,7 +126,7 @@ const dotNotation = `# These rules reference discord.readMessages and discord.se
 require discord.readMessages before discord.sendMessage
 limit discord.sendMessage to 5 per session`;
 ---
-<Layout title="Tutorial: Discord Bot | PetriFlow" description="Build a Discord bot agent with dot notation tool mapping and rate limits. Learn action-dispatch tools and cycling dependencies.">
+<Layout title="Build a Discord Bot | PetriFlow" description="Build a Discord bot agent with dot notation tool mapping and rate limits. Learn action-dispatch tools and cycling dependencies.">
   <Nav currentPage="docs" />
 
   <div class="doc-wrapper">
@@ -133,11 +134,12 @@ limit discord.sendMessage to 5 per session`;
       <nav class="doc-breadcrumb" aria-label="Documentation navigation">
         <a href={`${base}docs/`}>Docs</a>
         <span aria-hidden="true">/</span>
-        <span>Tutorial: Discord Bot</span>
+        <span>Build a Discord Bot</span>
         <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
         <a href={`${base}docs/tutorial-deployment/`}>&larr; Deployment</a>
       </nav>
-      <h1>Tutorial: Discord Bot</h1>
+      <h1>Build a Discord Bot</h1>
+      <ConceptTags concepts={["Dot notation tool mapping", "Action-dispatch tools", "Cycling dependencies", "Composing limits with sequencing"]} />
       <p>Build a Discord bot agent that <strong>must read before sending</strong> and is <strong>capped at 5 messages per session</strong>. You'll learn dot notation for action-dispatch tools, cycling dependencies, and how rate limits compose with sequencing.</p>
     </div>
 
@@ -159,7 +161,6 @@ limit discord.sendMessage to 5 per session`;
     <div class="doc-section" id="what-youll-build">
       <h2>What you'll build</h2>
       <p>A Discord bot with a single <code>discord</code> tool that dispatches actions via an <code>action</code> parameter: <code>readMessages</code>, <code>sendMessage</code>, <code>addReaction</code>, and <code>createThread</code>. Two rules control behavior: the agent must read messages before sending, and sending is limited to 5 messages per session.</p>
-      <p><strong>Concepts covered:</strong> dot notation tool mapping, action-dispatch tools, cycling dependencies, rate limits composing with sequencing.</p>
     </div>
 
     <div class="doc-section" id="prerequisites">
