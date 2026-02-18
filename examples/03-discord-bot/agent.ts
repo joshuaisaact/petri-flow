@@ -3,6 +3,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { loadRules } from "@petriflow/rules";
 import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { discord } from "./tools";
 
 // Load rules from file
 const { nets, verification } = await loadRules(
@@ -47,22 +48,15 @@ const tools = gate.wrapTools({
         .describe("Thread name (for createThread)"),
     }),
     execute: async (input) => {
-      console.log(`> discord.${input.action} #${input.channel}`);
       switch (input.action) {
         case "readMessages":
-          return {
-            messages: [
-              { author: "alice", content: "Build failed on main" },
-              { author: "bob", content: "Looking into it now" },
-              { author: "carol", content: "Might be the new dependency" },
-            ],
-          };
+          return discord.readMessages(input.channel);
         case "sendMessage":
-          return { sent: true, id: `msg-${Date.now()}` };
+          return discord.sendMessage(input.channel, input.content!);
         case "addReaction":
-          return { reacted: true, messageId: input.messageId, emoji: input.emoji };
+          return discord.addReaction(input.channel, input.messageId!, input.emoji!);
         case "createThread":
-          return { created: true, threadName: input.threadName };
+          return discord.createThread(input.channel, input.threadName!);
       }
     },
   }),
