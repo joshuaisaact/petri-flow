@@ -16,44 +16,46 @@ import InstallBar from "../components/InstallBar.astro";
 
     <InstallBar />
 
-    <!-- observe-before-send -->
-    <div class="example border-t-0!" id="observe-before-send">
-      <div class="example-name">observe-before-send</div>
+    <!-- read-before-send (Discord) -->
+    <div class="example border-t-0!" id="read-before-send">
+      <div class="example-name">read-before-send</div>
       <h2>Don't message blindly</h2>
-      <p>The agent must read a channel before it can send to it. Each read earns one send. Channel-matched &mdash; reading #general doesn't unlock #production.</p>
+      <p>The agent must read messages before it can send. Each read earns one send. The sequencing rule cycles &mdash; after each send, the agent must read again.</p>
 
-      <div class="example-rule"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send-message</span></div>
+      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">discord.readMessages</span> before <span class="str">discord.sendMessage</span>
+<span class="kw">limit</span> <span class="str">discord.sendMessage</span> to <span class="str">5</span> per <span class="str">session</span>`} />
 
       <Trace label="// agent tries to send without reading first" steps={[
-        { icon: "blocked", html: `Agent calls <strong>slack.sendMessage({ channel: "#deploys", text: "Deployed v2.1" })</strong><br><span class="blocked-text">BLOCKED</span> no read token for #deploys` },
-        { icon: "ok", html: `Agent calls <strong>slack.readMessages({ channel: "#deploys", limit: 10 })</strong><br><span class="ok-text">OK</span> earns one send token for #deploys` },
-        { icon: "ok", html: `Agent calls <strong>slack.sendMessage({ channel: "#deploys", text: "Deployed v2.1" })</strong><br><span class="ok-text">ALLOWED</span> send token consumed` },
-        { icon: "blocked", html: `Agent calls <strong>slack.sendMessage({ channel: "#deploys", text: "Also bumped deps" })</strong><br><span class="blocked-text">BLOCKED</span> token already consumed, must read again` },
+        { icon: "blocked", html: `Agent calls <strong>discord({ action: "sendMessage", channel: "#dev-general", content: "Hello!" })</strong><br><span class="blocked-text">BLOCKED</span> readMessages required first` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "readMessages", channel: "#dev-general" })</strong><br><span class="ok-text">OK</span> earns one send token` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "sendMessage", channel: "#dev-general", content: "Hello!" })</strong><br><span class="ok-text">ALLOWED</span> send token consumed. Budget: 4/5` },
+        { icon: "blocked", html: `Agent tries to send another message immediately<br><span class="blocked-text">BLOCKED</span> must readMessages again (rule cycles)` },
       ]} />
 
-      <p class="example-note"><strong>1:1 read-to-send ratio, structurally enforced.</strong> The agent can't spam a channel &mdash; every send requires a fresh read. And reading #general doesn't unlock #production.</p>
+      <p class="example-note"><strong>1:1 read-to-send ratio + session rate limit.</strong> The agent can't spam a channel &mdash; every send requires a fresh read, and messages are capped at 5 per session. <a href={`${import.meta.env.BASE_URL}docs/tutorial-discord-bot/`} style="color:var(--accent-text)">Full tutorial &rarr;</a></p>
     </div>
 
     <!-- test-before-deploy -->
     <div class="example" id="test-before-deploy">
       <div class="example-name">test-before-deploy</div>
       <h2>Don't ship broken code</h2>
-      <p>Tests gate staging. Staging gates production. Production requires a human to approve &mdash; no amount of prompt injection can auto-ship.</p>
+      <p>Lint gates test. Test gates deploy. Deploy requires a human and is capped at 2 per session &mdash; no prompt injection can skip the pipeline or exhaust your deploys.</p>
 
-      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span>
-<span class="kw">require</span> <span class="str">deploy-staging</span> before <span class="str">deploy-prod</span>
-<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span>`} />
+      <div class="example-rule" set:html={`<span class="kw">require</span> <span class="str">lint</span> before <span class="str">test</span>
+<span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">limit</span> <span class="str">deploy</span> to <span class="str">2</span> per <span class="str">session</span>`} />
 
-      <Trace label="// agent tries to deploy to production" steps={[
-        { icon: "blocked", html: `Agent calls <strong>bash({ command: "deploy --env production" })</strong><br><span class="blocked-text">BLOCKED</span> staging hasn't passed, human hasn't approved` },
-        { icon: "ok", html: `Agent calls <strong>bash({ command: "npm test" })</strong><br><span class="ok-text">OK</span> tests pass, staging unlocked` },
-        { icon: "ok", html: `Agent calls <strong>bash({ command: "deploy --env staging" })</strong><br><span class="ok-text">OK</span> staging deployed` },
-        { icon: "blocked", html: `Agent calls <strong>bash({ command: "deploy --env production" })</strong><br><span class="blocked-text">BLOCKED</span> human hasn't approved` },
-        { icon: "wait", html: `PetriFlow prompts: <strong>"Deploy to production?"</strong><br>Human approves &rarr; manual gate opens` },
-        { icon: "ok", html: `Agent calls <strong>bash({ command: "deploy --env production" })</strong><br><span class="ok-text">ALLOWED</span> tests passed, staging done, human approved` },
+      <Trace label="// agent tries to deploy" steps={[
+        { icon: "blocked", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="blocked-text">BLOCKED</span> lint hasn't run, test hasn't run, human hasn't approved` },
+        { icon: "ok", html: `Agent calls <strong>lint()</strong><br><span class="ok-text">OK</span> linter passes, test unlocked` },
+        { icon: "ok", html: `Agent calls <strong>test()</strong><br><span class="ok-text">OK</span> tests pass, deploy one gate away` },
+        { icon: "wait", html: `PetriFlow calls <strong>confirm</strong>: "Allow 'deploy'?"<br>Human approves &rarr; manual gate opens` },
+        { icon: "ok", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="ok-text">ALLOWED</span> pipeline satisfied. Budget: 1/2 remaining` },
+        { icon: "blocked", html: `After 2 deploys, a third attempt<br><span class="blocked-text">BLOCKED</span> rate limit reached — budget exhausted` },
       ]} />
 
-      <p class="example-note"><strong>Production is a manual gate.</strong> Even if the agent is prompt-injected into believing it should ship immediately, the deploy call is structurally blocked until a human approves.</p>
+      <p class="example-note"><strong>Deploy is a manual gate with a budget.</strong> Even if the agent is prompt-injected, deploys are structurally blocked until lint, test, and human approval are all satisfied. And the session limit prevents runaway deploys. <a href={`${import.meta.env.BASE_URL}docs/tutorial-deployment/`} style="color:var(--accent-text)">Full tutorial &rarr;</a></p>
     </div>
 
     <!-- research-before-share -->
@@ -97,7 +99,7 @@ import InstallBar from "../components/InstallBar.astro";
         { icon: "ok", html: `Agent calls <strong>bash({ command: "rm -rf data/" })</strong><br><span class="ok-text">ALLOWED</span> backup succeeded, delete unlocked` },
       ]} />
 
-      <p class="example-note"><strong>Allowlist, not deny-list.</strong> <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, <code style="font-family:var(--mono);font-size:12px">find -delete</code> &mdash; anything unmapped is blocked. Only <code style="font-family:var(--mono);font-size:12px">cp</code> and <code style="font-family:var(--mono);font-size:12px">rm</code> can reach the shell, and only in the right order.</p>
+      <p class="example-note"><strong>Allowlist, not deny-list.</strong> <code style="font-family:var(--mono);font-size:12px">unlink</code>, <code style="font-family:var(--mono);font-size:12px">shred</code>, <code style="font-family:var(--mono);font-size:12px">find -delete</code> &mdash; anything unmapped is blocked. Only <code style="font-family:var(--mono);font-size:12px">cp</code> and <code style="font-family:var(--mono);font-size:12px">rm</code> can reach the shell, and only in the right order. <a href={`${import.meta.env.BASE_URL}docs/tutorial-file-safety/`} style="color:var(--accent-text)">Full tutorial &rarr;</a></p>
     </div>
 
     <!-- whatsapp (bonus) -->

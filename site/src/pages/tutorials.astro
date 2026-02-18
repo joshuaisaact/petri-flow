@@ -1,0 +1,82 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import TutorialCard from "../components/TutorialCard.astro";
+
+const base = import.meta.env.BASE_URL;
+
+const kw = (s: string) => `<span class="kw">${s}</span>`;
+const str = (s: string) => `<span class="str">${s}</span>`;
+
+const tutorials = [
+  {
+    href: `${base}docs/tutorial-file-safety/`,
+    number: 1,
+    title: "File Safety Agent",
+    description: `The agent must back up before deleting and can never use <code>rm</code>.`,
+    rules: [
+      `${kw("require")} ${str("backup")} before ${str("delete")}`,
+      `${kw("block")} ${str("rm")}`,
+    ].join("\n"),
+    concepts: [
+      "Sequencing",
+      "Permanent blocking",
+      "Deferred transitions",
+      "Free tools",
+    ],
+  },
+  {
+    href: `${base}docs/tutorial-deployment/`,
+    number: 2,
+    title: "Deployment Agent",
+    description: "A full CI/CD pipeline the agent cannot skip. Lint, test, approval, deploy.",
+    rules: [
+      `${kw("require")} ${str("lint")} before ${str("test")}`,
+      `${kw("require")} ${str("test")} before ${str("deploy")}`,
+      `${kw("require")} ${str("human-approval")} before ${str("deploy")}`,
+      `${kw("limit")} ${str("deploy")} to ${str("2")} per ${str("session")}`,
+    ].join("\n"),
+    concepts: [
+      "Chained dependencies",
+      "Human approval gates",
+      "Session rate limits",
+      "Pipeline resets",
+    ],
+  },
+  {
+    href: `${base}docs/tutorial-discord-bot/`,
+    number: 3,
+    title: "Discord Bot",
+    description: "One tool, multiple actions, each gated independently.",
+    rules: [
+      `${kw("require")} ${str("discord.readMessages")}`,
+      `  before ${str("discord.sendMessage")}`,
+      `${kw("limit")} ${str("discord.sendMessage")}`,
+      `  to ${str("5")} per ${str("session")}`,
+    ].join("\n"),
+    concepts: [
+      "Dot notation tool mapping",
+      "Action-dispatch tools",
+      "Cycling dependencies",
+      "Composing limits with sequencing",
+    ],
+  },
+];
+---
+<Layout title="Tutorials — PetriFlow" description="Step-by-step tutorials for building safe AI agents with PetriFlow. Learn sequencing, blocking, human approval gates, rate limits, and tool mapping.">
+  <Nav currentPage="docs" />
+
+  <div class="container-narrow">
+    <div class="page-header">
+      <h1>Tutorials</h1>
+      <p>Build working agents step by step. Each tutorial introduces new concepts and builds on the previous one.</p>
+    </div>
+
+    <div class="flex flex-col gap-4 mb-15">
+      {tutorials.map((t) => <TutorialCard {...t} />)}
+    </div>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>
