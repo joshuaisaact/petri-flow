@@ -1,0 +1,260 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const rulesFile = `require lint before test
+require test before deploy
+require human-approval before deploy
+limit deploy to 2 per session`;
+
+const toolDefs = `import { tool } from "ai";
+import { z } from "zod";
+
+const myTools = {
+  lint: tool({
+    description: "Run the linter on the codebase",
+    inputSchema: z.object({}),
+    execute: async () => {
+      // run your linter
+      return { passed: true, warnings: 0, errors: 0 };
+    },
+  }),
+  test: tool({
+    description: "Run the test suite",
+    inputSchema: z.object({}),
+    execute: async () => {
+      // run your tests
+      return { passed: true, total: 42, failed: 0 };
+    },
+  }),
+  deploy: tool({
+    description: "Deploy to an environment",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => {
+      return { deployed: true, environment, version: "1.4.2" };
+    },
+  }),
+  checkStatus: tool({
+    description: "Check the current deployment status",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => {
+      return { environment, status: "healthy", version: "1.4.1" };
+    },
+  }),
+  rollback: tool({
+    description: "Rollback to the previous deployment",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => {
+      return { rolledBack: true, environment, version: "1.4.0" };
+    },
+  }),
+};`;
+
+const fullExample = `import { loadRules } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { generateText, tool, stepCountIs } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+// 1. Load and verify rules
+const { nets, verification } = await loadRules("./pipeline.rules");
+
+// 2. Create the gate with a confirm callback for human-approval rules
+const gate = createPetriflowGate(nets, {
+  confirm: async (title, message) => {
+    // In production: show a dialog, send a Slack message, etc.
+    // Return true to approve, false to reject.
+    console.log(\`APPROVAL: \${message}\`);
+    return true;
+  },
+});
+
+// 3. Define and wrap tools
+const tools = gate.wrapTools({
+  lint: tool({
+    description: "Run the linter on the codebase",
+    inputSchema: z.object({}),
+    execute: async () => ({ passed: true, warnings: 0, errors: 0 }),
+  }),
+  test: tool({
+    description: "Run the test suite",
+    inputSchema: z.object({}),
+    execute: async () => ({ passed: true, total: 42, failed: 0 }),
+  }),
+  deploy: tool({
+    description: "Deploy to an environment",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => ({
+      deployed: true, environment, version: "1.4.2",
+    }),
+  }),
+  checkStatus: tool({
+    description: "Check the current deployment status",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => ({
+      environment, status: "healthy", version: "1.4.1",
+    }),
+  }),
+  rollback: tool({
+    description: "Rollback to the previous deployment",
+    inputSchema: z.object({
+      environment: z.enum(["production", "staging"]),
+    }),
+    execute: async ({ environment }) => ({
+      rolledBack: true, environment, version: "1.4.0",
+    }),
+  }),
+});
+
+// 4. Run the agent
+const { text } = await generateText({
+  model: openai("gpt-4o"),
+  tools,
+  system: gate.systemPrompt(),
+  stopWhen: stepCountIs(15),
+  prompt: "Deploy the latest version to production, then deploy to staging.",
+});`;
+
+const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/openai zod`;
+---
+<Layout title="Tutorial: Deployment Agent | PetriFlow" description="Build a deployment agent with chained dependencies, human approval gates, and rate limits.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Tutorial: Deployment</span>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/tutorial-file-safety/`}>&larr; File Safety</a>
+        <a href={`${base}docs/tutorial-discord-bot/`}>Next: Discord Bot &rarr;</a>
+      </nav>
+      <h1>Tutorial: Deployment Agent</h1>
+      <p>Build a CI/CD agent where <strong>lint gates test</strong>, <strong>test gates deploy</strong>, <strong>a human approves every deploy</strong>, and <strong>deploys are capped at 2 per session</strong>. You'll learn chained dependencies, human approval gates, and rate limits.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#what-youll-build">What you'll build</a>
+        <a href="#prerequisites">Prerequisites</a>
+        <a href="#write-the-rules">Write the rules</a>
+        <a href="#define-the-tools">Define the tools</a>
+        <a href="#wire-it-up">Wire it up</a>
+        <a href="#see-it-in-action">See it in action</a>
+        <a href="#what-you-learned">What you learned</a>
+        <a href="#next-steps">Next steps</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <div class="doc-section" id="what-youll-build">
+      <h2>What you'll build</h2>
+      <p>A deployment agent with 5 tools: <code>lint</code>, <code>test</code>, <code>deploy</code>, <code>checkStatus</code>, and <code>rollback</code>. Four rules enforce a full CI/CD pipeline: lint before test, test before deploy, human approval before deploy, and a maximum of 2 deploys per session. <code>checkStatus</code> and <code>rollback</code> are free tools.</p>
+      <p><strong>Concepts covered:</strong> chained sequencing, human approval gates (<code>require human-approval</code>), the <code>confirm</code> callback, session rate limits (<code>limit ... to N per session</code>).</p>
+    </div>
+
+    <div class="doc-section" id="prerequisites">
+      <h2>Prerequisites</h2>
+      <Code code={installCmd} lang="bash" />
+      <p>You'll also need an API key for your model provider. This tutorial assumes you've read <a href={`${base}docs/tutorial-file-safety/`} style="color:var(--accent-text)">Tutorial 1: File Safety</a>.</p>
+    </div>
+
+    <div class="doc-section" id="write-the-rules">
+      <h2>Write the rules</h2>
+      <p>Create a file called <code>pipeline.rules</code>:</p>
+      <div class="example-rule" set:html={`<span class="comment"># pipeline.rules</span>
+<span class="kw">require</span> <span class="str">lint</span> before <span class="str">test</span>
+<span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">limit</span> <span class="str">deploy</span> to <span class="str">2</span> per <span class="str">session</span>`} />
+
+      <p>Four rules, three different mechanisms:</p>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">require lint before test</strong> + <strong style="color:var(--text-secondary)">require test before deploy</strong> — chained sequencing. Deploy is two steps away from being reachable. The agent must complete lint, then test, in order.</li>
+        <li><strong style="color:var(--text-secondary)">require human-approval before deploy</strong> — compiles to a <em>manual transition</em>. The gate calls your <code>confirm</code> callback and waits. If the human approves, the transition fires and deploy unlocks. If they reject (or no callback is provided), deploy stays blocked.</li>
+        <li><strong style="color:var(--text-secondary)">limit deploy to 2 per session</strong> — places 2 tokens in a budget pool. Each successful deploy consumes one. After 2 deploys, the budget is empty and deploy is permanently blocked for the rest of the session.</li>
+      </ul>
+      <p>Each rule compiles to an independent Petri net. All nets must agree for a tool call to proceed — this is AND composition.</p>
+    </div>
+
+    <div class="doc-section" id="define-the-tools">
+      <h2>Define the tools</h2>
+      <p>Define your tools with <code>tool()</code> from the Vercel AI SDK. <code>checkStatus</code> and <code>rollback</code> are free tools — no rules mention them.</p>
+      <Code code={toolDefs} lang="typescript" />
+    </div>
+
+    <div class="doc-section" id="wire-it-up">
+      <h2>Wire it up</h2>
+      <p>The key difference from Tutorial 1 is the <code>confirm</code> callback. This is called whenever a <code>require human-approval</code> rule triggers.</p>
+      <Code code={fullExample} lang="typescript" />
+      <p>The <code>confirm</code> callback receives a <code>title</code> (e.g. "Approve: deploy") and a <code>message</code> (e.g. "Allow 'deploy' via transition 'approve' in net 'approve-before-deploy'?"). Return <code>true</code> to approve, <code>false</code> to reject. If no callback is provided, manual transitions are always blocked.</p>
+    </div>
+
+    <div class="doc-section" id="see-it-in-action">
+      <h2>See it in action</h2>
+      <p>The agent tries to deploy to production, then to staging:</p>
+
+      <Trace label="// deploy to production, then staging" steps={[
+        { icon: "blocked", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="blocked-text">BLOCKED</span> lint hasn't run, test hasn't run, human hasn't approved` },
+        { icon: "ok", html: `Agent calls <strong>lint()</strong><br><span class="ok-text">OK</span> linter passes — test is now unlocked` },
+        { icon: "ok", html: `Agent calls <strong>test()</strong><br><span class="ok-text">OK</span> tests pass — deploy is one gate away` },
+        { icon: "wait", html: `PetriFlow calls <strong>confirm</strong>: "Allow 'deploy'?"<br>Human approves &rarr; manual gate opens` },
+        { icon: "ok", html: `Agent calls <strong>deploy({ environment: "production" })</strong><br><span class="ok-text">ALLOWED</span> all gates satisfied. Budget: 1/2 remaining` },
+        { icon: "ok", html: `Agent calls <strong>lint()</strong> then <strong>test()</strong><br><span class="ok-text">OK</span> pipeline resets for second deploy` },
+        { icon: "wait", html: `PetriFlow calls <strong>confirm</strong>: "Allow 'deploy'?"<br>Human approves &rarr; manual gate opens` },
+        { icon: "ok", html: `Agent calls <strong>deploy({ environment: "staging" })</strong><br><span class="ok-text">ALLOWED</span> Budget: 0/2 remaining` },
+        { icon: "blocked", html: `A third deploy attempt<br><span class="blocked-text">BLOCKED</span> rate limit reached — budget exhausted` },
+      ]} />
+
+      <p>Key observations:</p>
+      <ul>
+        <li>The chained rules create a pipeline: lint &rarr; test &rarr; approval &rarr; deploy. You can't skip steps.</li>
+        <li>The pipeline <em>resets</em> after each deploy — the agent must lint and test again for the next deploy.</li>
+        <li>Human approval fires every time deploy becomes reachable, not just once.</li>
+        <li>After 2 deploys, the rate limit kicks in permanently for this session.</li>
+        <li><code>checkStatus</code> and <code>rollback</code> work at any point — they're free tools.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="what-you-learned">
+      <h2>What you learned</h2>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">Chained sequencing</strong> — multiple <code>require ... before ...</code> rules compose into a pipeline. Each step must complete in order.</li>
+        <li><strong style="color:var(--text-secondary)">Human approval gates</strong> — <code>require human-approval before X</code> creates a manual transition. The <code>confirm</code> callback controls the gate.</li>
+        <li><strong style="color:var(--text-secondary)">Rate limits</strong> — <code>limit X to N per session</code> places N tokens in a budget. Each call consumes one. Budget exhaustion is permanent.</li>
+        <li><strong style="color:var(--text-secondary)">Pipeline reset</strong> — sequencing rules cycle. After each deploy, the pipeline resets and the agent must lint and test again.</li>
+        <li><strong style="color:var(--text-secondary)">AND composition</strong> — all rules (all nets) must agree. Deploy requires passing lint, test, approval, <em>and</em> having budget remaining.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="next-steps">
+      <h2>Next steps</h2>
+      <ul>
+        <li><a href={`${base}docs/tutorial-discord-bot/`} style="color:var(--accent-text)">Tutorial 3: Discord Bot</a> — dot notation tool mapping and action-dispatch tools.</li>
+        <li><a href={`${base}docs/vercel-ai/#manual-confirmation`} style="color:var(--accent-text)">Manual confirmation docs</a> — CLI prompts, React dialogs, and other confirm patterns.</li>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax and composition model.</li>
+      </ul>
+    </div>
+
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

@@ -31,14 +31,14 @@ import { Code } from "astro:components";
             <div class="hero-code-dot"></div>
             <span>safety.rules</span>
           </div>
-          <pre class="hero-code-body"><code><span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
-<span class="kw">require</span> <span class="str">slack.readMessages</span> before <span class="str">slack.sendMessage</span>
-<span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span>
-<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy-prod</span>
+          <pre class="hero-code-body"><code><span class="kw">require</span> <span class="str">lint</span> before <span class="str">test</span>
+<span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">limit</span> <span class="str">deploy</span> to <span class="str">2</span> per <span class="str">session</span>
 <span class="comment"><!-- --># that's it. each rule is mathematically verified.</span></code></pre>
         </div>
         <p class="hero-code-caption">
-          4 rules. <strong>Every reachable state checked.</strong> Zero bypasses possible.
+          4 rules, 1 domain. <strong>Every reachable state checked.</strong> Zero bypasses possible.
         </p>
       </div>
     </div>
@@ -342,6 +342,39 @@ const manager = createGateManager(
     </div>
   </section>
 
+  <!-- TUTORIALS -->
+  <section class="tutorials" id="tutorials" data-animate aria-labelledby="tutorials-heading">
+    <div class="container">
+      <h2 id="tutorials-heading" class="section-title">Build something real.<br />Learn by doing.</h2>
+      <p class="section-sub">
+        Three step-by-step tutorials. Each builds a working agent with increasing complexity.
+      </p>
+
+      <div class="tutorials-grid">
+        <a href={`${import.meta.env.BASE_URL}docs/tutorial-file-safety/`} class="tutorial-card">
+          <div class="tutorial-number">1</div>
+          <h3>File Safety Agent</h3>
+          <p>Sequencing + permanent blocking. The agent must back up before deleting and can never use <code>rm</code>.</p>
+          <span class="tutorial-link">Build it &rarr;</span>
+        </a>
+
+        <a href={`${import.meta.env.BASE_URL}docs/tutorial-deployment/`} class="tutorial-card">
+          <div class="tutorial-number">2</div>
+          <h3>Deployment Agent</h3>
+          <p>Chained dependencies + human approval + rate limits. A full CI/CD pipeline the agent cannot skip.</p>
+          <span class="tutorial-link">Build it &rarr;</span>
+        </a>
+
+        <a href={`${import.meta.env.BASE_URL}docs/tutorial-discord-bot/`} class="tutorial-card">
+          <div class="tutorial-number">3</div>
+          <h3>Discord Bot</h3>
+          <p>Dot notation tool mapping + rate limits. One tool, multiple actions, each gated independently.</p>
+          <span class="tutorial-link">Build it &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- SAFETY RULES SHOWCASE -->
   <section class="rules" id="rules" data-animate aria-labelledby="rules-heading">
     <div class="container">
@@ -351,18 +384,18 @@ const manager = createGateManager(
       </p>
 
       <div class="rules-grid">
-        <a href={`${import.meta.env.BASE_URL}examples/#observe-before-send`} class="rule-card">
-          <div class="rule-name">observe-before-send</div>
+        <a href={`${import.meta.env.BASE_URL}examples/#read-before-send`} class="rule-card">
+          <div class="rule-name">read-before-send</div>
           <h3>Don't message blindly</h3>
-          <p>Read a channel before you can send to it. One read, one send. Channel-matched: reading #general doesn't unlock #production.</p>
-          <div class="rule-preview"><span class="kw">require</span> <span class="str">read-channel</span> before <span class="str">send</span></div>
+          <p>Read messages before you can send. Each read earns one send. Cycling dependency prevents spam.</p>
+          <div class="rule-preview"><span class="kw">require</span> <span class="str">discord.readMessages</span> before <span class="str">discord.sendMessage</span></div>
         </a>
 
         <a href={`${import.meta.env.BASE_URL}examples/#test-before-deploy`} class="rule-card">
           <div class="rule-name">test-before-deploy</div>
           <h3>Don't ship broken code</h3>
-          <p>Tests gate staging. Staging gates production. Production requires a human.</p>
-          <div class="rule-preview"><span class="kw">require</span> <span class="str">tests-pass</span> before <span class="str">deploy-staging</span></div>
+          <p>Lint gates test. Test gates deploy. Deploy requires a human and is rate-limited.</p>
+          <div class="rule-preview"><span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span></div>
         </a>
 
         <a href={`${import.meta.env.BASE_URL}examples/#research-before-share`} class="rule-card">

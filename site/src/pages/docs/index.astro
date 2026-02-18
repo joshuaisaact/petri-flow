@@ -19,6 +19,33 @@ const base = import.meta.env.BASE_URL;
       <code>bun add @petriflow/gate @petriflow/rules</code>
     </div>
 
+    <h2 class="docs-section-title">Tutorials</h2>
+    <p class="docs-section-desc">Step-by-step guides that build working agents. Start here.</p>
+
+    <div class="doc-cards">
+      <a href={`${base}docs/tutorial-file-safety/`} class="doc-card">
+        <div class="doc-card-label">Tutorial 1</div>
+        <h2>File Safety Agent</h2>
+        <p>Sequencing and permanent blocking. The agent must back up before deleting and can never use <code>rm</code>.</p>
+        <span class="doc-card-link">Build it &rarr;</span>
+      </a>
+      <a href={`${base}docs/tutorial-deployment/`} class="doc-card">
+        <div class="doc-card-label">Tutorial 2</div>
+        <h2>Deployment Agent</h2>
+        <p>Chained dependencies, human approval gates, and session rate limits. A full CI/CD pipeline.</p>
+        <span class="doc-card-link">Build it &rarr;</span>
+      </a>
+      <a href={`${base}docs/tutorial-discord-bot/`} class="doc-card">
+        <div class="doc-card-label">Tutorial 3</div>
+        <h2>Discord Bot</h2>
+        <p>Dot notation tool mapping, action-dispatch tools, cycling dependencies, and rate limits.</p>
+        <span class="doc-card-link">Build it &rarr;</span>
+      </a>
+    </div>
+
+    <h2 class="docs-section-title" style="margin-top:48px">Reference</h2>
+    <p class="docs-section-desc">Package documentation and API reference.</p>
+
     <div class="doc-cards">
       <a href={`${base}docs/rules/`} class="doc-card">
         <div class="doc-card-label">@petriflow/rules</div>

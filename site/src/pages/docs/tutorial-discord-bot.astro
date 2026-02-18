@@ -1,0 +1,247 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const rulesFile = `require discord.readMessages before discord.sendMessage
+limit discord.sendMessage to 5 per session`;
+
+const toolDefs = `import { tool } from "ai";
+import { z } from "zod";
+
+const myTools = {
+  discord: tool({
+    description:
+      "Interact with Discord: read messages, send messages, add reactions, or create threads",
+    inputSchema: z.object({
+      action: z.enum([
+        "readMessages",
+        "sendMessage",
+        "addReaction",
+        "createThread",
+      ]),
+      channel: z.string().describe("Channel name"),
+      content: z.string().optional().describe("Message content (for sendMessage)"),
+      messageId: z.string().optional().describe("Target message ID (for addReaction)"),
+      emoji: z.string().optional().describe("Emoji to react with"),
+      threadName: z.string().optional().describe("Thread name (for createThread)"),
+    }),
+    execute: async (input) => {
+      switch (input.action) {
+        case "readMessages":
+          return {
+            messages: [
+              { author: "alice", content: "Build failed on main" },
+              { author: "bob", content: "Looking into it now" },
+              { author: "carol", content: "Might be the new dependency" },
+            ],
+          };
+        case "sendMessage":
+          return { sent: true, id: \`msg-\${Date.now()}\` };
+        case "addReaction":
+          return { reacted: true };
+        case "createThread":
+          return { created: true, threadName: input.threadName };
+      }
+    },
+  }),
+};`;
+
+const fullExample = `import { loadRules } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { generateText, tool, stepCountIs } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+
+// 1. Load and verify rules
+const { nets, verification } = await loadRules("./messaging.rules");
+console.log(verification);
+// [
+//   { name: "require-discord.readMessages-before-discord.sendMessage", reachableStates: 3 },
+//   { name: "limit-discord.sendMessage-5", reachableStates: 7 },
+// ]
+
+// 2. Create the gate
+const gate = createPetriflowGate(nets);
+
+// 3. Define and wrap tools — a single "discord" tool with an action enum
+const tools = gate.wrapTools({
+  discord: tool({
+    description:
+      "Interact with Discord: read messages, send messages, add reactions, or create threads",
+    inputSchema: z.object({
+      action: z.enum(["readMessages", "sendMessage", "addReaction", "createThread"]),
+      channel: z.string().describe("Channel name"),
+      content: z.string().optional().describe("Message content"),
+      messageId: z.string().optional().describe("Target message ID"),
+      emoji: z.string().optional().describe("Emoji to react with"),
+      threadName: z.string().optional().describe("Thread name"),
+    }),
+    execute: async (input) => {
+      switch (input.action) {
+        case "readMessages":
+          return {
+            messages: [
+              { author: "alice", content: "Build failed on main" },
+              { author: "bob", content: "Looking into it now" },
+              { author: "carol", content: "Might be the new dependency" },
+            ],
+          };
+        case "sendMessage":
+          return { sent: true, id: \`msg-\${Date.now()}\` };
+        case "addReaction":
+          return { reacted: true };
+        case "createThread":
+          return { created: true, threadName: input.threadName };
+      }
+    },
+  }),
+});
+
+// 4. Run the agent
+const { text } = await generateText({
+  model: openai("gpt-4o"),
+  tools,
+  system: gate.systemPrompt(),
+  stopWhen: stepCountIs(15),
+  prompt:
+    "In #dev-general: read messages, reply about the build failure, and send a few follow-ups.",
+});`;
+
+const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/openai zod`;
+
+const dotNotation = `# These rules reference discord.readMessages and discord.sendMessage.
+# The compiler sees the dot notation and auto-generates a toolMapper
+# that resolves the virtual tool name from input.action.
+#
+# discord({ action: "readMessages", ... }) → virtual tool "discord.readMessages"
+# discord({ action: "sendMessage", ... })  → virtual tool "discord.sendMessage"
+# discord({ action: "addReaction", ... })  → virtual tool "discord.addReaction" (ungated)
+
+require discord.readMessages before discord.sendMessage
+limit discord.sendMessage to 5 per session`;
+---
+<Layout title="Tutorial: Discord Bot | PetriFlow" description="Build a Discord bot agent with dot notation tool mapping and rate limits. Learn action-dispatch tools and cycling dependencies.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Tutorial: Discord Bot</span>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/tutorial-deployment/`}>&larr; Deployment</a>
+      </nav>
+      <h1>Tutorial: Discord Bot</h1>
+      <p>Build a Discord bot agent that <strong>must read before sending</strong> and is <strong>capped at 5 messages per session</strong>. You'll learn dot notation for action-dispatch tools, cycling dependencies, and how rate limits compose with sequencing.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#what-youll-build">What you'll build</a>
+        <a href="#prerequisites">Prerequisites</a>
+        <a href="#write-the-rules">Write the rules</a>
+        <a href="#define-the-tools">Define the tools</a>
+        <a href="#wire-it-up">Wire it up</a>
+        <a href="#see-it-in-action">See it in action</a>
+        <a href="#what-you-learned">What you learned</a>
+        <a href="#next-steps">Next steps</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <div class="doc-section" id="what-youll-build">
+      <h2>What you'll build</h2>
+      <p>A Discord bot with a single <code>discord</code> tool that dispatches actions via an <code>action</code> parameter: <code>readMessages</code>, <code>sendMessage</code>, <code>addReaction</code>, and <code>createThread</code>. Two rules control behavior: the agent must read messages before sending, and sending is limited to 5 messages per session.</p>
+      <p><strong>Concepts covered:</strong> dot notation tool mapping, action-dispatch tools, cycling dependencies, rate limits composing with sequencing.</p>
+    </div>
+
+    <div class="doc-section" id="prerequisites">
+      <h2>Prerequisites</h2>
+      <Code code={installCmd} lang="bash" />
+      <p>This tutorial assumes you've read <a href={`${base}docs/tutorial-file-safety/`} style="color:var(--accent-text)">Tutorial 1: File Safety</a> and <a href={`${base}docs/tutorial-deployment/`} style="color:var(--accent-text)">Tutorial 2: Deployment</a>.</p>
+    </div>
+
+    <div class="doc-section" id="write-the-rules">
+      <h2>Write the rules</h2>
+      <p>Create a file called <code>messaging.rules</code>:</p>
+      <div class="example-rule" set:html={`<span class="comment"># messaging.rules</span>
+<span class="kw">require</span> <span class="str">discord.readMessages</span> before <span class="str">discord.sendMessage</span>
+<span class="kw">limit</span> <span class="str">discord.sendMessage</span> to <span class="str">5</span> per <span class="str">session</span>`} />
+
+      <h3>How dot notation works</h3>
+      <p>The rules reference <code>discord.readMessages</code> and <code>discord.sendMessage</code> — but your actual tool is just <code>discord</code>. The compiler sees the dot and auto-generates a <strong>toolMapper</strong> that resolves the virtual tool name from the <code>action</code> field in the tool's input:</p>
+      <Code code={dotNotation} lang="bash" />
+      <p>This means one physical tool (<code>discord</code>) can have different actions gated independently. <code>readMessages</code> and <code>sendMessage</code> are controlled by rules. <code>addReaction</code> and <code>createThread</code> are free — no rules mention them.</p>
+
+      <h3>Cycling dependencies</h3>
+      <p>The sequencing rule <code>require discord.readMessages before discord.sendMessage</code> <em>cycles</em>: after each send, the agent must read again before the next send. This naturally interleaves reading context with sending replies — the agent can't spam messages without checking what's new.</p>
+    </div>
+
+    <div class="doc-section" id="define-the-tools">
+      <h2>Define the tools</h2>
+      <p>A single tool with an <code>action</code> enum. The tool definition is standard Vercel AI SDK — PetriFlow's dot notation handles the dispatch mapping automatically.</p>
+      <Code code={toolDefs} lang="typescript" />
+      <p>The <code>action</code> parameter is what PetriFlow uses for tool mapping. When the agent calls <code>discord({"{"} action: "sendMessage", ... {"}"})</code>, PetriFlow resolves it to the virtual tool <code>discord.sendMessage</code> and checks the rules against that name.</p>
+    </div>
+
+    <div class="doc-section" id="wire-it-up">
+      <h2>Wire it up</h2>
+      <p>Same pattern as the previous tutorials. No special configuration needed — the dot notation toolMapper is auto-generated from the rules.</p>
+      <Code code={fullExample} lang="typescript" />
+    </div>
+
+    <div class="doc-section" id="see-it-in-action">
+      <h2>See it in action</h2>
+      <p>The agent tries to interact with a Discord channel:</p>
+
+      <Trace label="// agent manages #dev-general" steps={[
+        { icon: "blocked", html: `Agent calls <strong>discord({ action: "sendMessage", channel: "#dev-general", content: "Hello!" })</strong><br><span class="blocked-text">BLOCKED</span> readMessages required first` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "readMessages", channel: "#dev-general" })</strong><br><span class="ok-text">OK</span> reads messages, sendMessage now unlocked` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "sendMessage", channel: "#dev-general", content: "Looking at the build failure..." })</strong><br><span class="ok-text">ALLOWED</span> budget: 4/5 remaining` },
+        { icon: "blocked", html: `Agent tries to send another message immediately<br><span class="blocked-text">BLOCKED</span> must readMessages again (rule cycles)` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "readMessages" })</strong> then <strong>discord({ action: "sendMessage" })</strong><br><span class="ok-text">OK</span> read-send cycle repeats. Budget: 3/5` },
+        { icon: "ok", html: `Agent calls <strong>discord({ action: "addReaction", emoji: "👍" })</strong><br><span class="ok-text">OK</span> free action — no rules mention addReaction` },
+        { icon: "blocked", html: `After 5 sends, agent tries to send again<br><span class="blocked-text">BLOCKED</span> rate limit reached — budget exhausted` },
+      ]} />
+
+      <p>Key observations:</p>
+      <ul>
+        <li>The sequencing rule <em>cycles</em> — after each send, readMessages is required again. The agent can't batch-fire messages.</li>
+        <li>The rate limit and sequencing compose via AND logic. A send needs <em>both</em> a prior read <em>and</em> remaining budget.</li>
+        <li><code>addReaction</code> and <code>createThread</code> work at any point — they're free actions.</li>
+        <li>After 5 sends, the budget is permanently exhausted. The agent can still read, react, and create threads.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="what-you-learned">
+      <h2>What you learned</h2>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">Dot notation</strong> — <code>tool.action</code> in rules auto-generates a toolMapper that resolves virtual tool names from the input's <code>action</code> field.</li>
+        <li><strong style="color:var(--text-secondary)">Action-dispatch tools</strong> — one physical tool can have actions gated independently. Only the actions mentioned in rules are controlled.</li>
+        <li><strong style="color:var(--text-secondary)">Cycling dependencies</strong> — sequencing rules reset after each use, creating a read-send-read-send pattern that prevents spam.</li>
+        <li><strong style="color:var(--text-secondary)">Composing limits with sequencing</strong> — rate limits and sequencing rules compose via AND logic. Both constraints must be satisfied.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="next-steps">
+      <h2>Next steps</h2>
+      <ul>
+        <li><a href={`${base}docs/rules/`} style="color:var(--accent-text)">Rules Engine reference</a> — full DSL syntax including <code>map</code> for custom tool mapping.</li>
+        <li><a href={`${base}docs/gate/`} style="color:var(--accent-text)">Gate reference</a> — skill nets, deferred transitions, multi-net composition.</li>
+        <li><a href={`${base}docs/vercel-ai/`} style="color:var(--accent-text)">Vercel AI SDK docs</a> — shadow mode, registry mode, error handling.</li>
+        <li><a href={`${base}examples/`} style="color:var(--accent-text)">More examples</a> — WhatsApp messaging, research gating, and more patterns.</li>
+      </ul>
+    </div>
+
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

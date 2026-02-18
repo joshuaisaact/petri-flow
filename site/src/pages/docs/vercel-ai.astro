@@ -7,13 +7,27 @@ import { Code } from "astro:components";
 
 const quickStart = `import { loadRules } from "@petriflow/rules";
 import { createPetriflowGate } from "@petriflow/vercel-ai";
-import { generateText } from "ai";
+import { generateText, tool } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
 
 const { nets } = await loadRules("./safety.rules");
 
 const gate = createPetriflowGate(nets);
-const tools = gate.wrapTools(myTools);
+
+// Define your tools — PetriFlow wraps each one's execute method
+const tools = gate.wrapTools({
+  backup: tool({
+    description: "Create a backup of a file",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ backedUp: \`\${path}.bak\` }),
+  }),
+  delete: tool({
+    description: "Delete a file (requires backup first)",
+    inputSchema: z.object({ path: z.string() }),
+    execute: async ({ path }) => ({ deleted: path }),
+  }),
+});
 
 const { text } = await generateText({
   model: openai("gpt-4o"),
@@ -50,6 +64,7 @@ const gate = createPetriflowGate(nets, {
   },
 });
 
+// myTools = your tool definitions (see Quick Start above)
 const tools = gate.wrapTools(myTools);
 
 const { text } = await generateText({
@@ -96,6 +111,7 @@ const shadowExample = `const gate = createPetriflowGate(nets, {
 
 // Tools execute normally. Nothing is blocked.
 // onDecision fires on every call, so you see what *would* happen.
+// myTools = your tool definitions (see Quick Start above)
 const tools = gate.wrapTools(myTools);`;
 
 const registryExample = `import { createPetriflowGate } from "@petriflow/vercel-ai";
@@ -117,6 +133,7 @@ const gate = createPetriflowGate({
   active: ["safety"],
 });
 
+// myTools = your tool definitions (see Quick Start above)
 const tools = gate.wrapTools(myTools);
 
 // Later: enable deploy policy at runtime
@@ -133,6 +150,7 @@ const errorExample = `import { ToolCallBlockedError } from "@petriflow/vercel-ai
 try {
   const result = await generateText({
     model: openai("gpt-4o"),
+    // myTools = your tool definitions (see Quick Start above)
     tools: gate.wrapTools(myTools),
     prompt: "Delete all logs",
   });
@@ -228,7 +246,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
 <span class="kw">block</span> <span class="str">rm</span>`} />
       <p>Load, compile, gate:</p>
       <Code code={quickStart} lang="typescript" />
-      <p><code>loadRules</code> reads a <code>.rules</code> file and builds a verified Petri net for each rule. <code>createPetriflowGate</code> wraps the nets into a gate. <code>wrapTools</code> instruments every tool's <code>execute</code> method. <code>systemPrompt()</code> tells the model which tools are gated and why, so it can plan around the constraints instead of hitting them blind.</p>
+      <p><code>loadRules</code> reads a <code>.rules</code> file and builds a verified Petri net for each rule. <code>createPetriflowGate</code> wraps the nets into a gate. <code>wrapTools</code> takes your Vercel AI SDK <code>tool()</code> definitions and instruments every tool's <code>execute</code> method. <code>systemPrompt()</code> tells the model which tools are gated and why, so it can plan around the constraints instead of hitting them blind.</p>
     </div>
 
     <!-- How it works -->

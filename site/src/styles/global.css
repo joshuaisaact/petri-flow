@@ -809,6 +809,72 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
 .rule-example .blocked { color: var(--red); }
 .rule-example .allowed { color: var(--green); }
 
+/* ───── TUTORIALS ───── */
+
+.tutorials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 40px;
+}
+
+a.tutorial-card { text-decoration: none; color: inherit; cursor: pointer; }
+
+.tutorial-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+}
+
+.tutorial-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+.tutorial-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-text);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.tutorial-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.tutorial-card p {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.tutorial-card code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.tutorial-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-text);
+  margin-top: auto;
+}
+
 /* ───── INTEGRATIONS ───── */
 
 .integrations-grid {
@@ -1412,6 +1478,19 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
   margin-bottom: 32px;
 }
 
+.docs-section-title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.docs-section-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
 .doc-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1540,6 +1619,7 @@ footer.footer-minimal a:hover { color: var(--text-secondary); }
   .solution-compare,
   .rw-layout,
   .rules-grid,
+  .tutorials-grid,
   .integrations-grid,
   .under-hood-content {
     grid-template-columns: 1fr;
