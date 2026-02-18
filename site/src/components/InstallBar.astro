@@ -1,6 +1,10 @@
 ---
+interface Props {
+  packages?: string;
+}
+const { packages = "@petriflow/rules" } = Astro.props;
 ---
-<div class="install-bar" data-install-bar>
+<div class="install-bar" data-install-bar data-packages={packages}>
   <div class="install-tabs" role="tablist">
     <button role="tab" class="install-tab active" data-pm="npm">npm</button>
     <button role="tab" class="install-tab" data-pm="pnpm">pnpm</button>
@@ -8,7 +12,7 @@
     <button role="tab" class="install-tab" data-pm="yarn">yarn</button>
   </div>
   <div class="install-command">
-    <code data-install-code>npm install @petriflow/rules</code>
+    <code data-install-code>{`npm install ${packages}`}</code>
     <button class="install-copy" aria-label="Copy install command" data-install-copy>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
     </button>
@@ -18,14 +22,16 @@
 <script>
   const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
   const CHECK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  const commands: Record<string, string> = {
-    npm: 'npm install @petriflow/rules',
-    pnpm: 'pnpm add @petriflow/rules',
-    yarn: 'yarn add @petriflow/rules',
-    bun: 'bun add @petriflow/rules',
+
+  const cmds: Record<string, (pkg: string) => string> = {
+    npm: (p) => `npm install ${p}`,
+    pnpm: (p) => `pnpm add ${p}`,
+    yarn: (p) => `yarn add ${p}`,
+    bun: (p) => `bun add ${p}`,
   };
 
   document.querySelectorAll<HTMLElement>('[data-install-bar]').forEach(bar => {
+    const pkg = bar.dataset.packages || '@petriflow/rules';
     const tabs = bar.querySelectorAll<HTMLButtonElement>('.install-tab');
     const code = bar.querySelector<HTMLElement>('[data-install-code]')!;
     const copyBtn = bar.querySelector<HTMLButtonElement>('[data-install-copy]')!;
@@ -35,7 +41,7 @@
         tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
         tab.classList.add('active');
         tab.setAttribute('aria-selected', 'true');
-        code.textContent = commands[tab.dataset.pm!];
+        code.textContent = cmds[tab.dataset.pm!](pkg);
       });
     });
 

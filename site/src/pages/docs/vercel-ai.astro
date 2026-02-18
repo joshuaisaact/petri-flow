@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
+import InstallBar from "../../components/InstallBar.astro";
 import { Code } from "astro:components";
 
 const quickStart = `import { loadRules } from "@petriflow/rules";
@@ -219,6 +220,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       </nav>
       <h1>Vercel AI SDK</h1>
       <p>Wrap your Vercel AI SDK tools with Petri net gating. One function call instruments every tool's <code>execute</code> method with safety checks that the model cannot bypass.</p>
+      <InstallBar packages="@petriflow/vercel-ai @petriflow/rules" />
     </div>
 
     <aside class="doc-sidebar" aria-label="Page navigation">
@@ -239,7 +241,6 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
     <!-- Quick start -->
     <div class="doc-section" id="quick-start">
       <h2>Quick start</h2>
-      <Code code={`bun add @petriflow/vercel-ai @petriflow/rules`} lang="bash" />
       <p>Write your rules in a <code>.rules</code> file:</p>
       <div class="example-rule" set:html={`<span class="comment"># safety.rules</span>
 <span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
