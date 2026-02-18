@@ -1,0 +1,40 @@
+---
+import fs from "node:fs";
+import path from "node:path";
+
+interface Props {
+  name: string;
+  size?: number;
+  fill?: string;
+  stroke?: string;
+  "stroke-width"?: string | number;
+  class?: string;
+  style?: string;
+}
+
+const { name, size = 16, fill, stroke, "stroke-width": strokeWidth, class: className, style } = Astro.props;
+
+const filePath = path.resolve("public/icons", `${name}.svg`);
+const raw = fs.readFileSync(filePath, "utf-8");
+
+const attr = (name: string) => raw.match(new RegExp(`${name}="([^"]+)"`))?.[1];
+
+const viewBox = attr("viewBox") ?? "0 0 24 24";
+const svgFill = fill ?? attr("fill") ?? "currentColor";
+const svgStroke = stroke ?? attr("stroke");
+const svgStrokeWidth = strokeWidth ?? attr("stroke-width");
+
+const inner = raw.replace(/<svg[^>]*>/, "").replace(/<\/svg>/, "");
+---
+<svg
+  aria-hidden="true"
+  width={size}
+  height={size}
+  viewBox={viewBox}
+  fill={svgFill}
+  stroke={svgStroke}
+  stroke-width={svgStrokeWidth}
+  class={className}
+  style={style}
+  set:html={inner}
+/>
