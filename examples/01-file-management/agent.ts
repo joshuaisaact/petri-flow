@@ -3,6 +3,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { z } from "zod";
 import { loadRules } from "@petriflow/rules";
 import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { files } from "./tools";
 
 // Load rules from file
 const { nets, verification } = await loadRules(
@@ -27,44 +28,27 @@ const tools = gate.wrapTools({
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> listFiles ${path}`);
-      return {
-        files: ["temp.log", "old-backup.tar.gz", "important.txt", "config.json"],
-      };
-    },
+    execute: async ({ path }) => files.list(path),
   }),
   readFile: tool({
     description: "Read a file's contents",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> readFile ${path}`);
-      return { content: `Contents of ${path}` };
-    },
+    execute: async ({ path }) => files.read(path),
   }),
   backup: tool({
     description: "Create a backup of a file before modifying it",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> backup ${path}`);
-      return { backedUp: `${path}.bak` };
-    },
+    execute: async ({ path }) => files.backup(path),
   }),
   delete: tool({
     description: "Delete a file (requires backup first)",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> delete ${path}`);
-      return { deleted: path };
-    },
+    execute: async ({ path }) => files.remove(path),
   }),
   rm: tool({
     description: "Remove a file with force",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      console.log(`> rm ${path}`);
-      return { removed: path };
-    },
+    execute: async ({ path }) => files.forceRemove(path),
   }),
 });
 
