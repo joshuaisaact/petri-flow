@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
+import DocTable from "../../components/DocTable.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -237,18 +238,16 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
     <div class="doc-section" id="what-youll-build">
       <h2>What you'll build</h2>
       <p>A DevOps assistant that monitors dependency updates, researches releases, notifies the team on Slack, runs the deployment pipeline, emails the manager, and cleans up files. Five independent safety domains, all enforced simultaneously:</p>
-      <table>
-        <thead>
-          <tr><th>Domain</th><th>Tools</th><th>Rules</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Research</td><td>webSearch</td><td>None (free)</td></tr>
-          <tr><td>Slack</td><td>slack (readMessages, sendMessage)</td><td>Read before send, limit 10</td></tr>
-          <tr><td>Email</td><td>readInbox, sendEmail</td><td>Human approval, limit 3</td></tr>
-          <tr><td>Deployment</td><td>lint, test, deploy, checkStatus</td><td>lint &rarr; test &rarr; deploy + approval, limit 2</td></tr>
-          <tr><td>Files</td><td>listFiles, readFile, backup, delete, rm</td><td>Backup before delete, rm blocked</td></tr>
-        </tbody>
-      </table>
+      <DocTable
+        headers={["Domain", "Tools", "Rules"]}
+        rows={[
+          ["Research", "<code>webSearch</code>", "None (free)"],
+          ["Slack", "<code>slack</code> (readMessages, sendMessage)", "Read before send, limit 10"],
+          ["Email", "<code>readInbox</code>, <code>sendEmail</code>", "Human approval, limit 3"],
+          ["Deployment", "<code>lint</code>, <code>test</code>, <code>deploy</code>, <code>checkStatus</code>", "lint &rarr; test &rarr; deploy + approval, limit 2"],
+          ["Files", "<code>listFiles</code>, <code>readFile</code>, <code>backup</code>, <code>delete</code>, <code>rm</code>", "Backup before delete, <code>rm</code> blocked"],
+        ]}
+      />
       <p><strong>Concepts covered:</strong> cross-domain composition, independent verification, abstaining nets, free tools, production-scale safety.</p>
     </div>
 
