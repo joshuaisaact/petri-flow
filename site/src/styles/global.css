@@ -175,14 +175,13 @@ nav .container {
 
 .btn-secondary {
   background: rgba(255,255,255,0.04);
-  color: var(--text-secondary);
+  color: #fff;
   border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
   background: rgba(255,255,255,0.06);
   border-color: var(--border-hover);
-  color: var(--text);
 }
 
 /* ───── HERO ───── */
@@ -368,7 +367,7 @@ nav .container {
 .install-command code {
   font-family: var(--mono);
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
