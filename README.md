@@ -73,17 +73,17 @@ limit A to N per action         # N uses, refills when action fires
 map tool.field pattern as name  # pattern-match tool inputs into virtual names
 ```
 
-Full docs: [petriflow.dev](https://petriflow.dev)
+Full docs: [petriflow.joshtuddenham.dev](https://petriflow.joshtuddenham.dev)
 
 ### Examples
 
 Three runnable Vercel AI SDK agents in `examples/`:
 
-| Example | What it demonstrates |
-|---|---|
-| `01-file-management` | Deferred transitions (backup must succeed), permanent blocks (`rm`), sequence gates |
-| `02-deployment` | Human approval gates, multi-rule composition (`lint → test → deploy`) |
-| `03-discord-bot` | Dot-notation action dispatch, session rate limiting |
+| Example | What it demonstrates | |
+|---|---|---|
+| `01-file-management` | Deferred transitions (backup must succeed), permanent blocks (`rm`), sequence gates | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-file-safety/) |
+| `02-deployment` | Human approval gates, multi-rule composition (`lint → test → deploy`) | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-deployment/) |
+| `03-discord-bot` | Dot-notation action dispatch, session rate limiting | [Tutorial](https://petriflow.joshtuddenham.dev/docs/tutorial-discord-bot/) |
 
 ---
 

@@ -33,3 +33,7 @@ limit deploy to 2 per session
 ```bash
 ANTHROPIC_API_KEY=sk-... bun run examples/02-deployment/agent.ts
 ```
+
+## Full tutorial
+
+[Step-by-step walkthrough on petriflow.joshtuddenham.dev](https://petriflow.joshtuddenham.dev/docs/tutorial-deployment/)

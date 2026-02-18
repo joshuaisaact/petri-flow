@@ -35,3 +35,7 @@ The sequencing rule cycles — after each `sendMessage`, the model must call `re
 ```bash
 ANTHROPIC_API_KEY=sk-... bun run examples/03-discord-bot/agent.ts
 ```
+
+## Full tutorial
+
+[Step-by-step walkthrough on petriflow.joshtuddenham.dev](https://petriflow.joshtuddenham.dev/docs/tutorial-discord-bot/)
