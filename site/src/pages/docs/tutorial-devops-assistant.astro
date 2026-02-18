@@ -9,24 +9,6 @@ import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
 
-const rulesFile = `# Slack — read channel context before sending, rate limited
-require slack.readMessages before slack.sendMessage
-limit slack.sendMessage to 10 per session
-
-# Email — human approves every send, rate limited
-require human-approval before sendEmail
-limit sendEmail to 3 per session
-
-# Deployment pipeline
-require lint before test
-require test before deploy
-require human-approval before deploy
-limit deploy to 2 per session
-
-# File safety
-require backup before delete
-block rm`;
-
 const toolDefs = `import { tool } from "ai";
 import { z } from "zod";
 
@@ -261,7 +243,25 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
     <div class="doc-section" id="write-the-rules">
       <h2>Write the rules</h2>
       <p>Create a file called <code>assistant.rules</code>:</p>
-      <Code code={rulesFile} lang="bash" />
+      <div class="example-rule" set:html={`<span class="comment"># assistant.rules</span>
+
+<span class="comment"># Slack — read channel context before sending, rate limited</span>
+<span class="kw">require</span> <span class="str">slack.readMessages</span> before <span class="str">slack.sendMessage</span>
+<span class="kw">limit</span> <span class="str">slack.sendMessage</span> to <span class="str">10</span> per <span class="str">session</span>
+
+<span class="comment"># Email — human approves every send, rate limited</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">sendEmail</span>
+<span class="kw">limit</span> <span class="str">sendEmail</span> to <span class="str">3</span> per <span class="str">session</span>
+
+<span class="comment"># Deployment pipeline</span>
+<span class="kw">require</span> <span class="str">lint</span> before <span class="str">test</span>
+<span class="kw">require</span> <span class="str">test</span> before <span class="str">deploy</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">limit</span> <span class="str">deploy</span> to <span class="str">2</span> per <span class="str">session</span>
+
+<span class="comment"># File safety</span>
+<span class="kw">require</span> <span class="str">backup</span> before <span class="str">delete</span>
+<span class="kw">block</span> <span class="str">rm</span>`} />
 
       <h3>How composition works</h3>
       <p>Each rule compiles to its own small, independently verified Petri net. At runtime, every net is checked on every tool call. A tool is allowed only if <strong>all</strong> nets agree.</p>
