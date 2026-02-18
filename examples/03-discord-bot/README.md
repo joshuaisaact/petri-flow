@@ -30,10 +30,21 @@ The sequencing rule cycles — after each `sendMessage`, the model must call `re
 7. After 5 sends, rate limit kicks in permanently
 8. `addReaction` and `createThread` remain available throughout
 
+## Setup
+
+Requires a Discord bot token and guild (server) ID. Add them to `examples/.env`:
+
+```bash
+DISCORD_BOT_TOKEN=your-bot-token
+DISCORD_GUILD_ID=your-guild-id
+```
+
+The bot needs **Read Message History** and **Send Messages** permissions in the target channel.
+
 ## Run
 
 ```bash
-ANTHROPIC_API_KEY=sk-... bun run examples/03-discord-bot/agent.ts
+bun run --env-file=examples/.env examples/03-discord-bot/agent.ts
 ```
 
 ## Full tutorial
