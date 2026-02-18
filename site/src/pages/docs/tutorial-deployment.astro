@@ -4,6 +4,7 @@ import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import ConceptTags from "../../components/ConceptTags.astro";
+import Icon from "../../components/Icon.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -138,15 +139,10 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
   <div class="doc-wrapper">
     <div class="page-header">
-      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
-        <a href={`${base}docs/`}>Docs</a>
-        <span aria-hidden="true">/</span>
-        <span>Build a Deployment Agent</span>
-        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
-        <a href={`${base}docs/tutorial-file-safety/`}>&larr; File Safety</a>
-        <a href={`${base}docs/tutorial-discord-bot/`}>Next: Discord Bot &rarr;</a>
-      </nav>
-      <h1>Build a Deployment Agent</h1>
+      <div class="tutorial-heading">
+        <h1>Build a Deployment Agent</h1>
+        <a class="tutorial-github" href="https://github.com/joshuaisaact/petri-flow/tree/main/examples/02-deployment"><Icon name="github" size={14} />View code</a>
+      </div>
       <ConceptTags concepts={["Chained sequencing", "Human approval gates", "Confirm callback", "Session rate limits"]} />
       <p>Build a CI/CD agent where <strong>lint gates test</strong>, <strong>test gates deploy</strong>, <strong>a human approves every deploy</strong>, and <strong>deploys are capped at 2 per session</strong>. You'll learn chained dependencies, human approval gates, and rate limits.</p>
     </div>

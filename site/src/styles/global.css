@@ -1268,6 +1268,39 @@ footer.footer-minimal a {
 
 footer.footer-minimal a:hover { color: var(--text-secondary); }
 
+/* ───── TUTORIAL HEADING + GITHUB LINK ───── */
+
+.tutorial-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tutorial-heading h1 {
+  margin-bottom: 12px;
+}
+
+.page-header a.tutorial-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  transition: border-color 0.15s;
+}
+
+.page-header a.tutorial-github:hover {
+  border-color: var(--border-hover);
+  text-decoration: none;
+}
+
 /* ───── EXAMPLES PAGE ───── */
 
 .page-header {

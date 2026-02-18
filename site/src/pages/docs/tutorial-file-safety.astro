@@ -4,6 +4,7 @@ import Nav from "../../components/Nav.astro";
 import Footer from "../../components/Footer.astro";
 import Trace from "../../components/Trace.astro";
 import ConceptTags from "../../components/ConceptTags.astro";
+import Icon from "../../components/Icon.astro";
 import { Code } from "astro:components";
 
 const base = import.meta.env.BASE_URL;
@@ -118,14 +119,10 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
   <div class="doc-wrapper">
     <div class="page-header">
-      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
-        <a href={`${base}docs/`}>Docs</a>
-        <span aria-hidden="true">/</span>
-        <span>Build a File Safety Agent</span>
-        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
-        <a href={`${base}docs/tutorial-deployment/`}>Next: Deployment &rarr;</a>
-      </nav>
-      <h1>Build a File Safety Agent</h1>
+      <div class="tutorial-heading">
+        <h1>Build a File Safety Agent</h1>
+        <a class="tutorial-github" href="https://github.com/joshuaisaact/petri-flow/tree/main/examples/01-file-management"><Icon name="github" size={14} />View code</a>
+      </div>
       <ConceptTags concepts={["Sequencing", "Permanent blocking", "Deferred transitions", "Free tools"]} />
       <p>Build a file management agent that <strong>must</strong> back up before deleting and <strong>can never</strong> use <code>rm</code>. You'll learn sequencing rules, permanent blocks, deferred transitions, and free tools.</p>
     </div>
