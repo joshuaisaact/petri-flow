@@ -15,44 +15,33 @@ block rm`;
 
 const toolDefs = `import { tool } from "ai";
 import { z } from "zod";
+import { files } from "./tools";
 
 const myTools = {
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      // your implementation here
-      return { files: ["temp.log", "old-backup.tar.gz", "important.txt", "config.json"] };
-    },
+    execute: async ({ path }) => files.list(path),
   }),
   readFile: tool({
     description: "Read a file's contents",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      return { content: \`Contents of \${path}\` };
-    },
+    execute: async ({ path }) => files.read(path),
   }),
   backup: tool({
     description: "Create a backup of a file before modifying it",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      // cp file to file.bak
-      return { backedUp: \`\${path}.bak\` };
-    },
+    execute: async ({ path }) => files.backup(path),
   }),
   delete: tool({
     description: "Delete a file (requires backup first)",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      return { deleted: path };
-    },
+    execute: async ({ path }) => files.remove(path),
   }),
   rm: tool({
     description: "Remove a file with force",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => {
-      return { removed: path };
-    },
+    execute: async ({ path }) => files.forceRemove(path),
   }),
 };`;
 
@@ -61,6 +50,7 @@ import { createPetriflowGate } from "@petriflow/vercel-ai";
 import { generateText, tool, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { files } from "./tools";
 
 // 1. Load and verify rules
 const { nets, verification } = await loadRules("./safety.rules");
@@ -78,29 +68,27 @@ const tools = gate.wrapTools({
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({
-      files: ["temp.log", "old-backup.tar.gz", "important.txt", "config.json"],
-    }),
+    execute: async ({ path }) => files.list(path),
   }),
   readFile: tool({
     description: "Read a file's contents",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ content: \`Contents of \${path}\` }),
+    execute: async ({ path }) => files.read(path),
   }),
   backup: tool({
     description: "Create a backup of a file before modifying it",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ backedUp: \`\${path}.bak\` }),
+    execute: async ({ path }) => files.backup(path),
   }),
   delete: tool({
     description: "Delete a file (requires backup first)",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ deleted: path }),
+    execute: async ({ path }) => files.remove(path),
   }),
   rm: tool({
     description: "Remove a file with force",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ removed: path }),
+    execute: async ({ path }) => files.forceRemove(path),
   }),
 });
 
@@ -171,7 +159,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>Define your tools using the Vercel AI SDK's <code>tool()</code> function. These are standard tool definitions. PetriFlow doesn't change how you write them.</p>
+      <p>Define your tools using the Vercel AI SDK's <code>tool()</code> function. The execute functions delegate to a <code>files</code> service object that wraps <code>node:fs</code>. PetriFlow doesn't change how you write them.</p>
       <Code code={toolDefs} lang="typescript" />
       <p>Each tool has a <code>description</code> (for the model), a <code>parameters</code> schema (validated by the SDK), and an <code>execute</code> function (your implementation). PetriFlow wraps <code>execute</code> with gate checks. The tool definitions themselves stay the same.</p>
     </div>

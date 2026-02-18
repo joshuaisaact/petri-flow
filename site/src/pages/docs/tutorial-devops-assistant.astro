@@ -12,15 +12,14 @@ const base = import.meta.env.BASE_URL;
 
 const toolDefs = `import { tool } from "ai";
 import { z } from "zod";
+import { web, slack, email, pipeline, files } from "./tools";
 
 const myTools = {
   // --- Research (free — no rules mention it) ---
   webSearch: tool({
     description: "Search the web for information",
     inputSchema: z.object({ query: z.string() }),
-    execute: async ({ query }) => {
-      return { results: [/* ... */] };
-    },
+    execute: async ({ query }) => web.search(query),
   }),
 
   // --- Slack (dot notation: slack.readMessages, slack.sendMessage) ---
@@ -34,9 +33,9 @@ const myTools = {
     execute: async (input) => {
       switch (input.action) {
         case "readMessages":
-          return { messages: [/* ... */] };
+          return slack.readMessages(input.channel);
         case "sendMessage":
-          return { sent: true, channel: input.channel };
+          return slack.sendMessage(input.channel, input.content!);
       }
     },
   }),
@@ -45,7 +44,7 @@ const myTools = {
   readInbox: tool({
     description: "Read email inbox for recent messages",
     inputSchema: z.object({}),
-    execute: async () => ({ emails: [/* ... */] }),
+    execute: async () => email.readInbox(),
   }),
   sendEmail: tool({
     description: "Send an email (requires human approval)",
@@ -54,67 +53,60 @@ const myTools = {
       subject: z.string(),
       body: z.string(),
     }),
-    execute: async ({ to, subject }) => ({ sent: true }),
+    execute: async ({ to, subject, body }) => email.send(to, subject, body),
   }),
 
   // --- Deployment ---
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
-    execute: async () => ({ passed: true, warnings: 0, errors: 0 }),
+    execute: async () => pipeline.lint(),
   }),
   test: tool({
     description: "Run the test suite",
     inputSchema: z.object({}),
-    execute: async () => ({ passed: true, total: 42, failed: 0 }),
+    execute: async () => pipeline.test(),
   }),
   deploy: tool({
     description: "Deploy to an environment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => ({
-      deployed: true,
-      environment,
-      version: "2.1.0",
-    }),
+    execute: async ({ environment }) => pipeline.deploy(environment),
   }),
   checkStatus: tool({
     description: "Check the current deployment status",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => ({
-      environment,
-      status: "healthy",
-    }),
+    execute: async ({ environment }) => pipeline.checkStatus(environment),
   }),
 
   // --- Files ---
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ files: ["temp.log", "cache.json"] }),
+    execute: async ({ path }) => files.list(path),
   }),
   readFile: tool({
     description: "Read a file's contents",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ content: \`Contents of \${path}\` }),
+    execute: async ({ path }) => files.read(path),
   }),
   backup: tool({
     description: "Create a backup of a file",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ backedUp: \`\${path}.bak\` }),
+    execute: async ({ path }) => files.backup(path),
   }),
   delete: tool({
     description: "Delete a file (requires backup first)",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ deleted: path }),
+    execute: async ({ path }) => files.remove(path),
   }),
   rm: tool({
     description: "Remove a file with force",
     inputSchema: z.object({ path: z.string() }),
-    execute: async ({ path }) => ({ removed: path }),
+    execute: async ({ path }) => files.forceRemove(path),
   }),
 };`;
 
@@ -124,6 +116,7 @@ import { generateText, tool, stepCountIs } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { createInterface } from "readline";
 import { z } from "zod";
+import { web, slack, email, pipeline, files } from "./tools";
 
 // Interactive terminal prompt — blocks until the user types y/n
 async function askApproval(title: string, message: string): Promise<boolean> {
@@ -268,7 +261,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ant
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>13 tools across 5 domains. Each tool is a standard Vercel AI SDK <code>tool()</code> definition. PetriFlow handles the gating automatically.</p>
+      <p>13 tools across 5 domains. Each tool is a standard Vercel AI SDK <code>tool()</code> definition, with execute functions delegating to service objects (<code>web</code>, <code>slack</code>, <code>email</code>, <code>pipeline</code>, <code>files</code>) that contain the real implementations. PetriFlow handles the gating automatically.</p>
       <Code code={toolDefs} lang="typescript" />
       <p>The <code>slack</code> tool uses dot notation (same pattern as the Discord bot tutorial). The compiler auto-generates a <code>toolMapper</code> from the <code>action</code> field.</p>
     </div>

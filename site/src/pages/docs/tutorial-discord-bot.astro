@@ -15,6 +15,7 @@ limit discord.sendMessage to 5 per session`;
 
 const toolDefs = `import { tool } from "ai";
 import { z } from "zod";
+import { discord } from "./tools";
 
 const myTools = {
   discord: tool({
@@ -36,19 +37,13 @@ const myTools = {
     execute: async (input) => {
       switch (input.action) {
         case "readMessages":
-          return {
-            messages: [
-              { author: "alice", content: "Build failed on main" },
-              { author: "bob", content: "Looking into it now" },
-              { author: "carol", content: "Might be the new dependency" },
-            ],
-          };
+          return discord.readMessages(input.channel);
         case "sendMessage":
-          return { sent: true, id: \`msg-\${Date.now()}\` };
+          return discord.sendMessage(input.channel, input.content!);
         case "addReaction":
-          return { reacted: true };
+          return discord.addReaction(input.channel, input.messageId!, input.emoji!);
         case "createThread":
-          return { created: true, threadName: input.threadName };
+          return discord.createThread(input.channel, input.threadName!);
       }
     },
   }),
@@ -59,6 +54,7 @@ import { createPetriflowGate } from "@petriflow/vercel-ai";
 import { generateText, tool, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { discord } from "./tools";
 
 // 1. Load and verify rules
 const { nets, verification } = await loadRules("./messaging.rules");
@@ -87,19 +83,13 @@ const tools = gate.wrapTools({
     execute: async (input) => {
       switch (input.action) {
         case "readMessages":
-          return {
-            messages: [
-              { author: "alice", content: "Build failed on main" },
-              { author: "bob", content: "Looking into it now" },
-              { author: "carol", content: "Might be the new dependency" },
-            ],
-          };
+          return discord.readMessages(input.channel);
         case "sendMessage":
-          return { sent: true, id: \`msg-\${Date.now()}\` };
+          return discord.sendMessage(input.channel, input.content!);
         case "addReaction":
-          return { reacted: true };
+          return discord.addReaction(input.channel, input.messageId!, input.emoji!);
         case "createThread":
-          return { created: true, threadName: input.threadName };
+          return discord.createThread(input.channel, input.threadName!);
       }
     },
   }),
@@ -185,7 +175,7 @@ limit discord.sendMessage to 5 per session`;
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>A single tool with an <code>action</code> enum. The tool definition is standard Vercel AI SDK. PetriFlow's dot notation handles the dispatch mapping automatically.</p>
+      <p>A single tool with an <code>action</code> enum. The tool definition is standard Vercel AI SDK, with the execute function delegating to a <code>discord</code> service object that wraps the Discord REST API. PetriFlow's dot notation handles the dispatch mapping automatically.</p>
       <Code code={toolDefs} lang="typescript" />
       <p>The <code>action</code> parameter is what PetriFlow uses for tool mapping. When the agent calls <code>discord({"{"} action: "sendMessage", ... {"}"})</code>, PetriFlow resolves it to the virtual tool <code>discord.sendMessage</code> and checks the rules against that name.</p>
     </div>

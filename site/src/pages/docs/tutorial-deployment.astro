@@ -17,50 +17,39 @@ limit deploy to 2 per session`;
 
 const toolDefs = `import { tool } from "ai";
 import { z } from "zod";
+import { pipeline } from "./tools";
 
 const myTools = {
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
-    execute: async () => {
-      // run your linter
-      return { passed: true, warnings: 0, errors: 0 };
-    },
+    execute: async () => pipeline.lint(),
   }),
   test: tool({
     description: "Run the test suite",
     inputSchema: z.object({}),
-    execute: async () => {
-      // run your tests
-      return { passed: true, total: 42, failed: 0 };
-    },
+    execute: async () => pipeline.test(),
   }),
   deploy: tool({
     description: "Deploy to an environment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      return { deployed: true, environment, version: "1.4.2" };
-    },
+    execute: async ({ environment }) => pipeline.deploy(environment),
   }),
   checkStatus: tool({
     description: "Check the current deployment status",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      return { environment, status: "healthy", version: "1.4.1" };
-    },
+    execute: async ({ environment }) => pipeline.checkStatus(environment),
   }),
   rollback: tool({
     description: "Rollback to the previous deployment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => {
-      return { rolledBack: true, environment, version: "1.4.0" };
-    },
+    execute: async ({ environment }) => pipeline.rollback(environment),
   }),
 };`;
 
@@ -69,6 +58,7 @@ import { createPetriflowGate } from "@petriflow/vercel-ai";
 import { generateText, tool, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { pipeline } from "./tools";
 
 // 1. Load and verify rules
 const { nets, verification } = await loadRules("./pipeline.rules");
@@ -88,39 +78,33 @@ const tools = gate.wrapTools({
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
-    execute: async () => ({ passed: true, warnings: 0, errors: 0 }),
+    execute: async () => pipeline.lint(),
   }),
   test: tool({
     description: "Run the test suite",
     inputSchema: z.object({}),
-    execute: async () => ({ passed: true, total: 42, failed: 0 }),
+    execute: async () => pipeline.test(),
   }),
   deploy: tool({
     description: "Deploy to an environment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => ({
-      deployed: true, environment, version: "1.4.2",
-    }),
+    execute: async ({ environment }) => pipeline.deploy(environment),
   }),
   checkStatus: tool({
     description: "Check the current deployment status",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => ({
-      environment, status: "healthy", version: "1.4.1",
-    }),
+    execute: async ({ environment }) => pipeline.checkStatus(environment),
   }),
   rollback: tool({
     description: "Rollback to the previous deployment",
     inputSchema: z.object({
       environment: z.enum(["production", "staging"]),
     }),
-    execute: async ({ environment }) => ({
-      rolledBack: true, environment, version: "1.4.0",
-    }),
+    execute: async ({ environment }) => pipeline.rollback(environment),
   }),
 });
 
@@ -194,7 +178,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
     <div class="doc-section" id="define-the-tools">
       <h2>Define the tools</h2>
-      <p>Define your tools with <code>tool()</code> from the Vercel AI SDK. <code>checkStatus</code> and <code>rollback</code> are free tools. No rules mention them.</p>
+      <p>Define your tools with <code>tool()</code> from the Vercel AI SDK, delegating to a <code>pipeline</code> service object that runs real shell commands and manages deploy state. <code>checkStatus</code> and <code>rollback</code> are free tools. No rules mention them.</p>
       <Code code={toolDefs} lang="typescript" />
     </div>
 
