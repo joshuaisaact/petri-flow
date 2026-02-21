@@ -898,63 +898,6 @@ a.rule-card { text-decoration: none; color: inherit; cursor: pointer; }
   margin-top: 40px;
 }
 
-a.tutorial-card { text-decoration: none; color: inherit; cursor: pointer; }
-
-.tutorial-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-  display: flex;
-  flex-direction: column;
-}
-
-.tutorial-card:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-card-hover);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-}
-
-.tutorial-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--accent-text);
-  color: var(--bg);
-  font-size: 14px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 14px;
-}
-
-.tutorial-card h3 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.tutorial-card p {
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.6;
-  margin-bottom: 14px;
-}
-
-.tutorial-card code {
-  font-family: var(--mono);
-  font-size: 0.85em;
-}
-
-.tutorial-link {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent-text);
-  margin-top: auto;
-}
-
 /* ───── INTEGRATIONS ───── */
 
 .integrations-grid {

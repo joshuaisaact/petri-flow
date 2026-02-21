@@ -7,6 +7,7 @@ import Trace from "../components/Trace.astro";
 import InstallBar from "../components/InstallBar.astro";
 import IntegrationCard from "../components/IntegrationCard.astro";
 import Icon from "../components/Icon.astro";
+import TutorialCard from "../components/TutorialCard.astro";
 import { Code } from "astro:components";
 ---
 <Layout title="PetriFlow - Provably Safe AI Agents">
@@ -356,33 +357,34 @@ const manager = createGateManager(
       </p>
 
       <div class="tutorials-grid">
-        <a href={`${import.meta.env.BASE_URL}docs/tutorial-file-safety/`} class="tutorial-card">
-          <div class="tutorial-number">1</div>
-          <h3>File Safety Agent</h3>
-          <p>Sequencing + permanent blocking. The agent must back up before deleting and can never use <code>rm</code>.</p>
-          <span class="tutorial-link">Build it &rarr;</span>
-        </a>
-
-        <a href={`${import.meta.env.BASE_URL}docs/tutorial-deployment/`} class="tutorial-card">
-          <div class="tutorial-number">2</div>
-          <h3>Deployment Agent</h3>
-          <p>Chained dependencies + human approval + rate limits. A full CI/CD pipeline the agent cannot skip.</p>
-          <span class="tutorial-link">Build it &rarr;</span>
-        </a>
-
-        <a href={`${import.meta.env.BASE_URL}docs/tutorial-discord-bot/`} class="tutorial-card">
-          <div class="tutorial-number">3</div>
-          <h3>Discord Bot</h3>
-          <p>Dot notation tool mapping + rate limits. One tool, multiple actions, each gated independently.</p>
-          <span class="tutorial-link">Build it &rarr;</span>
-        </a>
-
-        <a href={`${import.meta.env.BASE_URL}docs/tutorial-devops-assistant/`} class="tutorial-card">
-          <div class="tutorial-number">4</div>
-          <h3>DevOps Assistant</h3>
-          <p>Cross-domain composition. 13 tools, 5 domains, 10 rules that enforce independently without interference.</p>
-          <span class="tutorial-link">Build it &rarr;</span>
-        </a>
+        <TutorialCard compact
+          href={`${import.meta.env.BASE_URL}docs/tutorial-file-safety/`}
+          title="Build a File Safety Agent"
+          description={`The agent must back up before deleting and can never use <code>rm</code>.`}
+          rules=""
+          concepts={["Sequencing", "Permanent blocking", "Deferred transitions", "Free tools"]}
+        />
+        <TutorialCard compact
+          href={`${import.meta.env.BASE_URL}docs/tutorial-deployment/`}
+          title="Build a Deployment Agent"
+          description="A full CI/CD pipeline the agent cannot skip. Lint, test, approval, deploy."
+          rules=""
+          concepts={["Chained dependencies", "Human approval gates", "Session rate limits", "Pipeline resets"]}
+        />
+        <TutorialCard compact
+          href={`${import.meta.env.BASE_URL}docs/tutorial-discord-bot/`}
+          title="Build a Discord Bot"
+          description="One tool, multiple actions, each gated independently."
+          rules=""
+          concepts={["Dot notation tool mapping", "Action-dispatch tools", "Cycling dependencies", "Composing limits with sequencing"]}
+        />
+        <TutorialCard compact
+          href={`${import.meta.env.BASE_URL}docs/tutorial-devops-assistant/`}
+          title="Build a DevOps Assistant"
+          description="One agent, five domains, ten rules. Everything composes."
+          rules=""
+          concepts={["Cross-domain composition", "Independent verification", "Free tools", "Production-scale safety"]}
+        />
       </div>
     </div>
   </section>
