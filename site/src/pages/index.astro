@@ -352,7 +352,7 @@ const manager = createGateManager(
     <div class="container">
       <h2 id="tutorials-heading" class="section-title">Build something real.<br />Learn by doing.</h2>
       <p class="section-sub">
-        Three step-by-step tutorials. Each builds a working agent with increasing complexity.
+        Four step-by-step tutorials. Each builds a working agent with increasing complexity.
       </p>
 
       <div class="tutorials-grid">
@@ -374,6 +374,13 @@ const manager = createGateManager(
           <div class="tutorial-number">3</div>
           <h3>Discord Bot</h3>
           <p>Dot notation tool mapping + rate limits. One tool, multiple actions, each gated independently.</p>
+          <span class="tutorial-link">Build it &rarr;</span>
+        </a>
+
+        <a href={`${import.meta.env.BASE_URL}docs/tutorial-devops-assistant/`} class="tutorial-card">
+          <div class="tutorial-number">4</div>
+          <h3>DevOps Assistant</h3>
+          <p>Cross-domain composition. 13 tools, 5 domains, 10 rules that enforce independently without interference.</p>
           <span class="tutorial-link">Build it &rarr;</span>
         </a>
       </div>
