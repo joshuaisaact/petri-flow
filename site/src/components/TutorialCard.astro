@@ -5,12 +5,11 @@ interface Props {
   description: string;
   rules: string;
   concepts: string[];
-  compact?: boolean;
 }
 
-const { href, title, description, rules, concepts, compact = false } = Astro.props;
+const { href, title, description, rules, concepts } = Astro.props;
 ---
-<a href={href} class:list={["doc-card !grid gap-x-6 gap-y-0", compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"]}>
+<a href={href} class="doc-card !grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0">
   <div class="col-span-full flex items-baseline justify-between gap-4">
     <h2>{title}</h2>
     <span class="doc-card-link shrink-0 !mt-0">Build it &rarr;</span>
@@ -19,10 +18,8 @@ const { href, title, description, rules, concepts, compact = false } = Astro.pro
   <ul class="self-center list-disc !pl-5 !mb-6 text-[13px] leading-[1.8] !text-[var(--text-secondary)]">
     {concepts.map((c) => <li>{c}</li>)}
   </ul>
-  {!compact && (
-    <div
-      class="self-start overflow-x-auto min-w-0 hidden sm:block !mb-6 font-[var(--mono)] text-xs leading-[1.8] !p-4 bg-[var(--bg)] border border-[var(--border)] rounded-md whitespace-pre [&_.kw]:text-[var(--accent-text)] [&_.str]:text-[var(--green)]"
-      set:html={rules}
-    />
-  )}
+  <div
+    class="self-start overflow-x-auto min-w-0 hidden sm:block !mb-6 font-[var(--mono)] text-xs leading-[1.8] !p-4 bg-[var(--bg)] border border-[var(--border)] rounded-md whitespace-pre [&_.kw]:text-[var(--accent-text)] [&_.str]:text-[var(--green)]"
+    set:html={rules}
+  />
 </a>
