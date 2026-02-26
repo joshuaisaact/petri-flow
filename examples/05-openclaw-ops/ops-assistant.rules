@@ -1,0 +1,270 @@
+# ============================================================
+# Full-Stack Ops Assistant — PetriFlow Safety Rules
+# ============================================================
+#
+# A comprehensive safety policy for an OpenClaw agent with
+# broad system access. Enforces sequencing, rate limits,
+# and structural blocks across 90+ gated tool paths via
+# 55 independent Petri nets composed with AND-logic.
+#
+# Usage with the @petriflow/openclaw plugin:
+#
+#   import { loadRules } from '@petriflow/rules'
+#   import { createPetriGatePlugin } from '@petriflow/openclaw'
+#
+#   const { nets } = await loadRules('./ops-assistant.rules')
+#   const plugin = createPetriGatePlugin(nets)
+#
+# ============================================================
+
+
+# ————————————————————————————————————————————————————————————
+# EXEC TOOL MAPPINGS
+# ————————————————————————————————————————————————————————————
+# The exec tool is a single tool that can run any shell command.
+# These mappings split it into fine-grained virtual tools so
+# each command class can be independently gated.
+#
+# IMPORTANT: More specific patterns must come before general
+# ones — the mapper returns the first match.
+
+
+# Git — destructive/specific patterns first
+map exec.command /\bgit\s+push\s+.*--force/ as git-force-push
+map exec.command /\bgit\s+reset\s+--hard/ as git-reset-hard
+map exec.command /\bgit\s+branch\s+-[dD]\b/ as git-branch-delete
+map exec.command /\bgit\s+add\b/ as git-add
+map exec.command /\bgit\s+commit\b/ as git-commit
+map exec.command /\bgit\s+push\b/ as git-push
+map exec.command /\bgit\s+pull\b/ as git-pull
+map exec.command /\bgit\s+merge\b/ as git-merge
+map exec.command /\bgit\s+rebase\b/ as git-rebase
+map exec.command /\bgit\s+stash\b/ as git-stash
+map exec.command /\bgit\s+diff\b/ as git-diff
+map exec.command /\bgit\s+log\b/ as git-log
+map exec.command /\bgit\s+status\b/ as git-status
+map exec.command /\bgit\s+clone\b/ as git-clone
+
+# Docker — compose before single-container commands
+map exec.command /\bdocker\s+compose\s+up\b/ as compose-up
+map exec.command /\bdocker\s+compose\s+down\b/ as compose-down
+map exec.command /\bdocker\s+build\b/ as docker-build
+map exec.command /\bdocker\s+run\b/ as docker-run
+map exec.command /\bdocker\s+push\b/ as docker-push
+map exec.command /\bdocker\s+pull\b/ as docker-pull
+map exec.command /\bdocker\s+stop\b/ as docker-stop
+map exec.command /\bdocker\s+kill\b/ as docker-kill
+map exec.command /\bdocker\s+rm\b/ as docker-rm
+map exec.command /\bdocker\s+exec\b/ as docker-exec
+map exec.command /\bdocker\s+images\b/ as docker-images
+map exec.command /\bdocker\s+ps\b/ as docker-ps
+
+# Package managers
+map exec.command /\bnpm\s+publish\b/ as npm-publish
+map exec.command /\bnpm\s+install\b/ as npm-install
+map exec.command /\bnpm\s+run\s+test\b/ as npm-test
+map exec.command /\bnpm\s+run\s+lint\b/ as npm-lint
+map exec.command /\bnpm\s+run\s+build\b/ as npm-build
+map exec.command /\bbun\s+test\b/ as bun-test
+map exec.command /\bbun\s+run\s+build\b/ as bun-build
+map exec.command /\bpip\s+install\b/ as pip-install
+
+# File operations — destructive patterns first
+map exec.command /\brm\s+-rf\b/ as rm-force
+map exec.command /\btrash\b/ as trash-file
+map exec.command /\brm\s/ as rm-file
+map exec.command /\bchmod\b/ as chmod
+map exec.command /\bchown\b/ as chown
+map exec.command /\bmv\b/ as mv-file
+map exec.command /\bcp\b/ as cp-file
+map exec.command /\btee\b/ as tee-write
+
+# Network
+map exec.command /\bcurl\b/ as curl
+map exec.command /\bwget\b/ as wget
+map exec.command /\bssh\b/ as ssh-connect
+map exec.command /\bscp\b/ as scp-transfer
+map exec.command /\brsync\b/ as rsync-transfer
+
+# System — dangerous operations
+map exec.command /\bsudo\b/ as sudo
+map exec.command /\bkillall\b/ as killall
+map exec.command /\bkill\b/ as kill-process
+map exec.command /\bshutdown\b/ as shutdown
+map exec.command /\breboot\b/ as reboot
+
+# Cloud infrastructure — destructive patterns first
+map exec.command /\bkubectl\s+delete\b/ as kubectl-delete
+map exec.command /\bkubectl\s+apply\b/ as kubectl-apply
+map exec.command /\bkubectl\s+get\b/ as kubectl-get
+map exec.command /\bkubectl\s+logs\b/ as kubectl-logs
+map exec.command /\bterraform\s+destroy\b/ as terraform-destroy
+map exec.command /\bterraform\s+apply\b/ as terraform-apply
+map exec.command /\bterraform\s+plan\b/ as terraform-plan
+map exec.command /\bhelm\s+uninstall\b/ as helm-uninstall
+map exec.command /\bhelm\s+upgrade\b/ as helm-upgrade
+map exec.command /\bhelm\s+install\b/ as helm-install
+map exec.command /\baws\b/ as aws-cli
+map exec.command /\bgcloud\b/ as gcloud-cli
+
+# Database CLIs
+map exec.command /\bpsql\b/ as psql
+map exec.command /\bmysql\b/ as mysql
+map exec.command /\bmongosh\b/ as mongosh
+map exec.command /\bredis-cli\b/ as redis-cli
+
+# Escape hatch prevention — agent can't shell out to its own CLI
+map exec.command /\bopenclaw\b/ as openclaw-cli
+
+
+# ————————————————————————————————————————————————————————————
+# PROCESS TOOL MAPPINGS
+# ————————————————————————————————————————————————————————————
+# The process tool runs background commands — same attack surface
+# as exec but bypasses exec mappings. Mirror the dangerous patterns.
+
+map process.command /\brm\s+-rf\b/ as rm-force
+map process.command /\btrash\b/ as trash-file
+map process.command /\brm\s/ as rm-file
+map process.command /\bsudo\b/ as sudo
+map process.command /\bkillall\b/ as killall
+map process.command /\bshutdown\b/ as shutdown
+map process.command /\breboot\b/ as reboot
+map process.command /\bgit\s+push\s+.*--force/ as git-force-push
+map process.command /\bgit\s+reset\s+--hard/ as git-reset-hard
+map process.command /\bgit\s+push\b/ as git-push
+map process.command /\bopenclaw\b/ as openclaw-cli
+map process.command /\bkubectl\s+delete\b/ as kubectl-delete
+map process.command /\bterraform\s+destroy\b/ as terraform-destroy
+map process.command /\bhelm\s+uninstall\b/ as helm-uninstall
+
+
+# ————————————————————————————————————————————————————————————
+# HARD BLOCKS — structurally unreachable
+# ————————————————————————————————————————————————————————————
+# These tools can never fire. The Petri net requires tokens
+# from a place that has zero tokens and no incoming arc.
+# No prompt injection or jailbreak can bypass this — it's
+# a mathematical property of the net, not a policy string.
+
+# Agent self-modification
+block gateway
+block openclaw-cli
+
+# Destructive system commands
+block rm-force
+block sudo
+block killall
+block shutdown
+block reboot
+
+# Destructive git
+block git-force-push
+block git-reset-hard
+
+# Destructive infrastructure
+block terraform-destroy
+block kubectl-delete
+block helm-uninstall
+
+# Hardware access
+block nodes
+
+# Container kill without graceful stop
+block docker-kill
+
+
+# ————————————————————————————————————————————————————————————
+# SEQUENCING — enforce safe ordering
+# ————————————————————————————————————————————————————————————
+# Each rule creates an independent net. AND-logic composition
+# means a tool is only allowed when ALL nets agree. Cycles
+# reset after the gated tool fires — the prerequisite must
+# run again before the next use.
+
+# File safety: always read before modifying
+require read before write
+require read before edit
+require read before apply_patch
+
+# Web: establish context before fetching/browsing
+require web_search before web_fetch
+require web_search before browser
+
+# Git workflow: review → stage → commit → push
+require git-diff before git-commit
+require git-add before git-commit
+require git-commit before git-push
+require git-pull before git-merge
+
+# Docker workflow: build before run or registry push
+require docker-build before docker-run
+require docker-build before docker-push
+
+# CI pipeline: lint → test → build → publish
+require npm-lint before npm-test
+require npm-test before npm-build
+require npm-build before npm-publish
+
+# Infrastructure: inspect/plan before mutating
+require terraform-plan before terraform-apply
+require kubectl-get before kubectl-apply
+
+# File deletion: copy first as backup
+require cp-file before rm-file
+require cp-file before trash-file
+
+# Multi-agent: know your context before acting
+require memory_search before sessions_send
+require sessions_list before sessions_send
+
+
+# ————————————————————————————————————————————————————————————
+# HUMAN APPROVAL — manual gate
+# ————————————————————————————————————————————————————————————
+# These create manual transitions requiring explicit human
+# confirmation via UI. In OpenClaw headless mode (hasUI: false),
+# these effectively become hard blocks — which is the correct
+# default for high-impact irreversible actions. If OpenClaw
+# adds a confirm UI, these become interactive approval gates.
+
+require human-approval before npm-publish
+require human-approval before docker-push
+require human-approval before terraform-apply
+require human-approval before message
+require human-approval before helm-install
+require human-approval before helm-upgrade
+
+
+# ————————————————————————————————————————————————————————————
+# RATE LIMITS — budget-based throttling
+# ————————————————————————————————————————————————————————————
+# Each limit creates a token-counting net. The budget depletes
+# with each tool call and cannot be refilled within a session.
+# When the budget hits zero, the tool is structurally blocked.
+
+# Broad execution caps
+limit exec to 50 per session
+limit write to 20 per session
+limit edit to 30 per session
+limit apply_patch to 10 per session
+
+# Communication
+limit message to 10 per session
+limit tts to 5 per session
+
+# Sub-agents and automation (prevent resource exhaustion)
+limit sessions_spawn to 3 per session
+limit cron to 5 per session
+limit process to 10 per session
+
+# Browser and media
+limit browser to 20 per session
+limit image to 10 per session
+
+# High-impact operations
+limit git-push to 5 per session
+limit docker-run to 10 per session
+limit curl to 30 per session
+limit ssh-connect to 5 per session
+limit npm-install to 5 per session

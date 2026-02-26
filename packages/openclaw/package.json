@@ -11,7 +11,8 @@
     "extensions": ["./entry.ts"]
   },
   "dependencies": {
-    "@petriflow/gate": "workspace:*"
+    "@petriflow/gate": "workspace:*",
+    "@petriflow/rules": "workspace:*"
   },
   "devDependencies": {
     "openclaw": "file:../../../openclaw",

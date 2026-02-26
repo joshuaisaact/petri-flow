@@ -1,18 +1,31 @@
 /**
  * OpenClaw plugin entry point.
  *
- * Loads petriflow-gate in shadow mode with the tool-approval net.
- * Shadow mode logs every gating decision but never blocks — safe for evaluation.
+ * Composes two layers:
+ *   1. Rules-compiled nets (56 simple gates — blocks, sequences, limits)
+ *   2. Hand-crafted workflow nets (deployment pipeline — stateful, branching)
  *
- * To switch to enforce mode, change mode: "shadow" → mode: "enforce".
+ * Both compose via AND-logic: every tool call must be allowed by ALL nets.
  */
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { compile } from "@petriflow/rules";
 import { createPetriGatePlugin } from "./src/index.js";
-import { openclawToolApprovalNet } from "./src/nets/tool-approval.js";
+import { deploymentPipelineNet } from "../../examples/05-openclaw-ops/deployment-pipeline.js";
 
-export default createPetriGatePlugin([openclawToolApprovalNet], {
-  mode: "shadow",
+// jiti compiles ESM → CJS, so __dirname is available at runtime
+declare const __dirname: string;
+const rulesPath = resolve(__dirname, "../../examples/05-openclaw-ops/ops-assistant.rules");
+const rulesText = readFileSync(rulesPath, "utf-8");
+const { nets: ruleNets } = compile(rulesText);
+
+const allNets = [...ruleNets, deploymentPipelineNet];
+console.error(`[petriflow-gate] loaded ${allNets.length} nets (${ruleNets.length} rules + 1 workflow)`);
+
+export default createPetriGatePlugin(allNets, {
+  mode: "enforce",
   onDecision: (event, decision) => {
-    const action = decision?.block ? `WOULD_BLOCK: ${decision.reason}` : "allow";
+    const action = decision?.block ? `BLOCKED: ${decision.reason}` : "allow";
     console.error(`[petriflow-gate] ${event.toolName} → ${action}`);
   },
 });
