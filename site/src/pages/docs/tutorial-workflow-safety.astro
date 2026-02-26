@@ -1,0 +1,254 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import DocTable from "../../components/DocTable.astro";
+import ConceptTags from "../../components/ConceptTags.astro";
+import Icon from "../../components/Icon.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const pipelineNet = `import { defineSkillNet } from "@petriflow/gate";
+
+type Place = "idle" | "building" | "tested" | "staged" | "canary";
+
+export const deploymentPipelineNet = defineSkillNet<Place>({
+  name: "deployment-pipeline",
+  places: ["idle", "building", "tested", "staged", "canary"],
+  terminalPlaces: [],
+  freeTools: [],
+  initialMarking: { idle: 1, building: 0, tested: 0, staged: 0, canary: 0 },
+
+  transitions: [
+    { name: "build",   type: "auto", inputs: ["idle"],     outputs: ["building"], tools: ["deploy-build"],   deferred: true },
+    { name: "test",    type: "auto", inputs: ["building"], outputs: ["tested"],   tools: ["deploy-test"],    deferred: true },
+    { name: "stage",   type: "auto", inputs: ["tested"],   outputs: ["staged"],   tools: ["deploy-stage"],   deferred: true },
+    { name: "canary",  type: "auto", inputs: ["staged"],   outputs: ["canary"],   tools: ["deploy-canary"],  deferred: true },
+    { name: "promote", type: "auto", inputs: ["canary"],   outputs: ["idle"],     tools: ["deploy-promote"], deferred: true },
+    // Rollback from canary or staging — both restore the deploy slot
+    { name: "rollback-canary",  type: "auto", inputs: ["canary"], outputs: ["idle"], tools: ["deploy-rollback"], deferred: true },
+    { name: "rollback-staging", type: "auto", inputs: ["staged"], outputs: ["idle"], tools: ["deploy-rollback"], deferred: true },
+  ],
+
+  toolMapper(event) {
+    if (event.toolName !== "exec" && event.toolName !== "process") return event.toolName;
+    const cmd = (event.input?.command as string) ?? "";
+    if (/\\bdeploy\\s+build\\b/.test(cmd))    return "deploy-build";
+    if (/\\bdeploy\\s+test\\b/.test(cmd))     return "deploy-test";
+    if (/\\bdeploy\\s+stage\\b/.test(cmd))    return "deploy-stage";
+    if (/\\bdeploy\\s+canary\\b/.test(cmd))   return "deploy-canary";
+    if (/\\bdeploy\\s+promote\\b/.test(cmd))  return "deploy-promote";
+    if (/\\bdeploy\\s+rollback\\b/.test(cmd)) return "deploy-rollback";
+    return event.toolName;
+  },
+});`;
+
+const rulesFile = `# Simple gates (same rules DSL as previous tutorials)
+require read before write
+block rm-force
+limit exec to 50 per session
+
+# Tool mapping — split exec into virtual tools
+map exec.command /\\bgit\\s+push\\b/ as git-push
+map exec.command /\\brm\\s+-rf\\b/ as rm-force
+block git-force-push
+require git-commit before git-push`;
+
+const wireUp = `import { compile } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
+import { readFileSync } from "fs";
+import { deploymentPipelineNet } from "./deployment-pipeline";
+
+// Layer 1: Simple rules (blocks, sequences, rate limits)
+const rulesText = readFileSync("./safety.rules", "utf-8");
+const { nets: ruleNets } = compile(rulesText);
+
+// Layer 2: Workflow nets (stateful, branching, resource tokens)
+const allNets = [...ruleNets, deploymentPipelineNet];
+
+// Both layers compose via AND-logic
+const gate = createPetriflowGate(allNets, {
+  confirm: askApproval,
+});
+
+const tools = gate.wrapTools({ /* your tools */ });`;
+
+const verifyOutput = `$ bun run verify.ts
+
+Rules: 56 nets from safety.rules
+
+Deployment pipeline: 5 reachable states
+  Deadlock-free: true
+  Token conservation (1 token always): true
+  Terminal states: 0
+  States: idle, building, tested, staged, canary
+
+Total: 57 nets, 62 unique gated tools`;
+
+const installCmd = `bun add @petriflow/gate @petriflow/rules @petriflow/vercel-ai`;
+---
+<Layout title="Build a Workflow Safety Layer | PetriFlow" description="Combine simple rules with a stateful deployment pipeline. Resource tokens, branching, formal verification — beyond if/then rules.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <div class="tutorial-heading">
+        <h1>Beyond Rules: Workflow Safety</h1>
+        <a class="tutorial-github" href="https://github.com/joshuaisaact/petri-flow/tree/main/examples/05-openclaw-ops"><Icon name="github" size={14} />View code</a>
+      </div>
+      <ConceptTags concepts={["Resource tokens", "Mutual exclusion", "Workflow branching", "Formal verification", "Two-layer composition"]} />
+      <p>The previous tutorials used the <code>.rules</code> DSL to create simple gates &mdash; sequencing, blocking, rate limits. Each compiled to a tiny Petri net (2&ndash;3 states). Powerful, but essentially if/then rules. This tutorial goes further: a <strong>hand-crafted workflow net</strong> with resource tokens, branching, and formally verified safety properties, composed alongside simple rules in the same agent.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#the-problem">The problem</a>
+        <a href="#the-deploy-slot">The deploy slot</a>
+        <a href="#build-the-net">Build the net</a>
+        <a href="#two-layer-composition">Two-layer composition</a>
+        <a href="#verify-it">Verify it</a>
+        <a href="#see-it-in-action">See it in action</a>
+        <a href="#why-not-if-then">Why not if/then rules?</a>
+        <a href="#concepts">Concepts</a>
+        <a href="#next-steps">Next steps</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <div class="doc-section" id="the-problem">
+      <h2>The problem</h2>
+      <p>A deployment pipeline isn't a single tool call. It's a multi-step workflow: build, test, stage, canary, promote. At each step, the agent is free to do other things &mdash; read logs, debug a failing test, search the web, fix code. But the deployment itself must follow a strict path, and <strong>only one deployment can be in progress at a time</strong>.</p>
+      <p>You can't express this with <code>require A before B</code> rules. A sequence rule resets after each cycle &mdash; it has no memory of "a deployment is in progress." You need something that tracks <em>state</em> across multiple steps, and <em>resources</em> that are consumed and restored.</p>
+      <p>This is what Petri nets are actually for.</p>
+    </div>
+
+    <div class="doc-section" id="the-deploy-slot">
+      <h2>The deploy slot</h2>
+      <p>The key insight is a single <strong>token</strong> representing "a deployment can be started." When the agent starts a build, the token moves from <code>idle</code> to <code>building</code>. It's no longer in <code>idle</code> &mdash; no second deployment can start. The token moves through the pipeline: building &rarr; tested &rarr; staged &rarr; canary. It returns to <code>idle</code> only when the agent promotes or rolls back.</p>
+
+      <div class="example-rule" set:html={`<span class="comment">     ┌──────────────────────────────────────────────────┐</span>
+<span class="comment">     │                                                  │</span>
+<span class="comment">     ▼                                                  │</span>
+<span class="comment">  </span><span class="str">[idle:1]</span><span class="comment"> ──build──▶ </span><span class="str">[building]</span><span class="comment"> ──test──▶ </span><span class="str">[tested]</span><span class="comment">     │</span>
+<span class="comment">                                              │         │</span>
+<span class="comment">                                            stage       │</span>
+<span class="comment">                                              │         │</span>
+<span class="comment">                                              ▼         │</span>
+<span class="comment">                                           </span><span class="str">[staged]</span><span class="comment"> ────┤ </span><span class="kw">rollback</span>
+<span class="comment">                                              │         │</span>
+<span class="comment">                                            canary      │</span>
+<span class="comment">                                              │         │</span>
+<span class="comment">                                              ▼         │</span>
+<span class="comment">                                           </span><span class="str">[canary]</span><span class="comment"> ────┤ </span><span class="kw">rollback</span>
+<span class="comment">                                              │         │</span>
+<span class="comment">                                           promote      │</span>
+<span class="comment">                                              │         │</span>
+<span class="comment">                                              └─────────┘</span>`} />
+
+      <p>There's exactly one token. It can be in one of five places. That's the entire state space &mdash; five reachable states, each representing a stage of the deployment. The agent's creativity is unconstrained between transitions. The net doesn't say "now do step 3." It says "the deployment is currently in <code>tested</code>, and the only deployment actions available are <code>stage</code> or do something else entirely."</p>
+    </div>
+
+    <div class="doc-section" id="build-the-net">
+      <h2>Build the net</h2>
+      <p>This is a hand-crafted <code>SkillNet</code>, not a compiled <code>.rules</code> file. The rules DSL handles simple gates; for real workflows, you write the net directly:</p>
+      <Code code={pipelineNet} lang="typescript" />
+
+      <h3>What makes this different from rules</h3>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">Resource token</strong>: The <code>idle</code> place starts with 1 token. When <code>build</code> fires, it moves to <code>building</code>. No second deployment can start because <code>idle</code> is empty.</li>
+        <li><strong style="color:var(--text-secondary)">Branching</strong>: From <code>canary</code>, the agent can <code>promote</code> (happy path) or <code>rollback</code> (unhappy path). Both return the token to <code>idle</code>. A simple sequence rule can't express OR paths.</li>
+        <li><strong style="color:var(--text-secondary)">Deferred transitions</strong>: Every transition is deferred &mdash; the tool call is allowed immediately, but the net only advances on success. A failed build doesn't consume the deploy slot.</li>
+        <li><strong style="color:var(--text-secondary)">Tool mapper</strong>: Maps <code>exec</code> commands like <code>deploy build</code> to virtual tool names like <code>deploy-build</code>. The net gates the virtual names.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="two-layer-composition">
+      <h2>Two-layer composition</h2>
+      <p>The workflow net composes with simple rules via AND-logic. Both layers check every tool call; a tool is allowed only if <strong>all nets agree</strong>.</p>
+      <Code code={wireUp} lang="typescript" />
+
+      <p>The same <code>exec</code> tool call passes through both layers independently:</p>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">Rules layer</strong>: maps <code>exec</code> to a virtual tool (e.g. <code>git-push</code>), checks blocks, sequences, and rate limits.</li>
+        <li><strong style="color:var(--text-secondary)">Workflow layer</strong>: maps the same <code>exec</code> to a deployment action (e.g. <code>deploy-build</code>), checks the pipeline state.</li>
+      </ul>
+      <p>Each layer has its own <code>toolMapper</code>, its own state, its own verification. Neither interferes with the other. An agent can <code>git push</code> freely when no deployment is active &mdash; the workflow net abstains because <code>git push</code> doesn't map to any <code>deploy-*</code> tool.</p>
+    </div>
+
+    <div class="doc-section" id="verify-it">
+      <h2>Verify it</h2>
+      <p>The formal verification proves three properties that if/then rules cannot express:</p>
+      <Code code={verifyOutput} lang="bash" />
+
+      <DocTable borderless rows={[
+        ["<strong>Deadlock-free</strong>", "From every reachable state, the agent has a valid next step. A deployment can always complete &mdash; the agent is never stuck."],
+        ["<strong>Token conservation</strong>", "Exactly one token exists across all five places at all times. This <em>proves</em> mutual exclusion: only one deployment can be in progress. Not a check &mdash; a mathematical invariant."],
+        ["<strong>Zero terminal states</strong>", "The net always cycles back to <code>idle</code> via promote or rollback. The deploy slot is always eventually restored."],
+      ]} />
+    </div>
+
+    <div class="doc-section" id="see-it-in-action">
+      <h2>See it in action</h2>
+      <p>An agent walks through the deployment pipeline, tries to skip ahead, and handles a rollback:</p>
+
+      <Trace label="// deployment pipeline with mutual exclusion" steps={[
+        { icon: "blocked", html: `Agent calls <strong>deploy stage</strong><br><span class="blocked-text">BLOCKED</span> pipeline is in <code>idle</code> &mdash; must <code>deploy build</code> first` },
+        { icon: "ok", html: `Agent calls <strong>deploy build</strong><br><span class="ok-text">OK</span> token moves idle &rarr; building. Deploy slot consumed.` },
+        { icon: "ok", html: `Agent reads logs, searches docs, fixes a test &mdash; <strong>no restrictions</strong><br><span class="ok-text">FREE</span> non-deployment tools are unconstrained` },
+        { icon: "ok", html: `Agent calls <strong>deploy test</strong><br><span class="ok-text">OK</span> token moves building &rarr; tested` },
+        { icon: "ok", html: `Agent calls <strong>deploy stage</strong><br><span class="ok-text">OK</span> token moves tested &rarr; staged` },
+        { icon: "blocked", html: `Another session tries <strong>deploy build</strong><br><span class="blocked-text">BLOCKED</span> deploy slot is empty &mdash; mutual exclusion` },
+        { icon: "ok", html: `Agent calls <strong>deploy canary</strong><br><span class="ok-text">OK</span> token moves staged &rarr; canary, 5% traffic routed` },
+        { icon: "ok", html: `Metrics look bad &mdash; agent calls <strong>deploy rollback</strong><br><span class="ok-text">ROLLED BACK</span> token returns to idle. Deploy slot restored.` },
+        { icon: "ok", html: `Agent can now start a new deployment &mdash; <strong>deploy build</strong> is available again<br><span class="ok-text">READY</span> full pipeline cycle complete` },
+      ]} />
+
+      <p>Key observations:</p>
+      <ul>
+        <li>The agent is <strong>free between transitions</strong>. It can read files, search the web, debug failures, write code &mdash; the net only constrains deployment actions.</li>
+        <li><strong>Mutual exclusion is structural</strong>. A second deployment is blocked because the token is physically not in <code>idle</code>. No prompt can change this.</li>
+        <li><strong>Rollback restores the token</strong>. The agent isn't stuck after a bad canary &mdash; rollback returns to <code>idle</code> and the cycle can restart.</li>
+        <li>This composes with the rules layer. <code>deploy build</code> also needs to pass any applicable rules (rate limits, etc.).</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="why-not-if-then">
+      <h2>Why not if/then rules?</h2>
+      <p>The <code>.rules</code> DSL from previous tutorials compiles to tiny nets (2&ndash;3 reachable states). They're powerful but stateless &mdash; each rule resets after every cycle. They can't express:</p>
+      <DocTable borderless rows={[
+        ["Mutual exclusion", "A resource token that's consumed and restored. Simple sequence rules reset after each use &mdash; they have no concept of \"in progress.\""],
+        ["Branching", "Two paths from one state (promote OR rollback). Sequence rules are linear: A before B, period."],
+        ["Multi-step state", "A workflow that persists across tool calls. Sequence rules track one prerequisite, not a five-step pipeline."],
+        ["Verified invariants", "\"Exactly one token always\" is a provable invariant. \"The deploy slot is always eventually restored\" is a liveness property. If/then rules don't have a state space to verify."],
+      ]} />
+      <p>This is why PetriFlow uses Petri nets as its core primitive, not a config file. Simple constraints get the simple DSL. Real workflows get the full power of the net. Both compose in the same agent.</p>
+    </div>
+
+    <div class="doc-section" id="concepts">
+      <h2>Concepts</h2>
+      <DocTable borderless rows={[
+        ["Resource tokens", "Places with tokens represent resources (deploy slots, locks, budgets). Transitions consume and produce tokens, modeling resource contention."],
+        ["Mutual exclusion", "A single token in a shared place ensures only one workflow instance at a time. Proved by a place invariant: sum of all place tokens = 1."],
+        ["Workflow branching", "Multiple transitions from one place model non-deterministic outcomes (promote vs rollback). Both restore the resource."],
+        ["Two-layer composition", "Simple rules (DSL) + workflow nets (hand-crafted), composed via AND-logic. Each layer has its own tool mapper and verification."],
+        ["Formal verification", "Deadlock freedom, token conservation, and zero terminal states are mathematical properties of the net, not runtime checks."],
+      ]} />
+    </div>
+
+    <div class="doc-section" id="next-steps">
+      <h2>Next steps</h2>
+      <DocTable borderless rows={[
+        [`<a href="${base}docs/gate/">Gate reference</a>`, "SkillNet type, deferred transitions, toolMapper, and multi-net composition internals."],
+        [`<a href="${base}docs/rules/">Rules Engine reference</a>`, "Full DSL syntax for the simple rules layer."],
+        [`<a href="${base}docs/vercel-ai/">Vercel AI SDK docs</a>`, "Wiring PetriFlow into Vercel AI agents."],
+      ]} />
+    </div>
+
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

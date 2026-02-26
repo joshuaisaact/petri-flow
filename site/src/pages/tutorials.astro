@@ -80,6 +80,24 @@ const tutorials = [
       "Production-scale safety",
     ],
   },
+  {
+    href: `${base}docs/tutorial-workflow-safety/`,
+
+    title: "Beyond Rules: Workflow Safety",
+    description: "A deployment pipeline with resource tokens, branching, and verified mutual exclusion.",
+    rules: [
+      `<span class="comment"># Not rules — a hand-crafted Petri net</span>`,
+      `${str("[idle:1]")} → build → ${str("[building]")}`,
+      `  → test → stage → canary`,
+      `  → ${kw("promote")} | ${kw("rollback")} → ${str("[idle]")}`,
+    ].join("\n"),
+    concepts: [
+      "Resource tokens",
+      "Mutual exclusion",
+      "Workflow branching",
+      "Formal verification",
+    ],
+  },
 ];
 ---
 <Layout title="Tutorials — PetriFlow" description="Step-by-step tutorials for building safe AI agents with PetriFlow. Learn sequencing, blocking, human approval gates, rate limits, and tool mapping.">
