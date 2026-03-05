@@ -1,25 +1,27 @@
 {
   "name": "@petriflow/rules",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "keywords": ["petri-net", "ai-agent", "guardrails", "dsl", "rules-engine", "safety"],
   "files": ["dist", "README.md"],
   "scripts": {
     "test": "bun test",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
     "check": "tsc --noEmit",
     "lint": "oxlint src/"
   },
   "dependencies": {
-    "@petriflow/gate": "workspace:*",
+    "@petriflow/gate": "^0.1.2",
     "petri-ts": "^0.1.5"
   },
   "license": "MIT",

@@ -1,36 +1,42 @@
 {
   "name": "@petriflow/engine",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./analyse": {
       "types": "./dist/analyse.d.ts",
-      "default": "./dist/analyse.js"
+      "import": "./dist/analyse.js",
+      "require": "./dist/analyse.cjs"
     },
     "./workflow": {
       "types": "./dist/workflow.d.ts",
-      "default": "./dist/workflow.js"
+      "import": "./dist/workflow.js",
+      "require": "./dist/workflow.cjs"
     },
     "./types": {
       "types": "./dist/types.d.ts",
-      "default": "./dist/types.js"
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs"
     },
     "./decision": {
       "types": "./dist/decision.d.ts",
-      "default": "./dist/decision.js"
+      "import": "./dist/decision.js",
+      "require": "./dist/decision.cjs"
     }
   },
   "keywords": ["petri-net", "workflow", "state-machine", "formal-verification", "ai-agent", "guardrails"],
   "files": ["dist", "README.md"],
   "scripts": {
     "test": "bun test",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
     "check": "tsc --noEmit",
     "lint": "oxlint src/"
   },

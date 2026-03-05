@@ -1,29 +1,32 @@
 {
   "name": "@petriflow/vercel-ai",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./nets/tool-approval": {
       "types": "./dist/nets/tool-approval.d.ts",
-      "default": "./dist/nets/tool-approval.js"
+      "import": "./dist/nets/tool-approval.js",
+      "require": "./dist/nets/tool-approval.cjs"
     }
   },
   "keywords": ["petri-net", "vercel-ai", "ai-agent", "guardrails", "tool-use", "safety"],
   "files": ["dist", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
     "test": "bun test",
     "check": "tsc --noEmit",
     "lint": "oxlint src/"
   },
   "dependencies": {
-    "@petriflow/gate": "workspace:*"
+    "@petriflow/gate": "^0.1.2"
   },
   "peerDependencies": {
     "ai": "^6.0.0"

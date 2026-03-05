@@ -12,6 +12,7 @@
   },
   "packageManager": "bun@1.2.7",
   "devDependencies": {
+    "tsup": "^8",
     "turbo": "^2",
     "typescript": "^5.7",
     "@types/bun": "^1"
