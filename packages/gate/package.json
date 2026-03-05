@@ -1,6 +1,6 @@
 {
   "name": "@petriflow/gate",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -21,7 +21,7 @@
     "lint": "oxlint src/"
   },
   "dependencies": {
-    "@petriflow/engine": "^0.1.2"
+    "@petriflow/engine": "^0.1.3"
   },
   "license": "MIT",
   "repository": {
