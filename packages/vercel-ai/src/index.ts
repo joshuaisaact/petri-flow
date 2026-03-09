@@ -59,7 +59,10 @@ export function createPetriflowGate(
       }
 
       return {
-        tools: wrapToolsInternal(tools, manager, ctx, opts.transformBlockReason, opts.isToolResultError),
+        tools: wrapToolsInternal(tools, manager, ctx, {
+          transformBlockReason: opts.transformBlockReason,
+          isToolResultError: opts.isToolResultError,
+        }),
         systemPrompt: () => manager.formatSystemPrompt(),
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),

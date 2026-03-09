@@ -346,4 +346,44 @@ describe("isToolResultError (gate-level)", () => {
     const result = await session.tools.deploy.execute({}, { toolCallId: "c2" });
     expect(result).toBe("deployed");
   });
+
+  it("live: callback throwing treats result as error (fail-closed)", async () => {
+    const gate = createPetriflowGate([net], {
+      isToolResultError: () => { throw new Error("callback bug"); },
+    });
+
+    const testTool = { execute: async (_input: unknown, _opts: { toolCallId: string }) => "ok" };
+    const deployTool = { execute: async (_input: unknown, _opts: { toolCallId: string }) => "deployed" };
+    const session = gate.wrapTools({ test: testTool, deploy: deployTool });
+
+    // Tool executes fine, but callback throws — treated as error
+    const result = await session.tools.test.execute({}, { toolCallId: "c1" });
+    expect(result).toBe("ok");
+
+    // Deferred transition should NOT have fired
+    try {
+      await session.tools.deploy.execute({}, { toolCallId: "c2" });
+      expect.unreachable("should have thrown");
+    } catch (e) {
+      expect((e as Error).message).toContain("blocked");
+    }
+  });
+
+  it("replay: callback throwing treats result as error (fail-closed)", () => {
+    const gate = createPetriflowGate([net], {
+      isToolResultError: () => { throw new Error("callback bug"); },
+    });
+
+    const session = gate.wrapTools(toolDefs, {
+      messages: [
+        { role: "assistant", content: [{ type: "tool-call", toolCallId: "c1", toolName: "test", input: {} }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "test", output: "ok" }] },
+      ],
+    });
+
+    // Callback threw during replay — treated as error, transition didn't fire
+    const state = session.manager.getActiveNets()[0]!;
+    expect(state.state.marking.ready).toBe(1);
+    expect(state.state.marking.tested).toBe(0);
+  });
 });

@@ -20,12 +20,16 @@ type Tool = {
  * Note: tool execution is not wrapped with a timeout. If `execute` hangs,
  * `handleToolResult` is never called and the net state will stall.
  */
+type WrapToolsOpts = {
+  transformBlockReason?: (toolName: string, reason: string) => string;
+  isToolResultError: (toolName: string, result: unknown) => boolean;
+};
+
 export function wrapTools<T extends Record<string, Tool>>(
   tools: T,
   manager: GateManager,
   ctx: GateContext,
-  transformBlockReason?: (toolName: string, reason: string) => string,
-  isToolResultError?: (toolName: string, result: unknown) => boolean,
+  opts: WrapToolsOpts,
 ): T {
   const wrapped = {} as Record<string, Tool>;
 
@@ -50,13 +54,21 @@ export function wrapTools<T extends Record<string, Tool>>(
         );
 
         if (decision?.block) {
-          const reason = transformBlockReason ? transformBlockReason(name, decision.reason) : decision.reason;
+          const reason = opts.transformBlockReason ? opts.transformBlockReason(name, decision.reason) : decision.reason;
           throw new ToolCallBlockedError(name, toolCallId, reason);
         }
 
         try {
           const result = await originalExecute(input, options);
-          const isError = isToolResultError ? isToolResultError(name, result) : false;
+          let isError = false;
+          if (opts.isToolResultError) {
+            try {
+              isError = opts.isToolResultError(name, result);
+            } catch {
+              // Callback threw — treat as error to avoid advancing on unknown state
+              isError = true;
+            }
+          }
           manager.handleToolResult({
             toolCallId,
             toolName: name,

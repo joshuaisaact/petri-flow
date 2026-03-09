@@ -13,7 +13,7 @@ type ToolResultPart = {
   type: "tool-result";
   toolCallId: string;
   toolName: string;
-  output: { type: string } | unknown;
+  output: unknown;
 };
 
 function isToolCallPart(part: unknown): part is ToolCallPart {
@@ -99,9 +99,15 @@ export function extractReplayEntries(
       for (const part of msg.content) {
         if (isToolResultPart(part)) {
           const builtinError = isErrorResult(part);
-          const customError = !builtinError && opts?.isToolResultError
-            ? opts.isToolResultError(part.toolName, part.output)
-            : false;
+          let customError = false;
+          if (!builtinError && opts?.isToolResultError) {
+            try {
+              customError = opts.isToolResultError(part.toolName, part.output);
+            } catch {
+              // Callback threw — treat as error to avoid advancing on unknown state
+              customError = true;
+            }
+          }
           entries.push({
             toolName: part.toolName,
             input: callInputs.get(part.toolCallId),
