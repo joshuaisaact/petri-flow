@@ -181,6 +181,32 @@ describe("manager.replay", () => {
     expect(state.state.marking.ready).toBe(1);
   });
 
+  it("calls onDeferredResult for deferred transitions", () => {
+    const calls: { resolved: string; input: Record<string, unknown> }[] = [];
+    const deferredNet = defineSkillNet({
+      name: "deferred-callback",
+      places: ["idle", "done"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { idle: 1, done: 0 },
+      transitions: [
+        { name: "do-thing", type: "auto" as const, inputs: ["idle"], outputs: ["done"], tools: ["thing"], deferred: true },
+      ],
+      onDeferredResult(event, resolvedTool, _transition, state) {
+        calls.push({ resolved: resolvedTool, input: event.input });
+        state.meta.recorded = true;
+      },
+    });
+
+    const manager = createGateManager([deferredNet]);
+    manager.replay([{ toolName: "thing", input: { key: "val" }, isError: false }]);
+
+    expect(calls).toEqual([{ resolved: "thing", input: { key: "val" } }]);
+    const state = manager.getActiveNets()[0]!;
+    expect(state.state.meta.recorded).toBe(true);
+    expect(state.state.marking.done).toBe(1);
+  });
+
   it("works with registry mode", () => {
     const manager = createGateManager({
       registry: { seq: sequenceNet, multi: multiStepNet },

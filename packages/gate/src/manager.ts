@@ -93,6 +93,16 @@ function replayNets(
       const transition = matching[0]!;
       if (canFire(state.marking, transition)) {
         state.marking = fire(state.marking, transition);
+
+        if (transition.deferred && net.onDeferredResult) {
+          net.onDeferredResult(
+            { toolCallId: `replay-${i}`, input: entry.input ?? {}, isError: false },
+            resolved,
+            transition,
+            state,
+          );
+        }
+
         state.marking = autoAdvance(net, state.marking);
       }
     }
