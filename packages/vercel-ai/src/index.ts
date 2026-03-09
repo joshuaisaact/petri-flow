@@ -1,7 +1,8 @@
 import { createGateManager } from "@petriflow/gate";
-import type { ComposeConfig, GateManagerOptions, SkillNet } from "@petriflow/gate";
+import type { ComposeConfig, GateManagerOptions, ReplayEntry, SkillNet } from "@petriflow/gate";
 import { wrapTools as wrapToolsInternal } from "./wrap-tools.js";
 import type { GateContext } from "@petriflow/gate";
+import { extractReplayEntries } from "./replay.js";
 
 type GateOptions = Omit<GateManagerOptions, "mode"> & {
   mode?: GateManagerOptions["mode"];
@@ -9,6 +10,11 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
   confirm?: (title: string, message: string) => Promise<boolean>;
   /** Transform block reasons before they reach the model. Receives the default constraint message. */
   transformBlockReason?: (toolName: string, reason: string) => string;
+};
+
+type WrapToolsOptions = {
+  /** Initialize gate state from existing conversation history. */
+  messages?: { role: string; content: unknown }[];
 };
 
 export function createPetriflowGate(nets: SkillNet<string>[], opts?: GateOptions): PetriflowGate;
@@ -27,8 +33,13 @@ export function createPetriflowGate(
   };
 
   return {
-    wrapTools: <T extends Record<string, any>>(tools: T): GateSession<T> => {
+    wrapTools: <T extends Record<string, any>>(tools: T, wrapOpts?: WrapToolsOptions): GateSession<T> => {
       const manager = createGateManager(input, managerOpts);
+
+      if (wrapOpts?.messages) {
+        manager.replay(extractReplayEntries(wrapOpts.messages));
+      }
+
       return {
         tools: wrapToolsInternal(tools, manager, ctx, opts?.transformBlockReason),
         systemPrompt: () => manager.formatSystemPrompt(),
@@ -51,11 +62,11 @@ export type GateSession<T extends Record<string, any> = Record<string, any>> = {
 };
 
 export type PetriflowGate = {
-  wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
+  wrapTools: <T extends Record<string, any>>(tools: T, opts?: WrapToolsOptions) => GateSession<T>;
 };
 
 // Re-export gate types for convenience
-export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, RuleMetadata } from "@petriflow/gate";
+export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, ReplayEntry, RuleMetadata } from "@petriflow/gate";
 export { defineSkillNet, createGateManager } from "@petriflow/gate";
 
 // Re-export errors

@@ -184,7 +184,10 @@ const gateOptionsType = `type GateOptions = {
 };`;
 
 const petriflowGateType = `type PetriflowGate = {
-  wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
+  wrapTools: <T extends Record<string, any>>(
+    tools: T,
+    opts?: { messages?: { role: string; content: unknown }[] },
+  ) => GateSession<T>;
 };
 
 type GateSession<T> = {
@@ -207,6 +210,44 @@ const ruleMetadataType = `type RuleMetadata =
   | { kind: "approval"; tool: string }
   | { kind: "block"; tool: string }
   | { kind: "limit"; tool: string; limit: number; scope: "session" | string };`;
+
+const replayExample = `// The AI SDK is stateless — each generateText call takes the full
+// message history. Gate state is derived from that same history.
+
+const gate = createPetriflowGate(nets);
+
+async function handleRequest(messages: ModelMessage[]) {
+  // Pass messages to initialize gate state from conversation history
+  const session = gate.wrapTools(myTools, { messages });
+
+  return generateText({
+    model: openai("gpt-4o"),
+    tools: session.tools,
+    system: session.systemPrompt(),
+    messages,
+  });
+}`;
+
+const replayLowLevelExample = `// Framework-agnostic: replay from known tool names
+manager.replay(["lint", "test"]);
+
+// With full entries (for toolMapper resolution)
+manager.replay([
+  { toolName: "bash", input: { command: "cp file backup" }, isError: false },
+  { toolName: "bash", input: { command: "rm file" }, isError: false },
+]);
+
+// Failed tools are skipped — deferred transitions don't advance
+manager.replay([
+  { toolName: "test", isError: true },   // skipped
+  { toolName: "test", isError: false },   // fires
+]);`;
+
+const replayEntryType = `type ReplayEntry = {
+  toolName: string;
+  input?: Record<string, unknown>;
+  isError: boolean;
+};`;
 
 const bundledNetExample = `import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai";
 // or: import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai/nets/tool-approval";
@@ -242,6 +283,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <a href="#manual-confirmation">Manual confirmation</a>
         <a href="#shadow-mode">Shadow mode</a>
         <a href="#registry-mode">Registry mode</a>
+        <a href="#replay">Replay</a>
         <a href="#error-handling">Error handling</a>
         <a href="#api-reference">API reference</a>
       </nav>
@@ -310,6 +352,19 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <p>Use this when your agent's permissions change mid-session: escalating privileges after authentication, enabling deploy rules only during a release window, or disabling rate limits for admin users.</p>
     </div>
 
+    <!-- Replay -->
+    <div class="doc-section" id="replay">
+      <h2>Replay</h2>
+      <p>The AI SDK is stateless — <code>generateText</code> and <code>streamText</code> take the full message history each call. There's no built-in session persistence. Pass <code>messages</code> to <code>wrapTools</code> and the gate derives its state from the same history.</p>
+      <Code code={replayExample} lang="typescript" />
+      <p>For long-lived connections (SSE, WebSocket) where you hold the session in memory, you can omit <code>messages</code> — the wrapped tools track state automatically during execution.</p>
+      <h3>Low-level replay</h3>
+      <p>Use <code>manager.replay()</code> directly when you already know which tools completed, or when you need to pass <code>input</code> for <code>toolMapper</code> resolution.</p>
+      <Code code={replayLowLevelExample} lang="typescript" />
+      <p>Replay is idempotent — if a transition has already fired or can't fire, it's skipped silently. Failed tool results (<code>isError: true</code>) are skipped so deferred transitions don't advance on failure.</p>
+      <p><strong>Security note:</strong> replay treats the message history as authoritative. If messages are round-tripped through the client, a caller could forge tool results to unlock gated tools. Use server-persisted message history for replay — the same best practice the AI SDK recommends for any stateless setup.</p>
+    </div>
+
     <!-- Error handling -->
     <div class="doc-section" id="error-handling">
       <h2>Error handling</h2>
@@ -338,7 +393,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <h3><code>PetriflowGate</code></h3>
       <Code code={petriflowGateType} lang="typescript" />
       <ul>
-        <li><strong style="color:var(--text-secondary)">wrapTools(tools)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns a <code>GateSession</code> containing the wrapped tools, prompt helpers, and net management methods. Each call creates fresh state, so the gate itself is stateless and safe to share.</li>
+        <li><strong style="color:var(--text-secondary)">wrapTools(tools, opts?)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns a <code>GateSession</code> containing the wrapped tools, prompt helpers, and net management methods. Each call creates fresh state. Pass <code>{"{"} messages {"}"}</code> to initialize gate state from conversation history.</li>
       </ul>
 
       <h3><code>GateSession</code></h3>
@@ -349,6 +404,14 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <li><strong style="color:var(--text-secondary)">addNet(name)</strong>: registry mode only. Activates a registered net.</li>
         <li><strong style="color:var(--text-secondary)">removeNet(name)</strong>: registry mode only. Deactivates a net. State is preserved for later reactivation.</li>
         <li><strong style="color:var(--text-secondary)">manager</strong>: the underlying <code>GateManager</code> instance. Useful for advanced introspection or custom integrations.</li>
+      </ul>
+
+      <h3><code>ReplayEntry</code></h3>
+      <Code code={replayEntryType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">toolName</strong>: the tool that was called</li>
+        <li><strong style="color:var(--text-secondary)">input</strong>: optional tool input, used for <code>toolMapper</code> resolution. <code>replayFromMessages</code> populates this automatically from the message history.</li>
+        <li><strong style="color:var(--text-secondary)">isError</strong>: if <code>true</code>, the entry is skipped (deferred transitions don't advance on failure)</li>
       </ul>
 
       <h3><code>ToolCallBlockedError</code></h3>

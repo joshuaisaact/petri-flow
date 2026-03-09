@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.1 — @petriflow/gate, @petriflow/vercel-ai
+
+### Replay: derive gate state from message history
+
+The AI SDK is stateless — each `generateText`/`streamText` call takes the full message history. Gate state should be derived from that same history. `replayFromMessages` is the primary integration pattern for stateless request handlers.
+
+- `@petriflow/gate`: `manager.replay(entries)` advances markings from completed tool results. Accepts `ReplayEntry[]` or `string[]` (successful tool names). Idempotent — skips transitions that can't fire.
+- `@petriflow/vercel-ai`: `wrapTools` accepts `{ messages }` to initialize gate state from conversation history.
+
+```typescript
+const session = gate.wrapTools(myTools, { messages });
+const result = await generateText({ tools: session.tools, messages });
+```
+
 ## 0.3.0 — @petriflow/gate, @petriflow/rules, @petriflow/vercel-ai
 
 ### Breaking: constraint-stating block reasons
