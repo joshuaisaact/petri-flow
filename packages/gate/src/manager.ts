@@ -1,3 +1,4 @@
+import { canFire, fire } from "@petriflow/engine";
 import type { GateToolCall, GateToolResult, GateContext, GateDecision } from "./events.js";
 import type { SkillNet } from "./types.js";
 import type { GateState } from "./gate.js";
@@ -6,14 +7,29 @@ import {
   formatMarking,
   getEnabledToolTransitions,
   handleToolResult as handleToolResultSingle,
+  resolveTool,
 } from "./gate.js";
 import { autoAdvance } from "./advance.js";
 import { composedToolCall } from "./compose.js";
 import type { ComposeConfig } from "./compose.js";
 
+export type ReplayEntry = {
+  toolName: string;
+  input?: Record<string, unknown>;
+  isError: boolean;
+};
+
 export type GateManager = {
   handleToolCall: (event: GateToolCall, ctx: GateContext) => Promise<GateDecision>;
   handleToolResult: (event: GateToolResult) => void;
+  /**
+   * Replay a sequence of completed tool results to advance net state.
+   * Skips failed results (isError: true). Idempotent — if a transition
+   * can't fire (already advanced past it), it is skipped silently.
+   * Accepts an array of ReplayEntry objects or plain tool name strings
+   * (treated as successful calls).
+   */
+  replay: (entries: ReplayEntry[] | string[]) => void;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
   getActiveNets: () => Array<{ name: string; net: SkillNet<string>; state: GateState<string> }>;
@@ -48,6 +64,41 @@ export function createGateManager(input: SkillNet<string>[] | ComposeConfig, opt
   return manager;
 }
 
+function normalizeEntries(entries: ReplayEntry[] | string[]): ReplayEntry[] {
+  if (entries.length === 0) return [];
+  if (typeof entries[0] === "string") {
+    return (entries as string[]).map((toolName) => ({ toolName, isError: false }));
+  }
+  return entries as ReplayEntry[];
+}
+
+function replayNets(
+  nets: SkillNet<string>[],
+  states: GateState<string>[],
+  entries: ReplayEntry[],
+): void {
+  for (const entry of entries) {
+    if (entry.isError) continue;
+    for (let i = 0; i < nets.length; i++) {
+      const net = nets[i]!;
+      const state = states[i]!;
+      const resolved = resolveTool(net, { toolName: entry.toolName, input: entry.input ?? {} });
+
+      if (net.freeTools.includes(resolved)) continue;
+
+      const enabled = getEnabledToolTransitions(net, state.marking);
+      const matching = enabled.filter((t) => t.tools!.includes(resolved));
+      if (matching.length === 0) continue;
+
+      const transition = matching[0]!;
+      if (canFire(state.marking, transition)) {
+        state.marking = fire(state.marking, transition);
+        state.marking = autoAdvance(net, state.marking);
+      }
+    }
+  }
+}
+
 function createArrayManager(nets: SkillNet<string>[]): GateManager {
   const states = nets.map((net) =>
     createGateState(autoAdvance(net, { ...net.initialMarking })),
@@ -65,6 +116,10 @@ function createArrayManager(nets: SkillNet<string>[]): GateManager {
       for (let i = 0; i < nets.length; i++) {
         handleToolResultSingle(event, nets[i]!, states[i]!);
       }
+    },
+
+    replay(entries) {
+      replayNets(nets, states, normalizeEntries(entries));
     },
 
     addNet() {
@@ -120,6 +175,12 @@ function createRegistryManager(config: ComposeConfig): GateManager {
       for (const { net, state } of registry.values()) {
         handleToolResultSingle(event, net, state);
       }
+    },
+
+    replay(entries) {
+      const activeNets = getActiveNets();
+      const activeStates = getActiveStates();
+      replayNets(activeNets, activeStates, normalizeEntries(entries));
     },
 
     addNet(name) {

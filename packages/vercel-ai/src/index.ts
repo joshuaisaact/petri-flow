@@ -1,7 +1,8 @@
 import { createGateManager } from "@petriflow/gate";
-import type { ComposeConfig, GateManagerOptions, SkillNet } from "@petriflow/gate";
+import type { ComposeConfig, GateManagerOptions, ReplayEntry, SkillNet } from "@petriflow/gate";
 import { wrapTools as wrapToolsInternal } from "./wrap-tools.js";
 import type { GateContext } from "@petriflow/gate";
+import { extractReplayEntries } from "./replay.js";
 
 type GateOptions = Omit<GateManagerOptions, "mode"> & {
   mode?: GateManagerOptions["mode"];
@@ -35,6 +36,10 @@ export function createPetriflowGate(
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),
         removeNet: (name: string) => manager.removeNet(name),
+        replay: (entries: ReplayEntry[] | string[]) => manager.replay(entries),
+        replayFromMessages: (messages: { role: string; content: unknown }[]) => {
+          manager.replay(extractReplayEntries(messages));
+        },
         manager,
       };
     },
@@ -47,6 +52,10 @@ export type GateSession<T extends Record<string, any> = Record<string, any>> = {
   formatStatus: () => string;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
+  /** Replay tool results to advance net state. Accepts ReplayEntry[] or string[] of successful tool names. */
+  replay: (entries: ReplayEntry[] | string[]) => void;
+  /** Extract tool results from Vercel AI SDK message history and replay them. */
+  replayFromMessages: (messages: { role: string; content: unknown }[]) => void;
   manager: ReturnType<typeof createGateManager>;
 };
 
@@ -55,7 +64,7 @@ export type PetriflowGate = {
 };
 
 // Re-export gate types for convenience
-export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, RuleMetadata } from "@petriflow/gate";
+export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, ReplayEntry, RuleMetadata } from "@petriflow/gate";
 export { defineSkillNet, createGateManager } from "@petriflow/gate";
 
 // Re-export errors
