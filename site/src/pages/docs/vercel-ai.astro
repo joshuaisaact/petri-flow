@@ -184,15 +184,16 @@ const gateOptionsType = `type GateOptions = {
 };`;
 
 const petriflowGateType = `type PetriflowGate = {
-  wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
+  wrapTools: <T extends Record<string, any>>(
+    tools: T,
+    opts?: { messages?: { role: string; content: unknown }[] },
+  ) => GateSession<T>;
 };
 
 type GateSession<T> = {
   tools: T;
   systemPrompt: () => string;
   formatStatus: () => string;
-  replay: (entries: ReplayEntry[] | string[]) => void;
-  replayFromMessages: (messages: { role: string; content: unknown }[]) => void;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
   manager: GateManager;
@@ -211,17 +212,14 @@ const ruleMetadataType = `type RuleMetadata =
   | { kind: "limit"; tool: string; limit: number; scope: "session" | string };`;
 
 const replayExample = `// The AI SDK is stateless — each generateText call takes the full
-// message history. Gate state must be derived from that history too.
+// message history. Gate state is derived from that same history.
 
 const gate = createPetriflowGate(nets);
 
 async function handleRequest(messages: ModelMessage[]) {
-  const session = gate.wrapTools(myTools);
+  // Pass messages to initialize gate state from conversation history
+  const session = gate.wrapTools(myTools, { messages });
 
-  // Derive gate state from conversation history
-  session.replayFromMessages(messages);
-
-  // Now the gate knows which tools have already fired
   return generateText({
     model: openai("gpt-4o"),
     tools: session.tools,
@@ -231,16 +229,16 @@ async function handleRequest(messages: ModelMessage[]) {
 }`;
 
 const replayLowLevelExample = `// Framework-agnostic: replay from known tool names
-session.replay(["lint", "test"]);
+manager.replay(["lint", "test"]);
 
 // With full entries (for toolMapper resolution)
-session.replay([
+manager.replay([
   { toolName: "bash", input: { command: "cp file backup" }, isError: false },
   { toolName: "bash", input: { command: "rm file" }, isError: false },
 ]);
 
 // Failed tools are skipped — deferred transitions don't advance
-session.replay([
+manager.replay([
   { toolName: "test", isError: true },   // skipped
   { toolName: "test", isError: false },   // fires
 ]);`;
@@ -357,12 +355,11 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
     <!-- Replay -->
     <div class="doc-section" id="replay">
       <h2>Replay</h2>
-      <p>The AI SDK is stateless — <code>generateText</code> and <code>streamText</code> take the full message history each call. There's no built-in session persistence. Gate state needs to be initialized from that same history.</p>
-      <p><code>replayFromMessages</code> extracts completed tool results from the conversation and advances the net to match. This is the primary integration pattern for stateless setups, which is most AI SDK usage.</p>
+      <p>The AI SDK is stateless — <code>generateText</code> and <code>streamText</code> take the full message history each call. There's no built-in session persistence. Pass <code>messages</code> to <code>wrapTools</code> and the gate derives its state from the same history.</p>
       <Code code={replayExample} lang="typescript" />
-      <p>For long-lived connections (SSE, WebSocket) where you hold the session in memory, replay isn't needed — the wrapped tools track state automatically via <code>handleToolCall</code>/<code>handleToolResult</code> during execution.</p>
+      <p>For long-lived connections (SSE, WebSocket) where you hold the session in memory, you can omit <code>messages</code> — the wrapped tools track state automatically during execution.</p>
       <h3>Low-level replay</h3>
-      <p>Use <code>replay()</code> directly when you already know which tools completed, or when you need to pass <code>input</code> for <code>toolMapper</code> resolution.</p>
+      <p>Use <code>manager.replay()</code> directly when you already know which tools completed, or when you need to pass <code>input</code> for <code>toolMapper</code> resolution.</p>
       <Code code={replayLowLevelExample} lang="typescript" />
       <p>Replay is idempotent — if a transition has already fired or can't fire, it's skipped silently. Failed tool results (<code>isError: true</code>) are skipped so deferred transitions don't advance on failure.</p>
     </div>
@@ -395,7 +392,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <h3><code>PetriflowGate</code></h3>
       <Code code={petriflowGateType} lang="typescript" />
       <ul>
-        <li><strong style="color:var(--text-secondary)">wrapTools(tools)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns a <code>GateSession</code> containing the wrapped tools, prompt helpers, and net management methods. Each call creates fresh state, so the gate itself is stateless and safe to share.</li>
+        <li><strong style="color:var(--text-secondary)">wrapTools(tools, opts?)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns a <code>GateSession</code> containing the wrapped tools, prompt helpers, and net management methods. Each call creates fresh state. Pass <code>{"{"} messages {"}"}</code> to initialize gate state from conversation history.</li>
       </ul>
 
       <h3><code>GateSession</code></h3>
@@ -403,8 +400,6 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <li><strong style="color:var(--text-secondary)">tools</strong>: the wrapped tools, same type as the input. Use these in <code>generateText</code> / <code>streamText</code>.</li>
         <li><strong style="color:var(--text-secondary)">systemPrompt()</strong>: returns a formatted prompt describing active nets, gated tools, and current state. Pass this to the model so it knows the constraints.</li>
         <li><strong style="color:var(--text-secondary)">formatStatus()</strong>: returns the current marking of all nets. Useful for debugging.</li>
-        <li><strong style="color:var(--text-secondary)">replay(entries)</strong>: advance net state from completed tool results. Accepts <code>ReplayEntry[]</code> or <code>string[]</code> of successful tool names. Idempotent.</li>
-        <li><strong style="color:var(--text-secondary)">replayFromMessages(messages)</strong>: extract tool results from Vercel AI SDK message history and replay them. The primary way to initialize gate state for stateless request handlers.</li>
         <li><strong style="color:var(--text-secondary)">addNet(name)</strong>: registry mode only. Activates a registered net.</li>
         <li><strong style="color:var(--text-secondary)">removeNet(name)</strong>: registry mode only. Deactivates a net. State is preserved for later reactivation.</li>
         <li><strong style="color:var(--text-secondary)">manager</strong>: the underlying <code>GateManager</code> instance. Useful for advanced introspection or custom integrations.</li>

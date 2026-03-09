@@ -3,10 +3,6 @@ import { defineSkillNet } from "../types.js";
 import { createGateManager } from "../manager.js";
 import type { GateContext } from "../events.js";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function makeCtx(): GateContext {
   return { hasUI: false, confirm: async () => false };
 }
@@ -57,10 +53,6 @@ const mapperNet = defineSkillNet({
     { name: "do-delete", type: "auto" as const, inputs: ["backed-up"], outputs: ["backed-up"], tools: ["delete"] },
   ],
 });
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe("manager.replay", () => {
   it("advances marking through a sequence", () => {

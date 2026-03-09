@@ -12,6 +12,11 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
   transformBlockReason?: (toolName: string, reason: string) => string;
 };
 
+type WrapToolsOptions = {
+  /** Initialize gate state from existing conversation history. */
+  messages?: { role: string; content: unknown }[];
+};
+
 export function createPetriflowGate(nets: SkillNet<string>[], opts?: GateOptions): PetriflowGate;
 export function createPetriflowGate(config: ComposeConfig, opts?: GateOptions): PetriflowGate;
 export function createPetriflowGate(
@@ -28,18 +33,19 @@ export function createPetriflowGate(
   };
 
   return {
-    wrapTools: <T extends Record<string, any>>(tools: T): GateSession<T> => {
+    wrapTools: <T extends Record<string, any>>(tools: T, wrapOpts?: WrapToolsOptions): GateSession<T> => {
       const manager = createGateManager(input, managerOpts);
+
+      if (wrapOpts?.messages) {
+        manager.replay(extractReplayEntries(wrapOpts.messages));
+      }
+
       return {
         tools: wrapToolsInternal(tools, manager, ctx, opts?.transformBlockReason),
         systemPrompt: () => manager.formatSystemPrompt(),
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),
         removeNet: (name: string) => manager.removeNet(name),
-        replay: (entries: ReplayEntry[] | string[]) => manager.replay(entries),
-        replayFromMessages: (messages: { role: string; content: unknown }[]) => {
-          manager.replay(extractReplayEntries(messages));
-        },
         manager,
       };
     },
@@ -52,15 +58,11 @@ export type GateSession<T extends Record<string, any> = Record<string, any>> = {
   formatStatus: () => string;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
-  /** Replay tool results to advance net state. Accepts ReplayEntry[] or string[] of successful tool names. */
-  replay: (entries: ReplayEntry[] | string[]) => void;
-  /** Extract tool results from Vercel AI SDK message history and replay them. */
-  replayFromMessages: (messages: { role: string; content: unknown }[]) => void;
   manager: ReturnType<typeof createGateManager>;
 };
 
 export type PetriflowGate = {
-  wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
+  wrapTools: <T extends Record<string, any>>(tools: T, opts?: WrapToolsOptions) => GateSession<T>;
 };
 
 // Re-export gate types for convenience

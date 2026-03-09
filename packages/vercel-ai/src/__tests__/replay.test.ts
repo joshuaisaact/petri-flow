@@ -121,63 +121,76 @@ describe("extractReplayEntries", () => {
   });
 });
 
-describe("session.replayFromMessages", () => {
-  const net = defineSkillNet({
-    name: "test-net",
-    places: ["ready", "tested"],
-    terminalPlaces: [],
-    freeTools: ["read"],
-    initialMarking: { ready: 1, tested: 0 },
-    transitions: [
-      { name: "run-test", type: "auto" as const, inputs: ["ready"], outputs: ["tested"], tools: ["test"], deferred: true },
-      { name: "run-deploy", type: "auto" as const, inputs: ["tested"], outputs: ["tested"], tools: ["deploy"] },
-    ],
-  });
+const net = defineSkillNet({
+  name: "test-net",
+  places: ["ready", "tested"],
+  terminalPlaces: [],
+  freeTools: ["read"],
+  initialMarking: { ready: 1, tested: 0 },
+  transitions: [
+    { name: "run-test", type: "auto" as const, inputs: ["ready"], outputs: ["tested"], tools: ["test"], deferred: true },
+    { name: "run-deploy", type: "auto" as const, inputs: ["tested"], outputs: ["tested"], tools: ["deploy"] },
+  ],
+});
 
-  it("replays from Vercel AI message history", () => {
+const toolDefs = {
+  test: { execute: async () => "ok" },
+  deploy: { execute: async () => "ok" },
+};
+
+describe("wrapTools with messages", () => {
+  it("initializes gate state from message history", () => {
     const gate = createPetriflowGate([net]);
-    const session = gate.wrapTools({ test: { execute: async () => "ok" }, deploy: { execute: async () => "ok" } });
-
-    session.replayFromMessages([
-      {
-        role: "assistant",
-        content: [
-          { type: "tool-call", toolCallId: "c1", toolName: "test", input: {} },
-        ],
-      },
-      {
-        role: "tool",
-        content: [
-          { type: "tool-result", toolCallId: "c1", toolName: "test", output: { type: "text", value: "ok" } },
-        ],
-      },
-    ]);
+    const session = gate.wrapTools(toolDefs, {
+      messages: [
+        {
+          role: "assistant",
+          content: [
+            { type: "tool-call", toolCallId: "c1", toolName: "test", input: {} },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            { type: "tool-result", toolCallId: "c1", toolName: "test", output: { type: "text", value: "ok" } },
+          ],
+        },
+      ],
+    });
 
     const state = session.manager.getActiveNets()[0]!;
     expect(state.state.marking.tested).toBe(1);
   });
 
-  it("skips error results during replay", () => {
+  it("skips error results", () => {
     const gate = createPetriflowGate([net]);
-    const session = gate.wrapTools({ test: { execute: async () => "ok" } });
-
-    session.replayFromMessages([
-      {
-        role: "assistant",
-        content: [
-          { type: "tool-call", toolCallId: "c1", toolName: "test", input: {} },
-        ],
-      },
-      {
-        role: "tool",
-        content: [
-          { type: "tool-result", toolCallId: "c1", toolName: "test", output: { type: "error-text", value: "fail" } },
-        ],
-      },
-    ]);
+    const session = gate.wrapTools(toolDefs, {
+      messages: [
+        {
+          role: "assistant",
+          content: [
+            { type: "tool-call", toolCallId: "c1", toolName: "test", input: {} },
+          ],
+        },
+        {
+          role: "tool",
+          content: [
+            { type: "tool-result", toolCallId: "c1", toolName: "test", output: { type: "error-text", value: "fail" } },
+          ],
+        },
+      ],
+    });
 
     const state = session.manager.getActiveNets()[0]!;
     expect(state.state.marking.ready).toBe(1);
     expect(state.state.marking.tested).toBe(0);
+  });
+
+  it("works without messages option", () => {
+    const gate = createPetriflowGate([net]);
+    const session = gate.wrapTools(toolDefs);
+
+    const state = session.manager.getActiveNets()[0]!;
+    expect(state.state.marking.ready).toBe(1);
   });
 });
