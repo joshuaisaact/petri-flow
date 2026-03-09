@@ -13,6 +13,7 @@ console.log("Loaded rules:", verification);
 
 // Create the gate with auto-approve for human-approval transitions
 const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
   confirm: async (title, message) => {
     console.log(`APPROVAL REQUESTED: ${title} — ${message}`);
     console.log("Auto-approving for demo...");

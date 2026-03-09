@@ -23,7 +23,7 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
    * `error-json`, `execution-denied`) always runs first. This callback is
    * only consulted when the built-in check passes.
    */
-  isToolResultError?: (toolName: string, result: unknown) => boolean;
+  isToolResultError: (toolName: string, result: unknown) => boolean;
 };
 
 type WrapToolsOptions = {
@@ -31,19 +31,20 @@ type WrapToolsOptions = {
   messages?: { role: string; content: unknown }[];
 };
 
-export function createPetriflowGate(nets: SkillNet<string>[], opts?: GateOptions): PetriflowGate;
-export function createPetriflowGate(config: ComposeConfig, opts?: GateOptions): PetriflowGate;
+export function createPetriflowGate(nets: SkillNet<string>[], opts: GateOptions): PetriflowGate;
+export function createPetriflowGate(config: ComposeConfig, opts: GateOptions): PetriflowGate;
 export function createPetriflowGate(
   input: SkillNet<string>[] | ComposeConfig,
-  opts?: GateOptions,
+  opts: GateOptions,
 ): PetriflowGate {
-  const managerOpts: GateManagerOptions | undefined = opts
-    ? { mode: opts.mode ?? "enforce", onDecision: opts.onDecision }
-    : undefined;
+  const managerOpts: GateManagerOptions = {
+    mode: opts.mode ?? "enforce",
+    onDecision: opts.onDecision,
+  };
 
   const ctx: GateContext = {
-    hasUI: !!opts?.confirm,
-    confirm: opts?.confirm ?? (async () => false),
+    hasUI: !!opts.confirm,
+    confirm: opts.confirm ?? (async () => false),
   };
 
   return {
@@ -53,12 +54,12 @@ export function createPetriflowGate(
       if (wrapOpts?.messages) {
         manager.replay(extractReplayEntries(
           wrapOpts.messages,
-          opts?.isToolResultError ? { isToolResultError: opts.isToolResultError } : undefined,
+          { isToolResultError: opts.isToolResultError },
         ));
       }
 
       return {
-        tools: wrapToolsInternal(tools, manager, ctx, opts?.transformBlockReason, opts?.isToolResultError),
+        tools: wrapToolsInternal(tools, manager, ctx, opts.transformBlockReason, opts.isToolResultError),
         systemPrompt: () => manager.formatSystemPrompt(),
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),

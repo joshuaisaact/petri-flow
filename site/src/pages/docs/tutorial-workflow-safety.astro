@@ -70,6 +70,7 @@ const allNets = [...ruleNets, deploymentPipelineNet];
 
 // Both layers compose via AND-logic
 const gate = createPetriflowGate(allNets, {
+  isToolResultError: () => false,
   confirm: askApproval,
 });
 

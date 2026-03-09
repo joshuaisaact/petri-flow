@@ -61,7 +61,9 @@ console.log(verification);
 // ]
 
 // 2. Create the gate
-const gate = createPetriflowGate(nets);
+const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
+});
 
 // 3. Define and wrap tools
 const session = gate.wrapTools({

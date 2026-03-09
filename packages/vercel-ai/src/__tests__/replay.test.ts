@@ -195,7 +195,7 @@ const toolDefs = {
 
 describe("wrapTools with messages", () => {
   it("initializes gate state from message history", () => {
-    const gate = createPetriflowGate([net]);
+    const gate = createPetriflowGate([net], { isToolResultError: () => false });
     const session = gate.wrapTools(toolDefs, {
       messages: [
         {
@@ -218,7 +218,7 @@ describe("wrapTools with messages", () => {
   });
 
   it("skips error results", () => {
-    const gate = createPetriflowGate([net]);
+    const gate = createPetriflowGate([net], { isToolResultError: () => false });
     const session = gate.wrapTools(toolDefs, {
       messages: [
         {
@@ -242,7 +242,7 @@ describe("wrapTools with messages", () => {
   });
 
   it("works without messages option", () => {
-    const gate = createPetriflowGate([net]);
+    const gate = createPetriflowGate([net], { isToolResultError: () => false });
     const session = gate.wrapTools(toolDefs);
 
     const state = session.manager.getActiveNets()[0]!;

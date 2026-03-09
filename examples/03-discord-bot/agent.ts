@@ -13,6 +13,7 @@ console.log("Loaded rules:", verification);
 
 // Create the gate
 const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
   onDecision: (event, decision) => {
     if (decision?.block) {
       console.log(`BLOCKED ${event.toolName}: ${decision.reason}`);

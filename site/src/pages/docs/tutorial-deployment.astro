@@ -65,6 +65,7 @@ const { nets, verification } = await loadRules("./pipeline.rules");
 
 // 2. Create the gate with a confirm callback for human-approval rules
 const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
   confirm: async (title, message) => {
     // In production: show a dialog, send a Slack message, etc.
     // Return true to approve, false to reject.

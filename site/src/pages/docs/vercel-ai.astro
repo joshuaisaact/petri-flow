@@ -14,7 +14,10 @@ import { z } from "zod";
 
 const { nets } = await loadRules("./safety.rules");
 
-const gate = createPetriflowGate(nets);
+const gate = createPetriflowGate(nets, {
+  isToolResultError: (_name, result) =>
+    typeof result === "object" && result !== null && (result as any).success === false,
+});
 
 // Define your tools — PetriFlow wraps each one's execute method
 const session = gate.wrapTools({
@@ -70,6 +73,8 @@ const { nets } = compile(\`
 \`);
 
 const gate = createPetriflowGate(nets, {
+  isToolResultError: (_name, result) =>
+    typeof result === "object" && result !== null && (result as any).success === false,
   confirm: async (title, message) => {
     // your UI or CLI prompt here
     return await askUser(message);
@@ -94,6 +99,7 @@ const { nets } = compile("require human-approval before deploy");
 
 // CLI: prompt on stdin
 const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
   confirm: async (title, message) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     return new Promise((resolve) => {
@@ -107,12 +113,14 @@ const gate = createPetriflowGate(nets, {
 
 // React: show a dialog
 const gate2 = createPetriflowGate(nets, {
+  isToolResultError: () => false,
   confirm: async (title, message) => {
     return await showApprovalDialog({ title, message });
   },
 });`;
 
 const shadowExample = `const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
   mode: "shadow",
   onDecision: (event, decision) => {
     if (decision?.block) {
@@ -143,6 +151,8 @@ const gate = createPetriflowGate({
     approval: deployNets[1],
   },
   active: ["safety"],
+}, {
+  isToolResultError: () => false,
 });
 
 // myTools = your tool definitions (see Quick Start above)
@@ -178,13 +188,13 @@ try {
 const createGateSignature = `// Static: pass compiled nets directly
 function createPetriflowGate(
   nets: SkillNet<string>[],
-  opts?: GateOptions,
+  opts: GateOptions,
 ): PetriflowGate;
 
 // Registry: dynamic activation/deactivation
 function createPetriflowGate(
   config: ComposeConfig,
-  opts?: GateOptions,
+  opts: GateOptions,
 ): PetriflowGate;`;
 
 const gateOptionsType = `type GateOptions = {
@@ -192,7 +202,7 @@ const gateOptionsType = `type GateOptions = {
   confirm?: (title: string, message: string) => Promise<boolean>;
   onDecision?: (event: GateToolCall, decision: GateDecision) => void;
   transformBlockReason?: (toolName: string, reason: string) => string;
-  isToolResultError?: (toolName: string, result: unknown) => boolean;
+  isToolResultError: (toolName: string, result: unknown) => boolean;
 };`;
 
 const petriflowGateType = `type PetriflowGate = {
@@ -226,7 +236,10 @@ const ruleMetadataType = `type RuleMetadata =
 const replayExample = `// The AI SDK is stateless — each generateText call takes the full
 // message history. Gate state is derived from that same history.
 
-const gate = createPetriflowGate(nets);
+const gate = createPetriflowGate(nets, {
+  isToolResultError: (_name, result) =>
+    typeof result === "object" && result !== null && (result as any).success === false,
+});
 
 async function handleRequest(messages: ModelMessage[]) {
   // Pass messages to initialize gate state from conversation history
@@ -264,7 +277,9 @@ const replayEntryType = `type ReplayEntry = {
 const bundledNetExample = `import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai";
 // or: import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai/nets/tool-approval";
 
-const gate = createPetriflowGate([vercelAiToolApprovalNet]);
+const gate = createPetriflowGate([vercelAiToolApprovalNet], {
+  isToolResultError: () => false,
+});
 // Free tools: readData, fetchData (always allowed)
 // Gated tools: writeData, sendEmail (require "ready" state)`;
 ---
@@ -399,7 +414,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
     <div class="doc-section" id="api-reference">
       <h2>API reference</h2>
 
-      <h3><code>createPetriflowGate(nets, opts?)</code></h3>
+      <h3><code>createPetriflowGate(nets, opts)</code></h3>
       <p>Creates a gate instance. Two overloads: pass an array of nets for static composition, or a <code>ComposeConfig</code> for registry mode with dynamic activation.</p>
       <Code code={createGateSignature} lang="typescript" />
 
