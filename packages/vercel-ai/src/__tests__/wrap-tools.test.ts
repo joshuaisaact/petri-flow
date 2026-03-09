@@ -101,7 +101,7 @@ describe("Free tools", () => {
   it("free tool executes normally and returns result", async () => {
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool(async () => "hello");
-    const tools = gate.wrapTools({ readData: tool });
+    const { tools } = gate.wrapTools({ readData: tool });
 
     const result = await tools.readData.execute({}, defaultOptions);
     expect(result).toBe("hello");
@@ -110,7 +110,7 @@ describe("Free tools", () => {
   it("free tool with no gate interference (execute called exactly once)", async () => {
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ readData: tool });
+    const { tools } = gate.wrapTools({ readData: tool });
 
     await tools.readData.execute({}, defaultOptions);
     expect(tool.execute).toHaveBeenCalledTimes(1);
@@ -131,7 +131,7 @@ describe("Free tools", () => {
     const read = mockTool(async () => "read");
     const fetch = mockTool(async () => "fetch");
     const list = mockTool(async () => "list");
-    const tools = gate.wrapTools({ readData: read, fetchData: fetch, listData: list });
+    const { tools } = gate.wrapTools({ readData: read, fetchData: fetch, listData: list });
 
     expect(await tools.readData.execute({}, defaultOptions)).toBe("read");
     expect(await tools.fetchData.execute({}, defaultOptions)).toBe("fetch");
@@ -143,7 +143,7 @@ describe("Gated tools — allowed", () => {
   it("gated tool allowed when transition is enabled (ready state)", async () => {
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool(async () => "written");
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const result = await tools.writeData.execute({}, defaultOptions);
     expect(result).toBe("written");
@@ -152,7 +152,7 @@ describe("Gated tools — allowed", () => {
   it("gated tool execute receives original input and options unchanged", async () => {
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool(async (input: any, opts: any) => ({ input, opts }));
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const input = { key: "value" };
     const opts = { toolCallId: "call-42", extra: "data" };
@@ -166,7 +166,7 @@ describe("Gated tools — allowed", () => {
     const gate = createPetriflowGate([simpleNet]);
     const complex = { nested: { data: [1, 2, 3] }, flag: true };
     const tool = mockTool(async () => complex);
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const result = await tools.writeData.execute({}, defaultOptions);
     expect(result).toEqual(complex);
@@ -178,7 +178,7 @@ describe("Gated tools — allowed", () => {
       onDecision: (event) => decisions.push(event),
     });
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     await tools.writeData.execute({}, { toolCallId: "unique-id-123" });
     expect(decisions[0].toolCallId).toBe("unique-id-123");
@@ -189,7 +189,7 @@ describe("Gated tools — blocked", () => {
   it("blocked tool throws ToolCallBlockedError", async () => {
     const gate = createPetriflowGate([blockingNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     expect(tools.writeData.execute({}, defaultOptions)).rejects.toThrow(ToolCallBlockedError);
   });
@@ -197,7 +197,7 @@ describe("Gated tools — blocked", () => {
   it("ToolCallBlockedError has correct toolName, toolCallId, reason properties", async () => {
     const gate = createPetriflowGate([blockingNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     try {
       await tools.writeData.execute({}, { toolCallId: "blocked-id" });
@@ -215,7 +215,7 @@ describe("Gated tools — blocked", () => {
   it("original execute is never called when blocked", async () => {
     const gate = createPetriflowGate([blockingNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     try { await tools.writeData.execute({}, defaultOptions); } catch {}
     expect(tool.execute).not.toHaveBeenCalled();
@@ -224,7 +224,7 @@ describe("Gated tools — blocked", () => {
   it("tool blocked by net state (has jurisdiction but no enabled transition)", async () => {
     const gate = createPetriflowGate([blockingNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     expect(tools.writeData.execute({}, defaultOptions)).rejects.toThrow(ToolCallBlockedError);
   });
@@ -234,7 +234,7 @@ describe("Deferred transitions", () => {
   it("deferred tool allowed immediately (execute runs)", async () => {
     const gate = createPetriflowGate([deferredNet]);
     const tool = mockTool(async () => "backed-up");
-    const tools = gate.wrapTools({ backup: tool });
+    const { tools } = gate.wrapTools({ backup: tool });
 
     const result = await tools.backup.execute({}, defaultOptions);
     expect(result).toBe("backed-up");
@@ -244,7 +244,7 @@ describe("Deferred transitions", () => {
     const gate = createPetriflowGate([deferredNet]);
     const backupTool = mockTool(async () => "ok");
     const destroyTool = mockTool(async () => "destroyed");
-    const tools = gate.wrapTools({ backup: backupTool, destroy: destroyTool });
+    const { tools } = gate.wrapTools({ backup: backupTool, destroy: destroyTool });
 
     // backup succeeds → net advances ready → backedUp
     await tools.backup.execute({}, { toolCallId: "b1" });
@@ -258,7 +258,7 @@ describe("Deferred transitions", () => {
     const gate = createPetriflowGate([deferredNet]);
     const backupTool = mockTool(async () => { throw new Error("backup failed"); });
     const destroyTool = mockTool();
-    const tools = gate.wrapTools({ backup: backupTool, destroy: destroyTool });
+    const { tools } = gate.wrapTools({ backup: backupTool, destroy: destroyTool });
 
     try { await tools.backup.execute({}, { toolCallId: "b1" }); } catch {}
 
@@ -269,7 +269,7 @@ describe("Deferred transitions", () => {
   it("original error re-thrown after handleToolResult (error not swallowed)", async () => {
     const gate = createPetriflowGate([deferredNet]);
     const tool = mockTool(async () => { throw new Error("specific error"); });
-    const tools = gate.wrapTools({ backup: tool });
+    const { tools } = gate.wrapTools({ backup: tool });
 
     expect(tools.backup.execute({}, defaultOptions)).rejects.toThrow("specific error");
   });
@@ -291,7 +291,7 @@ describe("Deferred transitions", () => {
     const gate = createPetriflowGate([repeatNet]);
     const step1 = mockTool(async () => "s1");
     const step2 = mockTool(async () => "s2");
-    const tools = gate.wrapTools({ stepOne: step1, stepTwo: step2 });
+    const { tools } = gate.wrapTools({ stepOne: step1, stepTwo: step2 });
 
     await tools.stepOne.execute({}, { toolCallId: "c1" });
     const result = await tools.stepTwo.execute({}, { toolCallId: "c2" });
@@ -303,7 +303,7 @@ describe("Manual transitions", () => {
   it("no confirm callback → manual transition blocked (ToolCallBlockedError)", async () => {
     const gate = createPetriflowGate([manualNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     expect(tools.writeData.execute({}, defaultOptions)).rejects.toThrow(ToolCallBlockedError);
   });
@@ -313,7 +313,7 @@ describe("Manual transitions", () => {
       confirm: async () => true,
     });
     const tool = mockTool(async () => "approved");
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const result = await tools.writeData.execute({}, defaultOptions);
     expect(result).toBe("approved");
@@ -324,7 +324,7 @@ describe("Manual transitions", () => {
       confirm: async () => false,
     });
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     expect(tools.writeData.execute({}, defaultOptions)).rejects.toThrow(ToolCallBlockedError);
   });
@@ -333,7 +333,7 @@ describe("Manual transitions", () => {
     const confirmFn = mock(async (_title: string, _message: string) => true);
     const gate = createPetriflowGate([manualNet], { confirm: confirmFn });
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     await tools.writeData.execute({}, defaultOptions);
     expect(confirmFn).toHaveBeenCalledTimes(1);
@@ -347,7 +347,7 @@ describe("Schema-only tools", () => {
   it("tool without execute function passes through unchanged", () => {
     const gate = createPetriflowGate([simpleNet]);
     const schema = schemaOnlyTool();
-    const tools = gate.wrapTools({ myTool: schema });
+    const { tools } = gate.wrapTools({ myTool: schema });
 
     expect((tools.myTool as any).execute).toBeUndefined();
     expect(tools.myTool.description).toBe("Schema-only tool");
@@ -356,7 +356,7 @@ describe("Schema-only tools", () => {
   it("wrapped tool set includes schema-only tools with all original properties", () => {
     const gate = createPetriflowGate([simpleNet]);
     const schema = { description: "test", parameters: { type: "object" as const, properties: { x: { type: "string" } } } };
-    const tools = gate.wrapTools({ myTool: schema });
+    const { tools } = gate.wrapTools({ myTool: schema });
 
     expect(tools.myTool.description).toBe("test");
     expect(tools.myTool.parameters).toEqual(schema.parameters);
@@ -367,7 +367,7 @@ describe("Multi-net composition", () => {
   it("one blocking net + one allowing net → tool blocked (any-block-rejects-all)", async () => {
     const gate = createPetriflowGate([simpleNet, blockingNet]);
     const tool = mockTool();
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     expect(tools.writeData.execute({}, defaultOptions)).rejects.toThrow(ToolCallBlockedError);
   });
@@ -375,7 +375,7 @@ describe("Multi-net composition", () => {
   it("two allowing nets → tool allowed", async () => {
     const gate = createPetriflowGate([simpleNet, multiToolNet]);
     const tool = mockTool(async () => "ok");
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const result = await tools.writeData.execute({}, defaultOptions);
     expect(result).toBe("ok");
@@ -384,7 +384,7 @@ describe("Multi-net composition", () => {
   it("free in all nets → tool allowed", async () => {
     const gate = createPetriflowGate([simpleNet, blockingNet]);
     const tool = mockTool(async () => "free");
-    const tools = gate.wrapTools({ readData: tool });
+    const { tools } = gate.wrapTools({ readData: tool });
 
     const result = await tools.readData.execute({}, defaultOptions);
     expect(result).toBe("free");
@@ -393,7 +393,7 @@ describe("Multi-net composition", () => {
   it("tool unknown to all nets → tool allowed (no jurisdiction = abstain)", async () => {
     const gate = createPetriflowGate([simpleNet, blockingNet]);
     const tool = mockTool(async () => "unknown-ok");
-    const tools = gate.wrapTools({ unknownTool: tool });
+    const { tools } = gate.wrapTools({ unknownTool: tool });
 
     const result = await tools.unknownTool.execute({}, defaultOptions);
     expect(result).toBe("unknown-ok");
@@ -407,18 +407,18 @@ describe("Registry mode (dynamic nets)", () => {
       active: ["simple"],
     });
     const tool = mockTool(async () => "ok");
-    const tools = gate.wrapTools({ writeData: tool });
+    const session = gate.wrapTools({ writeData: tool });
 
     // Allowed with only simple active
-    const r1 = await tools.writeData.execute({}, { toolCallId: "c1" });
+    const r1 = await session.tools.writeData.execute({}, { toolCallId: "c1" });
     expect(r1).toBe("ok");
 
     // Add blocker
-    const result = gate.addNet("blocker");
+    const result = session.addNet("blocker");
     expect(result.ok).toBe(true);
 
     // Now blocked
-    expect(tools.writeData.execute({}, { toolCallId: "c2" })).rejects.toThrow(ToolCallBlockedError);
+    expect(session.tools.writeData.execute({}, { toolCallId: "c2" })).rejects.toThrow(ToolCallBlockedError);
   });
 
   it("removeNet deactivates a net, tool now allowed", async () => {
@@ -426,17 +426,17 @@ describe("Registry mode (dynamic nets)", () => {
       registry: { simple: simpleNet, blocker: blockingNet },
     });
     const tool = mockTool(async () => "ok");
-    const tools = gate.wrapTools({ writeData: tool });
+    const session = gate.wrapTools({ writeData: tool });
 
     // Blocked with blocker active
-    try { await tools.writeData.execute({}, { toolCallId: "c1" }); } catch {}
+    try { await session.tools.writeData.execute({}, { toolCallId: "c1" }); } catch {}
 
     // Remove blocker
-    const result = gate.removeNet("blocker");
+    const result = session.removeNet("blocker");
     expect(result.ok).toBe(true);
 
     // Now allowed
-    const r = await tools.writeData.execute({}, { toolCallId: "c2" });
+    const r = await session.tools.writeData.execute({}, { toolCallId: "c2" });
     expect(r).toBe("ok");
   });
 
@@ -445,8 +445,9 @@ describe("Registry mode (dynamic nets)", () => {
       registry: { simple: simpleNet },
       active: ["simple"],
     });
+    const session = gate.wrapTools({});
 
-    const result = gate.addNet("nonexistent");
+    const result = session.addNet("nonexistent");
     expect(result.ok).toBe(false);
     expect(result.message).toContain("Unknown");
   });
@@ -456,8 +457,9 @@ describe("Registry mode (dynamic nets)", () => {
       registry: { simple: simpleNet, blocker: blockingNet },
       active: ["simple"],
     });
+    const session = gate.wrapTools({});
 
-    const result = gate.removeNet("blocker");
+    const result = session.removeNet("blocker");
     expect(result.ok).toBe(false);
     expect(result.message).toContain("not active");
   });
@@ -466,19 +468,22 @@ describe("Registry mode (dynamic nets)", () => {
 describe("System prompt & status", () => {
   it("systemPrompt() returns string containing net names", () => {
     const gate = createPetriflowGate([simpleNet]);
-    const prompt = gate.systemPrompt();
+    const session = gate.wrapTools({});
+    const prompt = session.systemPrompt();
     expect(prompt).toContain("simple");
   });
 
   it("systemPrompt() includes 'Active Petri Nets' header", () => {
     const gate = createPetriflowGate([simpleNet]);
-    const prompt = gate.systemPrompt();
+    const session = gate.wrapTools({});
+    const prompt = session.systemPrompt();
     expect(prompt).toContain("Active Petri Nets");
   });
 
   it("formatStatus() returns current marking for all nets", () => {
     const gate = createPetriflowGate([simpleNet, blockingNet]);
-    const status = gate.formatStatus();
+    const session = gate.wrapTools({});
+    const status = session.formatStatus();
     expect(status).toContain("simple");
     expect(status).toContain("blocker");
   });
@@ -488,7 +493,8 @@ describe("System prompt & status", () => {
       registry: { simple: simpleNet, blocker: blockingNet },
       active: ["simple"],
     });
-    const status = gate.formatStatus();
+    const session = gate.wrapTools({});
+    const status = session.formatStatus();
     expect(status).toContain("active");
     expect(status).toContain("inactive");
   });
@@ -498,7 +504,7 @@ describe("Error propagation", () => {
   it("original execute error re-thrown with same message", async () => {
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool(async () => { throw new Error("db connection failed"); });
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     expect(tools.writeData.execute({}, defaultOptions)).rejects.toThrow("db connection failed");
   });
@@ -507,7 +513,7 @@ describe("Error propagation", () => {
     class CustomError extends Error { code = "CUSTOM"; }
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool(async () => { throw new CustomError("custom"); });
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     try {
       await tools.writeData.execute({}, defaultOptions);
@@ -521,7 +527,7 @@ describe("Error propagation", () => {
   it("gate error (ToolCallBlockedError) is distinguishable from execute errors", async () => {
     const gate = createPetriflowGate([blockingNet]);
     const tool = mockTool(async () => { throw new Error("execute error"); });
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     try {
       await tools.writeData.execute({}, defaultOptions);
@@ -537,7 +543,7 @@ describe("Shadow mode", () => {
   it("shadow mode: blocked tool does NOT throw (gate allows despite block)", async () => {
     const gate = createPetriflowGate([blockingNet], { mode: "shadow" });
     const tool = mockTool(async () => "shadow-ok");
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const result = await tools.writeData.execute({}, defaultOptions);
     expect(result).toBe("shadow-ok");
@@ -550,7 +556,7 @@ describe("Shadow mode", () => {
       onDecision: (_event, decision) => decisions.push(decision),
     });
     const tool = mockTool(async () => "ok");
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     await tools.writeData.execute({}, defaultOptions);
     // In shadow mode, the decision callback fires but the block is suppressed
@@ -561,7 +567,7 @@ describe("Shadow mode", () => {
   it("shadow mode: execute runs normally", async () => {
     const gate = createPetriflowGate([blockingNet], { mode: "shadow" });
     const tool = mockTool(async () => "ran");
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     await tools.writeData.execute({}, defaultOptions);
     expect(tool.execute).toHaveBeenCalledTimes(1);
@@ -571,7 +577,7 @@ describe("Shadow mode", () => {
 describe("Edge cases", () => {
   it("empty tool set returns empty wrapped set", () => {
     const gate = createPetriflowGate([simpleNet]);
-    const tools = gate.wrapTools({});
+    const { tools } = gate.wrapTools({});
     expect(Object.keys(tools)).toHaveLength(0);
   });
 
@@ -579,7 +585,7 @@ describe("Edge cases", () => {
     const gate = createPetriflowGate([simpleNet]);
     // "ready" is a place name in simpleNet, but as a tool name it has no jurisdiction
     const tool = mockTool(async () => "no-conflict");
-    const tools = gate.wrapTools({ ready: tool });
+    const { tools } = gate.wrapTools({ ready: tool });
 
     const result = await tools.ready.execute({}, defaultOptions);
     expect(result).toBe("no-conflict");
@@ -588,7 +594,7 @@ describe("Edge cases", () => {
   it("rapid sequential calls to same tool maintain correct state", async () => {
     const gate = createPetriflowGate([simpleNet]);
     const tool = mockTool(async (input: any) => input.n);
-    const tools = gate.wrapTools({ writeData: tool });
+    const { tools } = gate.wrapTools({ writeData: tool });
 
     const results = [];
     for (let i = 0; i < 10; i++) {
@@ -612,9 +618,40 @@ describe("Edge cases", () => {
     const gate = createPetriflowGate([sharedNet]);
     const a = mockTool(async () => "a");
     const b = mockTool(async () => "b");
-    const tools = gate.wrapTools({ toolA: a, toolB: b });
+    const { tools } = gate.wrapTools({ toolA: a, toolB: b });
 
     expect(await tools.toolA.execute({}, { toolCallId: "a1" })).toBe("a");
     expect(await tools.toolB.execute({}, { toolCallId: "b1" })).toBe("b");
+  });
+});
+
+describe("Session isolation (stateless gate)", () => {
+  it("two wrapTools calls from same gate have independent state", async () => {
+    const gate = createPetriflowGate([deferredNet]);
+
+    // Session 1: advance through backup → destroy
+    const backup1 = mockTool(async () => "ok");
+    const destroy1 = mockTool(async () => "destroyed");
+    const s1 = gate.wrapTools({ backup: backup1, destroy: destroy1 });
+    await s1.tools.backup.execute({}, { toolCallId: "b1" });
+    const result = await s1.tools.destroy.execute({}, { toolCallId: "d1" });
+    expect(result).toBe("destroyed");
+
+    // Session 2: fresh state, destroy should be blocked
+    const backup2 = mockTool(async () => "ok");
+    const destroy2 = mockTool();
+    const s2 = gate.wrapTools({ backup: backup2, destroy: destroy2 });
+    expect(s2.tools.destroy.execute({}, { toolCallId: "d2" })).rejects.toThrow(ToolCallBlockedError);
+  });
+
+  it("gate can be reused across multiple independent sessions", async () => {
+    const gate = createPetriflowGate([simpleNet]);
+
+    for (let i = 0; i < 5; i++) {
+      const tool = mockTool(async () => `result-${i}`);
+      const { tools } = gate.wrapTools({ writeData: tool });
+      const result = await tools.writeData.execute({}, { toolCallId: `c-${i}` });
+      expect(result).toBe(`result-${i}`);
+    }
   });
 });

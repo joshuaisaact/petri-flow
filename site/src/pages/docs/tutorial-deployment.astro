@@ -74,7 +74,7 @@ const gate = createPetriflowGate(nets, {
 });
 
 // 3. Define and wrap tools
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
@@ -111,8 +111,8 @@ const tools = gate.wrapTools({
 // 4. Run the agent
 const { text } = await generateText({
   model: openai("gpt-4o"),
-  tools,
-  system: gate.systemPrompt(),
+  tools: session.tools,
+  system: session.systemPrompt(),
   stopWhen: stepCountIs(15),
   prompt: "Deploy the latest version to production, then deploy to staging.",
 });`;

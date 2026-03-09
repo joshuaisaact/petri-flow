@@ -73,7 +73,7 @@ const gate = createPetriflowGate(allNets, {
   confirm: askApproval,
 });
 
-const tools = gate.wrapTools({ /* your tools */ });`;
+const session = gate.wrapTools({ /* your tools */ });`;
 
 const verifyOutput = `$ bun run verify.ts
 

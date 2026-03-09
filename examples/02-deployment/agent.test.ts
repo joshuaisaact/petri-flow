@@ -22,7 +22,7 @@ describe("02-deployment", () => {
   describe("free tools", () => {
     it("checkStatus is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         checkStatus: mockTool(async () => ({ status: "healthy" })),
       });
 
@@ -32,7 +32,7 @@ describe("02-deployment", () => {
 
     it("rollback is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         rollback: mockTool(async () => ({ rolledBack: true })),
       });
 
@@ -44,7 +44,7 @@ describe("02-deployment", () => {
   describe("require lint before test", () => {
     it("test is blocked before lint", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
       });
@@ -56,7 +56,7 @@ describe("02-deployment", () => {
 
     it("test is allowed after lint succeeds", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "42 passed"),
       });
@@ -70,7 +70,7 @@ describe("02-deployment", () => {
   describe("require test before deploy", () => {
     it("deploy is blocked before test", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -86,7 +86,7 @@ describe("02-deployment", () => {
 
     it("deploy is allowed after lint → test pipeline", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -102,7 +102,7 @@ describe("02-deployment", () => {
   describe("require human-approval before deploy", () => {
     it("deploy is blocked without confirm callback", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -118,7 +118,7 @@ describe("02-deployment", () => {
 
     it("deploy is blocked when human rejects", async () => {
       const gate = createGate(async () => false);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -134,7 +134,7 @@ describe("02-deployment", () => {
 
     it("deploy is allowed when human approves", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -150,7 +150,7 @@ describe("02-deployment", () => {
   describe("limit deploy to 2 per session", () => {
     it("3rd deploy is blocked", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),

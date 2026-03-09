@@ -24,7 +24,7 @@ const gate = createPetriflowGate(nets, {
 // backup is deferred (must succeed before delete is allowed).
 // delete is gated (requires backup first).
 // rm is permanently blocked.
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
@@ -54,8 +54,8 @@ const tools = gate.wrapTools({
 
 const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
-  system: `You are a file management agent that helps clean up directories.\n\n${gate.systemPrompt()}`,
-  tools,
+  system: `You are a file management agent that helps clean up directories.\n\n${session.systemPrompt()}`,
+  tools: session.tools,
   stopWhen: stepCountIs(10),
   prompt:
     "Clean up /tmp/project: list the files, delete temp.log, and rm old-backup.tar.gz",

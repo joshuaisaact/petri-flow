@@ -34,10 +34,11 @@ const config = configure(".")
         <Code code={`import { createPetriflowGate } from "@petriflow/vercel-ai"
 
 const gate = createPetriflowGate([safetyNet])
+const session = gate.wrapTools({ bash, write })
 
 await generateText({
-  tools: gate.wrapTools({ bash, write }),
-  system: gate.systemPrompt(),
+  tools: session.tools,
+  system: session.systemPrompt(),
 })`} lang="ts" theme="github-dark" />
       </IntegrationCard>
 

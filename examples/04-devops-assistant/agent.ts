@@ -39,7 +39,7 @@ const gate = createPetriflowGate(nets, {
 // - Email: readInbox (free), sendEmail (gated)
 // - Deployment: lint, test, deploy, checkStatus (free)
 // - Files: listFiles (free), readFile (free), backup, delete, rm (blocked)
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   // --- Research ---
   webSearch: tool({
     description: "Search the web for information",
@@ -137,8 +137,8 @@ const tools = gate.wrapTools({
 
 const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
-  system: `You are a DevOps assistant that manages deployments, communications, and file cleanup.\n\n${gate.systemPrompt()}`,
-  tools,
+  system: `You are a DevOps assistant that manages deployments, communications, and file cleanup.\n\n${session.systemPrompt()}`,
+  tools: session.tools,
   stopWhen: stepCountIs(20),
   prompt:
     "Check my inbox for dependency update notifications, research the latest Node.js 22 release, let the team know on Slack what you find, run the deployment pipeline for production, email my manager a status update when it's done, and clean up temp files in /tmp/project.",

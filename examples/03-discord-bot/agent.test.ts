@@ -27,7 +27,7 @@ describe("03-discord-bot", () => {
   describe("free actions", () => {
     it("discord.readMessages is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         discord: mockTool(async () => ({ messages: [] })),
       });
 
@@ -40,7 +40,7 @@ describe("03-discord-bot", () => {
 
     it("discord.addReaction is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         discord: mockTool(async () => ({ reacted: true })),
       });
 
@@ -53,7 +53,7 @@ describe("03-discord-bot", () => {
 
     it("discord.createThread is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         discord: mockTool(async () => ({ created: true })),
       });
 
@@ -68,7 +68,7 @@ describe("03-discord-bot", () => {
   describe("require readMessages before sendMessage", () => {
     it("sendMessage is blocked before readMessages", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         discord: mockTool(async () => ({ sent: true })),
       });
 
@@ -82,7 +82,7 @@ describe("03-discord-bot", () => {
 
     it("sendMessage is allowed after readMessages", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         discord: mockTool(async (input: any) => {
           if (input.action === "readMessages") return { messages: [] };
           return { sent: true };
@@ -105,7 +105,7 @@ describe("03-discord-bot", () => {
   describe("limit sendMessage to 5 per session", () => {
     it("6th sendMessage is blocked", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         discord: mockTool(async (input: any) => {
           if (input.action === "readMessages") return { messages: [] };
           return { sent: true };

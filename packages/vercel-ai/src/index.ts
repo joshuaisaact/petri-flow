@@ -1,6 +1,6 @@
 import { createGateManager } from "@petriflow/gate";
 import type { ComposeConfig, GateManagerOptions, SkillNet } from "@petriflow/gate";
-import { wrapTools } from "./wrap-tools.js";
+import { wrapTools as wrapToolsInternal } from "./wrap-tools.js";
 import type { GateContext } from "@petriflow/gate";
 
 type GateOptions = Omit<GateManagerOptions, "mode"> & {
@@ -19,31 +19,37 @@ export function createPetriflowGate(
     ? { mode: opts.mode ?? "enforce", onDecision: opts.onDecision }
     : undefined;
 
-  const manager = createGateManager(input, managerOpts);
-
   const ctx: GateContext = {
     hasUI: !!opts?.confirm,
     confirm: opts?.confirm ?? (async () => false),
   };
 
   return {
-    wrapTools: <T extends Record<string, any>>(tools: T): T =>
-      wrapTools(tools, manager, ctx),
-    systemPrompt: () => manager.formatSystemPrompt(),
-    formatStatus: () => manager.formatStatus(),
-    addNet: (name: string) => manager.addNet(name),
-    removeNet: (name: string) => manager.removeNet(name),
-    manager,
+    wrapTools: <T extends Record<string, any>>(tools: T): GateSession<T> => {
+      const manager = createGateManager(input, managerOpts);
+      return {
+        tools: wrapToolsInternal(tools, manager, ctx),
+        systemPrompt: () => manager.formatSystemPrompt(),
+        formatStatus: () => manager.formatStatus(),
+        addNet: (name: string) => manager.addNet(name),
+        removeNet: (name: string) => manager.removeNet(name),
+        manager,
+      };
+    },
   };
 }
 
-export type PetriflowGate = {
-  wrapTools: <T extends Record<string, any>>(tools: T) => T;
+export type GateSession<T extends Record<string, any> = Record<string, any>> = {
+  tools: T;
   systemPrompt: () => string;
   formatStatus: () => string;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
   manager: ReturnType<typeof createGateManager>;
+};
+
+export type PetriflowGate = {
+  wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
 };
 
 // Re-export gate types for convenience

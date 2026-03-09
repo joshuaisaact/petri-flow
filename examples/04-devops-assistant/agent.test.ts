@@ -27,7 +27,7 @@ describe("04-devops-assistant", () => {
   describe("free tools", () => {
     it("webSearch is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         webSearch: mockTool(async () => ({ results: [] })),
       });
 
@@ -40,7 +40,7 @@ describe("04-devops-assistant", () => {
 
     it("readInbox is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         readInbox: mockTool(async () => ({ emails: [] })),
       });
 
@@ -50,7 +50,7 @@ describe("04-devops-assistant", () => {
 
     it("listFiles is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         listFiles: mockTool(async () => ["a.txt"]),
       });
 
@@ -63,7 +63,7 @@ describe("04-devops-assistant", () => {
 
     it("readFile is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         readFile: mockTool(async () => "contents"),
       });
 
@@ -76,7 +76,7 @@ describe("04-devops-assistant", () => {
 
     it("checkStatus is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         checkStatus: mockTool(async () => ({ status: "healthy" })),
       });
 
@@ -89,7 +89,7 @@ describe("04-devops-assistant", () => {
 
     it("slack.readMessages is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         slack: mockTool(async () => ({ messages: [] })),
       });
 
@@ -104,7 +104,7 @@ describe("04-devops-assistant", () => {
   describe("cross-domain independence", () => {
     it("file rules don't affect Slack", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
         slack: mockTool(async (input: any) => {
@@ -134,7 +134,7 @@ describe("04-devops-assistant", () => {
 
     it("Slack rules don't affect deployment", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         slack: mockTool(async () => ({ messages: [] })),
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
@@ -163,7 +163,7 @@ describe("04-devops-assistant", () => {
   describe("Slack: require readMessages before sendMessage", () => {
     it("sendMessage is blocked before readMessages", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         slack: mockTool(async () => ({ sent: true })),
       });
 
@@ -177,7 +177,7 @@ describe("04-devops-assistant", () => {
 
     it("sendMessage is allowed after readMessages", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         slack: mockTool(async (input: any) => {
           if (input.action === "readMessages") return { messages: [] };
           return { sent: true };
@@ -200,7 +200,7 @@ describe("04-devops-assistant", () => {
   describe("Slack: limit sendMessage to 10 per session", () => {
     it("11th sendMessage is blocked", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         slack: mockTool(async (input: any) => {
           if (input.action === "readMessages") return { messages: [] };
           return { sent: true };
@@ -237,7 +237,7 @@ describe("04-devops-assistant", () => {
   describe("Email: require human-approval before sendEmail", () => {
     it("sendEmail is blocked without confirm callback", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         sendEmail: mockTool(async () => ({ sent: true })),
       });
 
@@ -251,7 +251,7 @@ describe("04-devops-assistant", () => {
 
     it("sendEmail is blocked when human rejects", async () => {
       const gate = createGate(async () => false);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         sendEmail: mockTool(async () => ({ sent: true })),
       });
 
@@ -265,7 +265,7 @@ describe("04-devops-assistant", () => {
 
     it("sendEmail is allowed when human approves", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         sendEmail: mockTool(async () => ({ sent: true })),
       });
 
@@ -280,7 +280,7 @@ describe("04-devops-assistant", () => {
   describe("Email: limit sendEmail to 3 per session", () => {
     it("4th sendEmail is blocked", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         sendEmail: mockTool(async () => ({ sent: true })),
       });
 
@@ -303,7 +303,7 @@ describe("04-devops-assistant", () => {
   describe("Deployment: require lint → test → deploy + approval", () => {
     it("deploy is blocked before lint and test", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -319,7 +319,7 @@ describe("04-devops-assistant", () => {
 
     it("deploy is blocked after lint but before test", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -337,7 +337,7 @@ describe("04-devops-assistant", () => {
 
     it("deploy is allowed after lint → test + approval", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -356,7 +356,7 @@ describe("04-devops-assistant", () => {
   describe("Deployment: limit deploy to 2 per session", () => {
     it("3rd deploy is blocked", async () => {
       const gate = createGate(async () => true);
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         lint: mockTool(async () => "passed"),
         test: mockTool(async () => "passed"),
         deploy: mockTool(async () => "deployed"),
@@ -394,7 +394,7 @@ describe("04-devops-assistant", () => {
   describe("Files: require backup before delete", () => {
     it("delete is blocked before backup", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
       });
@@ -406,7 +406,7 @@ describe("04-devops-assistant", () => {
 
     it("delete is allowed after backup", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
       });
@@ -426,7 +426,7 @@ describe("04-devops-assistant", () => {
   describe("Files: block rm", () => {
     it("rm is permanently blocked", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({ rm: mockTool() });
+      const { tools } = gate.wrapTools({ rm: mockTool() });
 
       expect(
         tools.rm.execute({ path: "/tmp/temp.log" }, { toolCallId: nextId() }),
@@ -437,7 +437,7 @@ describe("04-devops-assistant", () => {
   describe("cross-domain interleaving", () => {
     it("backup → slack.readMessages → delete → slack.sendMessage all succeed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
         slack: mockTool(async (input: any) => {

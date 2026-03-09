@@ -64,7 +64,7 @@ console.log(verification);
 const gate = createPetriflowGate(nets);
 
 // 3. Define and wrap tools
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   listFiles: tool({
     description: "List files in a directory",
     inputSchema: z.object({ path: z.string() }),
@@ -95,8 +95,8 @@ const tools = gate.wrapTools({
 // 4. Run the agent
 const { text } = await generateText({
   model: openai("gpt-4o"),
-  tools,
-  system: gate.systemPrompt(),
+  tools: session.tools,
+  system: session.systemPrompt(),
   stopWhen: stepCountIs(10),
   prompt: "Clean up /tmp/project: list the files, delete temp.log, and rm old-backup.tar.gz",
 });`;
@@ -168,7 +168,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       <h2>Wire it up</h2>
       <p>Load the rules, create a gate, wrap your tools, and pass everything to <code>generateText</code>. Three imports, four steps.</p>
       <Code code={fullExample} lang="typescript" />
-      <p><code>loadRules</code> reads the <code>.rules</code> file and compiles each rule into a verified Petri net. <code>createPetriflowGate</code> wraps them into a gate. <code>wrapTools</code> instruments every tool's <code>execute</code> method with gate checks. <code>systemPrompt()</code> tells the model which tools are gated and why.</p>
+      <p><code>loadRules</code> reads the <code>.rules</code> file and compiles each rule into a verified Petri net. <code>createPetriflowGate</code> wraps them into a stateless gate. <code>wrapTools</code> returns a <code>GateSession</code> with instrumented tools and prompt helpers. <code>session.systemPrompt()</code> tells the model which tools are gated and why.</p>
     </div>
 
     <div class="doc-section" id="see-it-in-action">
@@ -200,7 +200,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
         ["block X", "Makes a tool permanently unreachable in all states."],
         ["Deferred transitions", "The net only advances when the tool's execute succeeds. Failures don't unlock gated tools."],
         ["Free tools", "Tools not mentioned in any rule pass through the gate without checks."],
-        ["The wiring pattern", "<code>loadRules</code> &rarr; <code>createPetriflowGate</code> &rarr; <code>wrapTools</code> &rarr; <code>generateText</code>."],
+        ["The wiring pattern", "<code>loadRules</code> &rarr; <code>createPetriflowGate</code> &rarr; <code>gate.wrapTools</code> &rarr; <code>generateText</code> with <code>session.tools</code>."],
       ]} />
     </div>
 

@@ -24,7 +24,7 @@ const gate = createPetriflowGate(nets, {
 // Rules use dot notation (discord.readMessages, discord.sendMessage) which
 // auto-generates a toolMapper that resolves the virtual tool name from
 // the action field in the input.
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   discord: tool({
     description:
       "Interact with Discord: read messages, send messages, add reactions, or create threads",
@@ -64,8 +64,8 @@ const tools = gate.wrapTools({
 
 const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
-  system: `You are a Discord bot agent that manages channel communications.\n\n${gate.systemPrompt()}`,
-  tools,
+  system: `You are a Discord bot agent that manages channel communications.\n\n${session.systemPrompt()}`,
+  tools: session.tools,
   stopWhen: stepCountIs(15),
   prompt:
     "In channel dev-general: send a greeting, read messages, reply about the build failure, and send a few follow-up messages.",

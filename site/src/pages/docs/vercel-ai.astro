@@ -17,7 +17,7 @@ const { nets } = await loadRules("./safety.rules");
 const gate = createPetriflowGate(nets);
 
 // Define your tools — PetriFlow wraps each one's execute method
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   backup: tool({
     description: "Create a backup of a file",
     inputSchema: z.object({ path: z.string() }),
@@ -32,12 +32,12 @@ const tools = gate.wrapTools({
 
 const { text } = await generateText({
   model: openai("gpt-4o"),
-  tools,
-  system: gate.systemPrompt(),
+  tools: session.tools,
+  system: session.systemPrompt(),
   prompt: "Clean up old data files",
 });`;
 
-const howItWorks = `// gate.wrapTools() instruments each tool's execute method:
+const howItWorks = `// session = gate.wrapTools() instruments each tool's execute method:
 
 // 1. Before execute → handleToolCall (gate check)
 //    Blocked? → throw ToolCallBlockedError, tool never runs
@@ -66,12 +66,12 @@ const gate = createPetriflowGate(nets, {
 });
 
 // myTools = your tool definitions (see Quick Start above)
-const tools = gate.wrapTools(myTools);
+const session = gate.wrapTools(myTools);
 
 const { text } = await generateText({
   model: openai("gpt-4o"),
-  tools,
-  system: gate.systemPrompt(),
+  tools: session.tools,
+  system: session.systemPrompt(),
   prompt: "Run lint, then deploy to production",
 });`;
 
@@ -113,7 +113,7 @@ const shadowExample = `const gate = createPetriflowGate(nets, {
 // Tools execute normally. Nothing is blocked.
 // onDecision fires on every call, so you see what *would* happen.
 // myTools = your tool definitions (see Quick Start above)
-const tools = gate.wrapTools(myTools);`;
+const { tools } = gate.wrapTools(myTools);`;
 
 const registryExample = `import { createPetriflowGate } from "@petriflow/vercel-ai";
 import { compile } from "@petriflow/rules";
@@ -135,24 +135,24 @@ const gate = createPetriflowGate({
 });
 
 // myTools = your tool definitions (see Quick Start above)
-const tools = gate.wrapTools(myTools);
+const session = gate.wrapTools(myTools);
 
 // Later: enable deploy policy at runtime
-gate.addNet("deploy");
-gate.addNet("approval");
+session.addNet("deploy");
+session.addNet("approval");
 // { ok: true, message: "Activated 'deploy'" }
 
 // Disable when no longer needed
-gate.removeNet("approval");
+session.removeNet("approval");
 // { ok: true, message: "Deactivated 'approval' (state preserved)" }`;
 
 const errorExample = `import { ToolCallBlockedError } from "@petriflow/vercel-ai";
 
 try {
+  const session = gate.wrapTools(myTools);
   const result = await generateText({
     model: openai("gpt-4o"),
-    // myTools = your tool definitions (see Quick Start above)
-    tools: gate.wrapTools(myTools),
+    tools: session.tools,
     prompt: "Delete all logs",
   });
 } catch (e) {
@@ -183,12 +183,16 @@ const gateOptionsType = `type GateOptions = {
 };`;
 
 const petriflowGateType = `type PetriflowGate = {
-  wrapTools: <T extends Record<string, any>>(tools: T) => T;
+  wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
+  manager: GateManager;
+};
+
+type GateSession<T> = {
+  tools: T;
   systemPrompt: () => string;
   formatStatus: () => string;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
-  manager: GateManager;
 };`;
 
 const errorType = `class ToolCallBlockedError extends Error {
@@ -247,7 +251,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
 <span class="kw">block</span> <span class="str">rm</span>`} />
       <p>Load, compile, gate:</p>
       <Code code={quickStart} lang="typescript" />
-      <p><code>loadRules</code> reads a <code>.rules</code> file and builds a verified Petri net for each rule. <code>createPetriflowGate</code> wraps the nets into a gate. <code>wrapTools</code> takes your Vercel AI SDK <code>tool()</code> definitions and instruments every tool's <code>execute</code> method. <code>systemPrompt()</code> tells the model which tools are gated and why, so it can plan around the constraints instead of hitting them blind.</p>
+      <p><code>loadRules</code> reads a <code>.rules</code> file and builds a verified Petri net for each rule. <code>createPetriflowGate</code> wraps the nets into a stateless gate. <code>wrapTools</code> takes your Vercel AI SDK <code>tool()</code> definitions and returns a <code>GateSession</code> with instrumented tools and prompt helpers. Each <code>wrapTools</code> call creates fresh state. <code>session.systemPrompt()</code> tells the model which tools are gated and why, so it can plan around the constraints instead of hitting them blind.</p>
     </div>
 
     <!-- How it works -->
@@ -262,7 +266,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         { icon: "ok", html: `Agent calls <strong>delete</strong><br><span class="ok-text">ALLOWED</span> net satisfied. Tool executes normally.` },
       ]} />
 
-      <p>Tools without an <code>execute</code> method (schema-only) pass through unchanged. The return type is preserved: <code>wrapTools</code> returns the same <code>T</code> you pass in, so type inference works everywhere.</p>
+      <p>Tools without an <code>execute</code> method (schema-only) pass through unchanged. <code>wrapTools</code> returns a <code>GateSession</code> containing the wrapped tools, the system prompt, and status helpers. The tools preserve the same type <code>T</code> you pass in, so type inference works everywhere.</p>
       <p>For details on the rule DSL (sequences, blocks, limits, tool mapping), see the <a href={`${import.meta.env.BASE_URL}docs/rules/`} style="color:var(--accent-text)">rules engine docs</a>.</p>
     </div>
 
@@ -326,7 +330,12 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <h3><code>PetriflowGate</code></h3>
       <Code code={petriflowGateType} lang="typescript" />
       <ul>
-        <li><strong style="color:var(--text-secondary)">wrapTools(tools)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns the same type.</li>
+        <li><strong style="color:var(--text-secondary)">wrapTools(tools)</strong>: instruments each tool's <code>execute</code> with gate checks. Returns a <code>GateSession</code> containing the wrapped tools, prompt helpers, and net management methods. Each call creates fresh state, so the gate itself is stateless and safe to share.</li>
+      </ul>
+
+      <h3><code>GateSession</code></h3>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">tools</strong>: the wrapped tools, same type as the input. Use these in <code>generateText</code> / <code>streamText</code>.</li>
         <li><strong style="color:var(--text-secondary)">systemPrompt()</strong>: returns a formatted prompt describing active nets, gated tools, and current state. Pass this to the model so it knows the constraints.</li>
         <li><strong style="color:var(--text-secondary)">formatStatus()</strong>: returns the current marking of all nets. Useful for debugging.</li>
         <li><strong style="color:var(--text-secondary)">addNet(name)</strong>: registry mode only. Activates a registered net.</li>
