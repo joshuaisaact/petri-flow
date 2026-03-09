@@ -362,6 +362,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <p>Use <code>manager.replay()</code> directly when you already know which tools completed, or when you need to pass <code>input</code> for <code>toolMapper</code> resolution.</p>
       <Code code={replayLowLevelExample} lang="typescript" />
       <p>Replay is idempotent — if a transition has already fired or can't fire, it's skipped silently. Failed tool results (<code>isError: true</code>) are skipped so deferred transitions don't advance on failure.</p>
+      <p><strong>Security note:</strong> replay treats the message history as authoritative. If messages are round-tripped through the client, a caller could forge tool results to unlock gated tools. Use server-persisted message history for replay — the same best practice the AI SDK recommends for any stateless setup.</p>
     </div>
 
     <!-- Error handling -->

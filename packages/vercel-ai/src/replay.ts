@@ -58,6 +58,9 @@ function isErrorResult(part: ToolResultPart): boolean {
  * for toolMapper resolution.
  *
  * Results are returned in the order tool-result parts appear in the messages.
+ *
+ * **Security:** The message history is treated as authoritative. Use
+ * server-persisted messages, not client-provided history.
  */
 export function extractReplayEntries(
   messages: { role: string; content: unknown }[],
