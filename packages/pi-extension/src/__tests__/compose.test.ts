@@ -168,7 +168,7 @@ describe("composeGates — tool_call handler", () => {
   it("blocks when one net blocks", async () => {
     const { handlers } = setupComposition([netA, netE]);
     const result = await handlers.tool_call!(makeEvent("dangerous"), makeCtx());
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("netE") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available in the current state") });
   });
 
   it("allows when net abstains and other allows", async () => {
@@ -231,7 +231,7 @@ describe("composeGates — dynamic management via pi-mono", () => {
 
     // "dangerous" is blocked by netE
     const result1 = await handlers.tool_call!(makeEvent("dangerous"), makeCtx());
-    expect(result1).toEqual({ block: true, reason: expect.stringContaining("netE") });
+    expect(result1).toEqual({ block: true, reason: expect.stringContaining("not available in the current state") });
 
     // Remove netE
     let notified = "";
@@ -327,7 +327,7 @@ describe("composeGates — real nets composition", () => {
 
     const { handlers } = setupComposition([communicateNet, cleanupNet]);
     const result = await handlers.tool_call!(makeBashEvent("rm -rf build/"), makeCtx());
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("cleanup") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available in the current state") });
   });
 
   it("compose communicate + cleanup: slack send gated by communicate", async () => {
@@ -339,6 +339,6 @@ describe("composeGates — real nets composition", () => {
       makeEvent("slack", { action: "sendMessage", to: "channel:C123" }),
       makeCtx(),
     );
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("communicate") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available in the current state") });
   });
 });

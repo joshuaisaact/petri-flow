@@ -1,5 +1,5 @@
 import { createGateManager } from "@petriflow/gate";
-import type { ComposeConfig, GateManagerOptions, SkillNet } from "@petriflow/gate";
+import type { ComposeConfig, GateManagerOptions, RuleMetadata, SkillNet } from "@petriflow/gate";
 import { wrapTools as wrapToolsInternal } from "./wrap-tools.js";
 import type { GateContext } from "@petriflow/gate";
 
@@ -7,6 +7,8 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
   mode?: GateManagerOptions["mode"];
   /** Called for manual transitions. If not provided, manual transitions are blocked. */
   confirm?: (title: string, message: string) => Promise<boolean>;
+  /** Custom formatter for block reasons. Overrides the default constraint message. */
+  formatBlockReason?: (toolName: string, reason: string) => string;
 };
 
 export function createPetriflowGate(nets: SkillNet<string>[], opts?: GateOptions): PetriflowGate;
@@ -28,7 +30,7 @@ export function createPetriflowGate(
     wrapTools: <T extends Record<string, any>>(tools: T): GateSession<T> => {
       const manager = createGateManager(input, managerOpts);
       return {
-        tools: wrapToolsInternal(tools, manager, ctx),
+        tools: wrapToolsInternal(tools, manager, ctx, opts?.formatBlockReason),
         systemPrompt: () => manager.formatSystemPrompt(),
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),
@@ -53,7 +55,7 @@ export type PetriflowGate = {
 };
 
 // Re-export gate types for convenience
-export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions } from "@petriflow/gate";
+export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, RuleMetadata } from "@petriflow/gate";
 export { defineSkillNet, createGateManager } from "@petriflow/gate";
 
 // Re-export errors

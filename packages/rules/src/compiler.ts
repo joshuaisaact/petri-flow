@@ -199,6 +199,7 @@ function compileSequence(rule: SequenceRule): SkillNet<string> {
     ],
     freeTools: [],
     terminalPlaces: [],
+    ruleMetadata: { kind: "sequence", prerequisite: rule.a, dependent: rule.b },
   });
 }
 
@@ -219,6 +220,7 @@ function compileApproval(rule: ApprovalRule): SkillNet<string> {
     ],
     freeTools: [],
     terminalPlaces: [],
+    ruleMetadata: { kind: "approval", tool: rule.b },
   });
 }
 
@@ -239,6 +241,7 @@ function compileBlock(rule: BlockRule): SkillNet<string> {
     ],
     freeTools: [],
     terminalPlaces: [],
+    ruleMetadata: { kind: "block", tool: rule.a },
   });
 }
 
@@ -260,6 +263,7 @@ function compileLimit(rule: LimitRule): SkillNet<string> {
       ],
       freeTools: [],
       terminalPlaces: [],
+      ruleMetadata: { kind: "limit", tool: rule.a, limit: rule.n, scope: "session" },
     });
   }
 
@@ -287,6 +291,7 @@ function compileLimit(rule: LimitRule): SkillNet<string> {
     ],
     freeTools: [],
     terminalPlaces: [],
+    ruleMetadata: { kind: "limit", tool: rule.a, limit: rule.n, scope: action },
   });
 }
 

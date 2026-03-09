@@ -177,7 +177,7 @@ describe("handleToolCall", () => {
   it("blocks manual transition when human rejects", async () => {
     const state = gs<P>({ a: 0, b: 0, c: 0, d: 1, e: 0 });
     const result = await handleToolCall(makeEvent("write"), makeCtx(false), simpleNet, state);
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("rejected") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("rejected by human review") });
     expect(state.marking.d).toBe(1);
   });
 
@@ -193,7 +193,7 @@ describe("handleToolCall", () => {
     const state = gs<P>({ a: 0, b: 0, c: 0, d: 1, e: 0 });
     const noUiCtx: GateContext = { hasUI: false, confirm: async () => false };
     const result = await handleToolCall(makeEvent("write"), noUiCtx, simpleNet, state);
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("requires UI") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("requires human approval") });
   });
 });
 
@@ -238,7 +238,7 @@ describe("toolApprovalNet", () => {
   it("bash blocked when human rejects", async () => {
     const state = gs(autoAdvance(toolApprovalNet, { ...toolApprovalNet.initialMarking }));
     const result = await handleToolCall(makeEvent("bash"), makeCtx(false), toolApprovalNet, state);
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("rejected") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("rejected by human review") });
   });
 
   it("bash allowed when human approves, token returns to ready", async () => {
@@ -289,7 +289,7 @@ describe("implementNet", () => {
       implementNet,
       state,
     );
-    expect(blocked).toEqual({ block: true, reason: expect.stringContaining("rejected") });
+    expect(blocked).toEqual({ block: true, reason: expect.stringContaining("rejected by human review") });
 
     const allowed = await handleToolCall(
       makeBashEvent('git commit -m "feat"'),

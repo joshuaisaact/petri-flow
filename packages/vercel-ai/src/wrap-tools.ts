@@ -23,6 +23,7 @@ export function wrapTools<T extends Record<string, Tool>>(
   tools: T,
   manager: GateManager,
   ctx: GateContext,
+  formatBlockReason?: (toolName: string, reason: string) => string,
 ): T {
   const wrapped = {} as Record<string, Tool>;
 
@@ -47,7 +48,8 @@ export function wrapTools<T extends Record<string, Tool>>(
         );
 
         if (decision?.block) {
-          throw new ToolCallBlockedError(name, toolCallId, decision.reason);
+          const reason = formatBlockReason ? formatBlockReason(name, decision.reason) : decision.reason;
+          throw new ToolCallBlockedError(name, toolCallId, reason);
         }
 
         try {

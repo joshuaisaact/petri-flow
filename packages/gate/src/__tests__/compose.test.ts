@@ -204,7 +204,7 @@ describe("createGateManager — array mode", () => {
   it("blocks when one net blocks (jurisdiction, no enabled transition)", async () => {
     const manager = createGateManager([netA, netE]);
     const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("netE") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available") });
   });
 
   it("allows when unknown net abstains and other net allows", async () => {
@@ -235,14 +235,14 @@ describe("createGateManager — array mode", () => {
   it("handles manual approval — blocked when rejected", async () => {
     const manager = createGateManager([netB]);
     const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx(false));
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("rejected") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("rejected by human review") });
   });
 
   it("handles manual approval — blocked when no UI", async () => {
     const manager = createGateManager([netB]);
     const noUiCtx: GateContext = { hasUI: false, confirm: async () => false };
     const result = await manager.handleToolCall(makeEvent("dangerous"), noUiCtx);
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("requires UI") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("requires human approval") });
   });
 });
 
@@ -337,7 +337,7 @@ describe("createGateManager — single net equivalence", () => {
     const manager = createGateManager([netB]);
 
     const rejected = await manager.handleToolCall(makeEvent("dangerous"), makeCtx(false));
-    expect(rejected).toEqual({ block: true, reason: expect.stringContaining("rejected") });
+    expect(rejected).toEqual({ block: true, reason: expect.stringContaining("rejected by human review") });
 
     const approved = await manager.handleToolCall(makeEvent("dangerous"), makeCtx(true));
     expect(approved).toBeUndefined();
@@ -391,7 +391,7 @@ describe("createGateManager — real nets composition", () => {
 
     const manager = createGateManager([communicateNet, cleanupNet]);
     const result = await manager.handleToolCall(makeBashEvent("rm -rf build/"), makeCtx());
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("cleanup") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available") });
   });
 
   it("compose communicate + cleanup: slack unknown to cleanup, communicate gates it", async () => {
@@ -403,7 +403,7 @@ describe("createGateManager — real nets composition", () => {
       makeEvent("slack", { action: "sendMessage", to: "channel:C123" }),
       makeCtx(),
     );
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("communicate") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available") });
   });
 });
 
@@ -434,7 +434,7 @@ describe("createGateManager — dynamic management", () => {
 
     // "dangerous" is blocked by netE
     const result1 = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
-    expect(result1).toEqual({ block: true, reason: expect.stringContaining("netE") });
+    expect(result1).toEqual({ block: true, reason: expect.stringContaining("not available") });
 
     // Remove netE
     const removeResult = manager.removeNet("netE");
@@ -615,7 +615,7 @@ describe("createGateManager — shadow mode", () => {
     });
 
     const result = await manager.handleToolCall(makeEvent("dangerous"), makeCtx());
-    expect(result).toEqual({ block: true, reason: expect.stringContaining("netE") });
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("not available") });
     expect(decisions).toEqual([{ toolName: "dangerous", blocked: true }]);
   });
 });

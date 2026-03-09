@@ -1,6 +1,9 @@
 // Types
 export { defineSkillNet } from "./types.js";
-export type { SkillNet, GatedTransition, ToolEvent } from "./types.js";
+export type { SkillNet, GatedTransition, ToolEvent, RuleMetadata } from "./types.js";
+
+// Block reason formatting
+export { formatBlockReason } from "./format.js";
 
 // Generic event types
 export type { GateToolCall, GateToolResult, GateContext, GateDecision } from "./events.js";
