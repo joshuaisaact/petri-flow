@@ -15,7 +15,7 @@ function mockTool(fn?: (...args: any[]) => any) {
 }
 
 function createGate() {
-  return createPetriflowGate(nets);
+  return createPetriflowGate(nets, { isToolResultError: () => false });
 }
 
 let callId = 0;

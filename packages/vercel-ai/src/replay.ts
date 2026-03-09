@@ -13,7 +13,7 @@ type ToolResultPart = {
   type: "tool-result";
   toolCallId: string;
   toolName: string;
-  output: { type: string } | unknown;
+  output: unknown;
 };
 
 function isToolCallPart(part: unknown): part is ToolCallPart {
@@ -36,7 +36,19 @@ function isToolResultPart(part: unknown): part is ToolResultPart {
   );
 }
 
+/**
+ * SDK error output types that indicate a tool execution failure.
+ * Tracks ToolResultOutput from @ai-sdk/provider-utils — update if the SDK
+ * adds new error variants.
+ */
 const ERROR_OUTPUT_TYPES = new Set(["error-text", "error-json", "execution-denied"]);
+
+/**
+ * SDK wrapper types that carry a `.value` with the raw tool result.
+ * Tracks ToolResultOutput from @ai-sdk/provider-utils — update if the SDK
+ * adds new output variants with a `.value` field.
+ */
+const VALUE_OUTPUT_TYPES = new Set(["text", "json", "error-text", "error-json"]);
 
 function isErrorResult(part: ToolResultPart): boolean {
   if (
@@ -49,6 +61,38 @@ function isErrorResult(part: ToolResultPart): boolean {
   }
   return false;
 }
+
+/**
+ * Unwrap SDK output wrappers so isToolResultError receives the raw tool
+ * return value, matching what it sees during live execution.
+ *
+ * SDK wraps results as: { type: "text"|"json", value: <raw> }
+ * If the output isn't a known wrapper, return it as-is (handles
+ * pre-SDK or hand-constructed messages).
+ */
+function unwrapOutput(output: unknown): unknown {
+  if (
+    typeof output === "object" &&
+    output !== null &&
+    "type" in output &&
+    "value" in output &&
+    typeof (output as { type: unknown }).type === "string" &&
+    VALUE_OUTPUT_TYPES.has((output as { type: string }).type)
+  ) {
+    return (output as { value: unknown }).value;
+  }
+  return output;
+}
+
+export type ExtractReplayOptions = {
+  /**
+   * Custom predicate to classify a tool result as an error.
+   * Called after the built-in check for Vercel AI error output types.
+   * Receives the tool name and the unwrapped raw tool result (SDK output
+   * wrappers like `{ type: "json", value: ... }` are stripped automatically).
+   */
+  isToolResultError?: (toolName: string, result: unknown) => boolean;
+};
 
 /**
  * Extract replay entries from Vercel AI SDK message history.
@@ -64,6 +108,7 @@ function isErrorResult(part: ToolResultPart): boolean {
  */
 export function extractReplayEntries(
   messages: { role: string; content: unknown }[],
+  opts?: ExtractReplayOptions,
 ): ReplayEntry[] {
   // Index tool-call inputs by toolCallId
   const callInputs = new Map<string, Record<string, unknown>>();
@@ -88,10 +133,20 @@ export function extractReplayEntries(
     if (msg.role === "tool" && Array.isArray(msg.content)) {
       for (const part of msg.content) {
         if (isToolResultPart(part)) {
+          const builtinError = isErrorResult(part);
+          let customError = false;
+          if (!builtinError && opts?.isToolResultError) {
+            try {
+              customError = opts.isToolResultError(part.toolName, unwrapOutput(part.output));
+            } catch {
+              // Callback threw — treat as error to avoid advancing on unknown state
+              customError = true;
+            }
+          }
           entries.push({
             toolName: part.toolName,
             input: callInputs.get(part.toolCallId),
-            isError: isErrorResult(part),
+            isError: builtinError || customError,
           });
         }
       }

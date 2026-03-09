@@ -25,6 +25,8 @@ console.log("Loaded rules:", verification);
 
 // Create the gate — deploy and sendEmail will pause for real human approval
 const gate = createPetriflowGate(nets, {
+  isToolResultError: (_toolName, result) =>
+    typeof result === "object" && result !== null && "passed" in result && (result as any).passed === false,
   confirm: askApproval,
   onDecision: (event, decision) => {
     if (decision?.block) {

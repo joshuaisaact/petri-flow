@@ -15,7 +15,7 @@ function mockTool(fn?: (...args: any[]) => any) {
 }
 
 function createGate(confirm?: (title: string, message: string) => Promise<boolean>) {
-  return createPetriflowGate(nets, { confirm });
+  return createPetriflowGate(nets, { isToolResultError: () => false, confirm });
 }
 
 let callId = 0;

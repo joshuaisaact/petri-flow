@@ -10,6 +10,21 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
   confirm?: (title: string, message: string) => Promise<boolean>;
   /** Transform block reasons before they reach the model. Receives the default constraint message. */
   transformBlockReason?: (toolName: string, reason: string) => string;
+  /**
+   * Classify a tool result as an error. Applied in both live execution and
+   * replay. `result` is always the raw return value from the tool's
+   * `execute` — during replay, SDK output wrappers (`{ type: "json",
+   * value: ... }`) are stripped automatically before calling this callback.
+   *
+   * When this returns `true`, the result is treated as a failure: deferred
+   * transitions do not fire, and the net marking stays unchanged.
+   *
+   * Built-in detection for Vercel AI error output types (`error-text`,
+   * `error-json`, `execution-denied`) always runs first during replay. This
+   * callback is only consulted when the built-in check does not already
+   * classify the result as an error.
+   */
+  isToolResultError: (toolName: string, result: unknown) => boolean;
 };
 
 type WrapToolsOptions = {
@@ -17,19 +32,20 @@ type WrapToolsOptions = {
   messages?: { role: string; content: unknown }[];
 };
 
-export function createPetriflowGate(nets: SkillNet<string>[], opts?: GateOptions): PetriflowGate;
-export function createPetriflowGate(config: ComposeConfig, opts?: GateOptions): PetriflowGate;
+export function createPetriflowGate(nets: SkillNet<string>[], opts: GateOptions): PetriflowGate;
+export function createPetriflowGate(config: ComposeConfig, opts: GateOptions): PetriflowGate;
 export function createPetriflowGate(
   input: SkillNet<string>[] | ComposeConfig,
-  opts?: GateOptions,
+  opts: GateOptions,
 ): PetriflowGate {
-  const managerOpts: GateManagerOptions | undefined = opts
-    ? { mode: opts.mode ?? "enforce", onDecision: opts.onDecision }
-    : undefined;
+  const managerOpts: GateManagerOptions = {
+    mode: opts.mode ?? "enforce",
+    onDecision: opts.onDecision,
+  };
 
   const ctx: GateContext = {
-    hasUI: !!opts?.confirm,
-    confirm: opts?.confirm ?? (async () => false),
+    hasUI: !!opts.confirm,
+    confirm: opts.confirm ?? (async () => false),
   };
 
   return {
@@ -37,11 +53,17 @@ export function createPetriflowGate(
       const manager = createGateManager(input, managerOpts);
 
       if (wrapOpts?.messages) {
-        manager.replay(extractReplayEntries(wrapOpts.messages));
+        manager.replay(extractReplayEntries(
+          wrapOpts.messages,
+          { isToolResultError: opts.isToolResultError },
+        ));
       }
 
       return {
-        tools: wrapToolsInternal(tools, manager, ctx, opts?.transformBlockReason),
+        tools: wrapToolsInternal(tools, manager, ctx, {
+          transformBlockReason: opts.transformBlockReason,
+          isToolResultError: opts.isToolResultError,
+        }),
         systemPrompt: () => manager.formatSystemPrompt(),
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),

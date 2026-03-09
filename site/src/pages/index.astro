@@ -455,7 +455,9 @@ const config = configure(".")
           <svg slot="logo" aria-hidden="true" width="28" height="28" viewBox="0 0 76 65" fill="white"><path d="M37.5274 0L75.0548 65H0L37.5274 0Z"/></svg>
           <Code code={`import { createPetriflowGate } from "@petriflow/vercel-ai"
 
-const gate = createPetriflowGate([safetyNet])
+const gate = createPetriflowGate([safetyNet], {
+  isToolResultError: /* classify in-band errors */ () => false,
+})
 const session = gate.wrapTools({ bash, write })
 
 await generateText({

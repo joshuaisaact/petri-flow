@@ -12,18 +12,24 @@ type Tool = {
  * Wraps each tool's `execute` with Petri net gating.
  *
  * - Before execute: `manager.handleToolCall()` — blocks if disallowed
- * - After success: `manager.handleToolResult({ isError: false })`
- * - After error: `manager.handleToolResult({ isError: true })`, re-throws
+ * - After success: `manager.handleToolResult({ isError })` where `isError`
+ *   is determined by the optional `isToolResultError` callback
+ * - After thrown error: `manager.handleToolResult({ isError: true })`, re-throws
  * - Tools without `execute` (schema-only) pass through unchanged
  *
  * Note: tool execution is not wrapped with a timeout. If `execute` hangs,
  * `handleToolResult` is never called and the net state will stall.
  */
+type WrapToolsOpts = {
+  transformBlockReason?: (toolName: string, reason: string) => string;
+  isToolResultError: (toolName: string, result: unknown) => boolean;
+};
+
 export function wrapTools<T extends Record<string, Tool>>(
   tools: T,
   manager: GateManager,
   ctx: GateContext,
-  transformBlockReason?: (toolName: string, reason: string) => string,
+  opts: WrapToolsOpts,
 ): T {
   const wrapped = {} as Record<string, Tool>;
 
@@ -48,17 +54,24 @@ export function wrapTools<T extends Record<string, Tool>>(
         );
 
         if (decision?.block) {
-          const reason = transformBlockReason ? transformBlockReason(name, decision.reason) : decision.reason;
+          const reason = opts.transformBlockReason ? opts.transformBlockReason(name, decision.reason) : decision.reason;
           throw new ToolCallBlockedError(name, toolCallId, reason);
         }
 
         try {
           const result = await originalExecute(input, options);
+          let isError = false;
+          try {
+            isError = opts.isToolResultError(name, result);
+          } catch {
+            // Callback threw — treat as error to avoid advancing on unknown state
+            isError = true;
+          }
           manager.handleToolResult({
             toolCallId,
             toolName: name,
             input: input ?? {},
-            isError: false,
+            isError,
           });
           return result;
         } catch (error) {

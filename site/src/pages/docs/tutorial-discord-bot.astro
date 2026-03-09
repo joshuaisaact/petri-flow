@@ -65,7 +65,9 @@ console.log(verification);
 // ]
 
 // 2. Create the gate
-const gate = createPetriflowGate(nets);
+const gate = createPetriflowGate(nets, {
+  isToolResultError: () => false,
+});
 
 // 3. Define and wrap tools — a single "discord" tool with an action enum
 const session = gate.wrapTools({

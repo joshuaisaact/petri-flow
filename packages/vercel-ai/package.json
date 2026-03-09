@@ -1,6 +1,6 @@
 {
   "name": "@petriflow/vercel-ai",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -29,7 +29,7 @@
     "@petriflow/gate": "^0.3.1"
   },
   "peerDependencies": {
-    "ai": "^6.0.0"
+    "ai": ">=5.0.0"
   },
   "license": "MIT",
   "repository": {
