@@ -16,7 +16,7 @@ Tool 'deploy' blocked: deploy requires a successful call to test first.
 
 - `@petriflow/gate`: `RuleMetadata` type on `SkillNet`, `formatBlockReason()` export
 - `@petriflow/rules`: compiler emits `ruleMetadata` on every compiled net
-- `@petriflow/vercel-ai`: optional `transformBlockReason` hook on `GateOptions`
+- `@petriflow/vercel-ai`: optional `transformBlockReason` hook on `GateOptions` — an escape hatch for custom wording. Most users won't need it since gate 0.3.0 produces good messages by default
 - Messages by rule type:
   - `require A before B` → "B requires a successful call to A first."
   - `block A` → "A is blocked and cannot be called."
