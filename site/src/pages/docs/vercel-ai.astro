@@ -159,8 +159,8 @@ try {
   if (e instanceof ToolCallBlockedError) {
     console.log(e.toolName);   // "delete"
     console.log(e.toolCallId); // "call_abc123"
-    console.log(e.reason);     // "[block-rm] Tool 'rm' not available ..."
-    console.log(e.message);    // "Tool 'delete' blocked: [block-rm] ..."
+    console.log(e.reason);     // "delete requires a successful call to backup first."
+    console.log(e.message);    // "Tool 'delete' blocked: delete requires ..."
   }
 }`;
 
@@ -180,11 +180,11 @@ const gateOptionsType = `type GateOptions = {
   mode?: "enforce" | "shadow";  // default: "enforce"
   confirm?: (title: string, message: string) => Promise<boolean>;
   onDecision?: (event: GateToolCall, decision: GateDecision) => void;
+  transformBlockReason?: (toolName: string, reason: string) => string;
 };`;
 
 const petriflowGateType = `type PetriflowGate = {
   wrapTools: <T extends Record<string, any>>(tools: T) => GateSession<T>;
-  manager: GateManager;
 };
 
 type GateSession<T> = {
@@ -193,6 +193,7 @@ type GateSession<T> = {
   formatStatus: () => string;
   addNet: (name: string) => { ok: boolean; message: string };
   removeNet: (name: string) => { ok: boolean; message: string };
+  manager: GateManager;
 };`;
 
 const errorType = `class ToolCallBlockedError extends Error {
@@ -200,6 +201,12 @@ const errorType = `class ToolCallBlockedError extends Error {
   readonly toolCallId: string;
   readonly reason: string;
 }`;
+
+const ruleMetadataType = `type RuleMetadata =
+  | { kind: "sequence"; prerequisite: string; dependent: string }
+  | { kind: "approval"; tool: string }
+  | { kind: "block"; tool: string }
+  | { kind: "limit"; tool: string; limit: number; scope: "session" | string };`;
 
 const bundledNetExample = `import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai";
 // or: import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai/nets/tool-approval";
@@ -306,7 +313,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
     <!-- Error handling -->
     <div class="doc-section" id="error-handling">
       <h2>Error handling</h2>
-      <p>When a tool is blocked in enforce mode, <code>wrapTools</code> throws a <code>ToolCallBlockedError</code>. The original tool never executes.</p>
+      <p>When a tool is blocked in enforce mode, <code>wrapTools</code> throws a <code>ToolCallBlockedError</code>. The original tool never executes. Block reasons are constraint-stating messages (e.g. "deploy requires a successful call to test first") that tell the model what to do next, rather than exposing internal Petri net state.</p>
       <Code code={errorExample} lang="typescript" />
       <p><code>ToolCallBlockedError</code> extends <code>Error</code>. Use <code>instanceof</code> to distinguish it from tool execution errors. The Vercel AI SDK catches tool errors and feeds them back to the model, so the agent sees the block reason and can adjust its plan.</p>
     </div>
@@ -325,6 +332,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <li><strong style="color:var(--text-secondary)">mode</strong>: <code>"enforce"</code> throws on blocked calls. <code>"shadow"</code> logs but never blocks. Default: <code>"enforce"</code>.</li>
         <li><strong style="color:var(--text-secondary)">confirm</strong>: callback for <code>require human-approval</code> rules. If omitted, manual transitions are blocked.</li>
         <li><strong style="color:var(--text-secondary)">onDecision</strong>: fires after every gating decision. Receives the tool call event and the decision (<code>{"{"} block: true, reason {"}"}</code> or <code>undefined</code>).</li>
+        <li><strong style="color:var(--text-secondary)">transformBlockReason</strong>: optional hook to transform block reasons before they reach the model. Receives the tool name and the default constraint-stating message. Return a custom string to override it.</li>
       </ul>
 
       <h3><code>PetriflowGate</code></h3>
@@ -340,6 +348,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <li><strong style="color:var(--text-secondary)">formatStatus()</strong>: returns the current marking of all nets. Useful for debugging.</li>
         <li><strong style="color:var(--text-secondary)">addNet(name)</strong>: registry mode only. Activates a registered net.</li>
         <li><strong style="color:var(--text-secondary)">removeNet(name)</strong>: registry mode only. Deactivates a net. State is preserved for later reactivation.</li>
+        <li><strong style="color:var(--text-secondary)">manager</strong>: the underlying <code>GateManager</code> instance. Useful for advanced introspection or custom integrations.</li>
       </ul>
 
       <h3><code>ToolCallBlockedError</code></h3>
@@ -347,8 +356,18 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <ul>
         <li><strong style="color:var(--text-secondary)">toolName</strong>: the tool that was blocked</li>
         <li><strong style="color:var(--text-secondary)">toolCallId</strong>: the specific invocation ID</li>
-        <li><strong style="color:var(--text-secondary)">reason</strong>: human-readable explanation from the gate</li>
+        <li><strong style="color:var(--text-secondary)">reason</strong>: constraint-stating explanation from the gate (e.g. "deploy requires a successful call to test first")</li>
         <li><strong style="color:var(--text-secondary)">message</strong>: formatted as <code>"Tool '&lt;name&gt;' blocked: &lt;reason&gt;"</code></li>
+      </ul>
+
+      <h3><code>RuleMetadata</code></h3>
+      <p>Structured metadata attached to each <code>SkillNet</code> by the rules compiler. Used internally to generate constraint-stating block reasons. Re-exported for consumers who need to inspect rule structure.</p>
+      <Code code={ruleMetadataType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">sequence</strong>: "deploy requires a successful call to test first."</li>
+        <li><strong style="color:var(--text-secondary)">approval</strong>: "deploy requires human approval."</li>
+        <li><strong style="color:var(--text-secondary)">block</strong>: "rm is blocked and cannot be called."</li>
+        <li><strong style="color:var(--text-secondary)">limit</strong>: "search has reached its limit of 3 calls per session."</li>
       </ul>
 
       <h3><code>vercelAiToolApprovalNet</code></h3>
