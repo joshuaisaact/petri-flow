@@ -197,6 +197,61 @@ const errorType = `class ToolCallBlockedError extends Error {
   readonly reason: string;
 }`;
 
+const factoryExample = `import { createPetriflowFactory } from "@petriflow/vercel-ai";
+import { streamText, tool } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+import { Hono } from "hono";
+
+// Startup — compile once, configure once
+const factory = await createPetriflowFactory("./safety.rules", {
+  mode: "enforce",
+  onDecision: (event, decision) => {
+    console.log({ tool: event.toolName, blocked: !!decision?.block });
+  },
+});
+
+const app = new Hono();
+
+app.post("/chat", async (c) => {
+  // Per request — fresh marking state, zero config
+  const gate = factory.createSession();
+
+  const result = streamText({
+    model: openai("gpt-4o"),
+    tools: gate.wrapTools(myTools),
+    system: gate.systemPrompt(),
+    prompt: c.req.query("prompt") ?? "Hello",
+  });
+
+  return result.toTextStreamResponse();
+});`;
+
+const factoryInputs = `// Path to a .rules file (requires @petriflow/rules as peer dep)
+const f1 = await createPetriflowFactory("./safety.rules", opts);
+
+// Inline rules string
+const f2 = await createPetriflowFactory({ rules: "block rm" }, opts);
+
+// Pre-compiled nets
+const { nets } = compile("require backup before delete");
+const f3 = await createPetriflowFactory({ nets }, opts);
+
+// Registry mode (ComposeConfig)
+const f4 = await createPetriflowFactory({
+  config: { registry: { safety: nets[0] }, active: ["safety"] },
+}, opts);`;
+
+const factorySignature = `async function createPetriflowFactory(
+  input: string | { rules: string } | { nets: SkillNet<string>[] } | { config: ComposeConfig },
+  opts?: GateOptions,
+): Promise<PetriflowFactory>;
+
+type PetriflowFactory = {
+  createSession: () => PetriflowGate;
+  nets: readonly SkillNet<string>[];
+};`;
+
 const bundledNetExample = `import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai";
 // or: import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai/nets/tool-approval";
 
@@ -231,6 +286,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <a href="#manual-confirmation">Manual confirmation</a>
         <a href="#shadow-mode">Shadow mode</a>
         <a href="#registry-mode">Registry mode</a>
+        <a href="#session-factory">Session factory</a>
         <a href="#error-handling">Error handling</a>
         <a href="#api-reference">API reference</a>
       </nav>
@@ -299,6 +355,19 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <p>Use this when your agent's permissions change mid-session: escalating privileges after authentication, enabling deploy rules only during a release window, or disabling rate limits for admin users.</p>
     </div>
 
+    <!-- Session factory -->
+    <div class="doc-section" id="session-factory">
+      <h2>Session factory</h2>
+      <p>In a server, the compiled rules are the same for every request — but each request needs its own marking state. <code>createPetriflowFactory</code> compiles once at startup and hands out fresh sessions on demand.</p>
+      <Code code={factoryExample} lang="typescript" />
+      <p>Each <code>createSession()</code> call returns an independent <code>PetriflowGate</code> with fresh markings, deferred tracking, and rate-limit budgets. The compiled nets and options are shared (immutable), so there's no redundant work per request.</p>
+      <p><strong style="color:var(--text-secondary)">Why not just call <code>createPetriflowGate</code> per request?</strong> You can — the factory is sugar. But it makes the lifecycle explicit: one factory = one set of compiled rules, one session = one set of markings. If someone accidentally lifts a gate out of a request handler for "performance", all users share one set of markings and rate limits break. The factory pattern makes this mistake structurally impossible.</p>
+
+      <h3>Input formats</h3>
+      <Code code={factoryInputs} lang="typescript" />
+      <p>The string and <code>{ rules }</code> variants dynamically import <code>@petriflow/rules</code>. Install it as a peer dependency if you use these forms. The <code>{ nets }</code> and <code>{ config }</code> variants work with pre-compiled nets and have no extra dependencies.</p>
+    </div>
+
     <!-- Error handling -->
     <div class="doc-section" id="error-handling">
       <h2>Error handling</h2>
@@ -331,6 +400,14 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <li><strong style="color:var(--text-secondary)">formatStatus()</strong>: returns the current marking of all nets. Useful for debugging.</li>
         <li><strong style="color:var(--text-secondary)">addNet(name)</strong>: registry mode only. Activates a registered net.</li>
         <li><strong style="color:var(--text-secondary)">removeNet(name)</strong>: registry mode only. Deactivates a net. State is preserved for later reactivation.</li>
+      </ul>
+
+      <h3><code>createPetriflowFactory(input, opts?)</code></h3>
+      <p>Creates a factory that compiles rules once and produces fresh gate sessions. Returns a <code>Promise</code> because rule loading may be async.</p>
+      <Code code={factorySignature} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">createSession()</strong>: returns a new <code>PetriflowGate</code> with independent marking state. Options from the factory are applied automatically.</li>
+        <li><strong style="color:var(--text-secondary)">nets</strong>: readonly access to the compiled nets used by this factory.</li>
       </ul>
 
       <h3><code>ToolCallBlockedError</code></h3>

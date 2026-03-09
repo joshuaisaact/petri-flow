@@ -1,0 +1,206 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import ConceptTags from "../../components/ConceptTags.astro";
+import DocTable from "../../components/DocTable.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const rulesFile = `require lint before deploy
+require human-approval before deploy
+limit deploy to 3 per session`;
+
+const serverCode = `import { createPetriflowFactory } from "@petriflow/vercel-ai";
+import { streamText, tool } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { z } from "zod";
+import { Hono } from "hono";
+
+// 1. Compile once at startup
+const factory = await createPetriflowFactory("./safety.rules", {
+  mode: "enforce",
+  onDecision: (event, decision) => {
+    if (decision?.block) {
+      console.warn(\`[BLOCKED] \${event.toolName}: \${decision.reason}\`);
+    }
+  },
+});
+
+console.log(\`Loaded \${factory.nets.length} nets\`);
+
+// 2. Define tools (shared across all requests)
+const myTools = {
+  lint: tool({
+    description: "Run the linter",
+    inputSchema: z.object({}),
+    execute: async () => ({ passed: true }),
+  }),
+  deploy: tool({
+    description: "Deploy to production",
+    inputSchema: z.object({ version: z.string() }),
+    execute: async ({ version }) => ({ deployed: version }),
+  }),
+};
+
+const app = new Hono();
+
+// 3. Per request — fresh session
+app.post("/chat", async (c) => {
+  const gate = factory.createSession();
+
+  const result = streamText({
+    model: openai("gpt-4o"),
+    tools: gate.wrapTools(myTools),
+    system: gate.systemPrompt(),
+    prompt: await c.req.text(),
+  });
+
+  return result.toTextStreamResponse();
+});
+
+export default app;`;
+
+const withoutFactory = `// Without factory — works, but easy to get wrong
+const { nets } = await loadRules("./safety.rules");
+
+app.post("/chat", async (c) => {
+  // Easy to accidentally lift this out of the handler
+  const gate = createPetriflowGate(nets, {
+    mode: "enforce",
+    onDecision: (event, decision) => { /* ... */ },
+  });
+  // ...
+});`;
+
+const withFactory = `// With factory — lifecycle is explicit
+const factory = await createPetriflowFactory("./safety.rules", {
+  mode: "enforce",
+  onDecision: (event, decision) => { /* ... */ },
+});
+
+app.post("/chat", async (c) => {
+  const gate = factory.createSession();
+  // ...
+});`;
+
+const inlineRules = `// Inline rules — no .rules file needed
+const factory = await createPetriflowFactory({
+  rules: \`
+    require lint before deploy
+    limit deploy to 3 per session
+  \`,
+});`;
+
+const precompiled = `// Pre-compiled nets — skip the file read
+import { compile } from "@petriflow/rules";
+
+const { nets } = compile("require lint before deploy");
+const factory = await createPetriflowFactory({ nets });`;
+
+const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/openai zod hono`;
+---
+<Layout title="Server Integration | PetriFlow" description="Integrate PetriFlow into a multi-user server. Compile rules once at startup, create fresh sessions per request.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <div class="tutorial-heading">
+        <h1>Server Integration</h1>
+      </div>
+      <ConceptTags concepts={["Session factory", "Per-request isolation", "Server integration", "Streaming responses"]} />
+      <p>Integrate PetriFlow into a multi-user server. <strong>Compile rules once at startup</strong>, <strong>create fresh sessions per request</strong>. You'll learn the factory pattern, per-request isolation, and multiple input formats.</p>
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#what-youll-build">What you'll build</a>
+        <a href="#prerequisites">Prerequisites</a>
+        <a href="#the-problem">The problem</a>
+        <a href="#the-factory-pattern">The factory pattern</a>
+        <a href="#full-server">Full server</a>
+        <a href="#input-formats">Input formats</a>
+        <a href="#concepts">Concepts</a>
+        <a href="#next-steps">Next steps</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <div class="doc-section" id="what-youll-build">
+      <h2>What you'll build</h2>
+      <p>An HTTP server where every request gets its own gated agent session. Rules compile once at startup. Each request gets fresh marking state — one user's progress never leaks into another's.</p>
+    </div>
+
+    <div class="doc-section" id="prerequisites">
+      <h2>Prerequisites</h2>
+      <Code code={installCmd} lang="bash" />
+      <p>You'll also need an API key for your model provider. This tutorial assumes you've read <a href={`${base}docs/tutorial-file-safety/`} style="color:var(--accent-text)">Tutorial 1: File Safety</a> and <a href={`${base}docs/tutorial-deployment/`} style="color:var(--accent-text)">Tutorial 2: Deployment Agent</a>.</p>
+    </div>
+
+    <div class="doc-section" id="the-problem">
+      <h2>The problem</h2>
+      <p>In a single-request script, you create one gate and use it once. In a server, you need fresh state per request — but the compiled rules are the same every time. The naive approach works but is fragile:</p>
+      <Code code={withoutFactory} lang="typescript" />
+      <p>The compiled nets are immutable, but the gate holds mutable state: markings, deferred transitions, rate-limit budgets. If someone refactors the gate creation out of the handler for "performance", all users share one set of markings. Rate limits become global. Sequencing breaks across requests.</p>
+    </div>
+
+    <div class="doc-section" id="the-factory-pattern">
+      <h2>The factory pattern</h2>
+      <Code code={withFactory} lang="typescript" />
+      <p><code>createPetriflowFactory</code> captures the compiled nets and options once. <code>createSession()</code> returns a fresh <code>PetriflowGate</code> with independent state. The lifecycle is explicit: one factory = one rule set, one session = one user's markings.</p>
+    </div>
+
+    <div class="doc-section" id="full-server">
+      <h2>Full server</h2>
+      <p>Write the rules file:</p>
+      <div class="example-rule" set:html={`<span class="comment"># safety.rules</span>
+<span class="kw">require</span> <span class="str">lint</span> before <span class="str">deploy</span>
+<span class="kw">require</span> <span class="str">human-approval</span> before <span class="str">deploy</span>
+<span class="kw">limit</span> <span class="str">deploy</span> to <span class="str">3</span> per <span class="str">session</span>`} />
+
+      <p>Wire it up:</p>
+      <Code code={serverCode} lang="typescript" />
+      <p>Each POST to <code>/chat</code> gets its own gate session. The factory compiles <code>safety.rules</code> once. <code>gate.systemPrompt()</code> tells the model about the constraints. <code>gate.wrapTools()</code> instruments each tool. Blocked calls throw <code>ToolCallBlockedError</code>, which the Vercel AI SDK feeds back to the model as a tool error.</p>
+
+      <Trace label="// Two users, independent sessions" steps={[
+        { icon: "ok", html: `User A calls <strong>lint()</strong><br><span class="ok-text">OK</span> Session A advances: deploy now reachable` },
+        { icon: "blocked", html: `User B calls <strong>deploy()</strong><br><span class="blocked-text">BLOCKED</span> Session B is fresh — lint hasn't run in this session` },
+        { icon: "ok", html: `User A calls <strong>deploy()</strong><br><span class="ok-text">ALLOWED</span> Session A: lint done, deploy permitted` },
+        { icon: "ok", html: `User B calls <strong>lint()</strong> then <strong>deploy()</strong><br><span class="ok-text">ALLOWED</span> Session B completes its own pipeline independently` },
+      ]} />
+    </div>
+
+    <div class="doc-section" id="input-formats">
+      <h2>Input formats</h2>
+      <p>The factory accepts four input formats:</p>
+      <Code code={inlineRules} lang="typescript" />
+      <Code code={precompiled} lang="typescript" />
+      <p>The string and <code>{'{ rules }'}</code> forms dynamically import <code>@petriflow/rules</code>. The <code>{'{ nets }'}</code> form works with any pre-compiled nets.</p>
+    </div>
+
+    <div class="doc-section" id="concepts">
+      <h2>Concepts</h2>
+      <DocTable borderless rows={[
+        ["Session factory", "Compile once, create fresh sessions on demand. <code>createPetriflowFactory</code> &rarr; <code>factory.createSession()</code>"],
+        ["Per-request isolation", "Each session has independent markings, deferred tracking, and rate-limit budgets. No shared mutable state."],
+        ["Immutable nets", "Compiled rule nets are structurally immutable. The factory captures them once and shares them across all sessions."],
+      ]} />
+    </div>
+
+    <div class="doc-section" id="next-steps">
+      <h2>Next steps</h2>
+      <DocTable borderless rows={[
+        [`<a href="${base}docs/vercel-ai/#session-factory">Session factory API reference</a>`, "Full API docs for <code>createPetriflowFactory</code> and <code>createSession</code>."],
+        [`<a href="${base}docs/vercel-ai/#shadow-mode">Shadow mode</a>`, "Audit decisions before enforcing them in production."],
+        [`<a href="${base}docs/vercel-ai/#registry-mode">Registry mode</a>`, "Dynamic rule activation for multi-tenant servers."],
+      ]} />
+    </div>
+
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

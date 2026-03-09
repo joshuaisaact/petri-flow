@@ -1,6 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import type { SkillNet } from "@petriflow/gate";
-import { createPetriflowGate } from "../index.js";
+import { createPetriflowGate, createPetriflowFactory } from "../index.js";
 import { ToolCallBlockedError } from "../errors.js";
 
 /** Helper to define test nets typed as SkillNet<string> (avoids contravariance issues) */
@@ -616,5 +616,80 @@ describe("Edge cases", () => {
 
     expect(await tools.toolA.execute({}, { toolCallId: "a1" })).toBe("a");
     expect(await tools.toolB.execute({}, { toolCallId: "b1" })).toBe("b");
+  });
+});
+
+describe("createPetriflowFactory", () => {
+  it("creates sessions with independent marking state from nets", async () => {
+    const factory = await createPetriflowFactory({ nets: [deferredNet] });
+
+    const session1 = factory.createSession();
+    const session2 = factory.createSession();
+
+    // Advance session1: backup succeeds → net moves to backedUp
+    const backup1 = mockTool(async () => "ok");
+    const destroy1 = mockTool(async () => "destroyed");
+    const tools1 = session1.wrapTools({ backup: backup1, destroy: destroy1 });
+    await tools1.backup.execute({}, { toolCallId: "b1" });
+    const result = await tools1.destroy.execute({}, { toolCallId: "d1" });
+    expect(result).toBe("destroyed");
+
+    // Session2 should still be in initial state — destroy blocked
+    const backup2 = mockTool(async () => "ok");
+    const destroy2 = mockTool();
+    const tools2 = session2.wrapTools({ backup: backup2, destroy: destroy2 });
+    expect(tools2.destroy.execute({}, { toolCallId: "d2" })).rejects.toThrow(ToolCallBlockedError);
+  });
+
+  it("passes gate options to every session", async () => {
+    const decisions: string[] = [];
+    const factory = await createPetriflowFactory(
+      { nets: [simpleNet] },
+      { onDecision: (event) => decisions.push(event.toolName) },
+    );
+
+    const s1 = factory.createSession();
+    const s2 = factory.createSession();
+
+    const t1 = mockTool(async () => "ok");
+    const t2 = mockTool(async () => "ok");
+    await s1.wrapTools({ writeData: t1 }).writeData.execute({}, { toolCallId: "c1" });
+    await s2.wrapTools({ writeData: t2 }).writeData.execute({}, { toolCallId: "c2" });
+
+    expect(decisions).toEqual(["writeData", "writeData"]);
+  });
+
+  it("exposes compiled nets as readonly", async () => {
+    const factory = await createPetriflowFactory({ nets: [simpleNet, blockingNet] });
+    expect(factory.nets).toHaveLength(2);
+    expect(factory.nets[0]!.name).toBe("simple");
+    expect(factory.nets[1]!.name).toBe("blocker");
+  });
+
+  it("accepts inline rules string", async () => {
+    const factory = await createPetriflowFactory({
+      rules: "block dangerousTool",
+    });
+
+    expect(factory.nets.length).toBeGreaterThan(0);
+    const session = factory.createSession();
+    const tool = mockTool();
+    const tools = session.wrapTools({ dangerousTool: tool });
+
+    expect(tools.dangerousTool.execute({}, { toolCallId: "c1" })).rejects.toThrow(ToolCallBlockedError);
+  });
+
+  it("accepts ComposeConfig for registry mode", async () => {
+    const factory = await createPetriflowFactory({
+      config: { registry: { simple: simpleNet, blocker: blockingNet }, active: ["simple"] },
+    });
+
+    const session = factory.createSession();
+    const tool = mockTool(async () => "ok");
+    const tools = session.wrapTools({ writeData: tool });
+
+    // Only simple active, so writeData allowed
+    const result = await tools.writeData.execute({}, { toolCallId: "c1" });
+    expect(result).toBe("ok");
   });
 });

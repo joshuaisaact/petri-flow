@@ -46,6 +46,51 @@ export type PetriflowGate = {
   manager: ReturnType<typeof createGateManager>;
 };
 
+// ---------------------------------------------------------------------------
+// Session factory — compile once, createSession() per request
+// ---------------------------------------------------------------------------
+
+type FactoryInput =
+  | { rules: string }
+  | { nets: SkillNet<string>[] }
+  | { config: ComposeConfig };
+
+export type PetriflowFactory = {
+  /** Create a fresh gate session (new markings, same compiled nets). */
+  createSession: () => PetriflowGate;
+  /** The compiled nets used by this factory. */
+  nets: readonly SkillNet<string>[];
+};
+
+export async function createPetriflowFactory(
+  input: string | FactoryInput,
+  opts?: GateOptions,
+): Promise<PetriflowFactory> {
+  let nets: SkillNet<string>[];
+  let createSession: () => PetriflowGate;
+
+  if (typeof input === "string") {
+    const { loadRules } = await import("@petriflow/rules");
+    const compiled = await loadRules(input);
+    nets = compiled.nets;
+    createSession = () => createPetriflowGate(nets, opts);
+  } else if ("rules" in input) {
+    const { compile } = await import("@petriflow/rules");
+    const compiled = compile(input.rules);
+    nets = compiled.nets;
+    createSession = () => createPetriflowGate(nets, opts);
+  } else if ("nets" in input) {
+    nets = input.nets;
+    createSession = () => createPetriflowGate(nets, opts);
+  } else {
+    const config = input.config;
+    nets = Object.values(config.registry);
+    createSession = () => createPetriflowGate(config, opts);
+  }
+
+  return { createSession, nets };
+}
+
 // Re-export gate types for convenience
 export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions } from "@petriflow/gate";
 export { defineSkillNet, createGateManager } from "@petriflow/gate";
