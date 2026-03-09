@@ -6,7 +6,7 @@
 
 Block reasons now state the constraint plainly instead of exposing internal Petri net state. LLMs can interpret these and recover instead of giving up.
 
-```
+```text
 # Before
 Tool 'deploy' blocked: [require-test-before-deploy] Tool 'deploy' not available in current state. Marking: ready:1
 
@@ -16,7 +16,7 @@ Tool 'deploy' blocked: deploy requires a successful call to test first.
 
 - `@petriflow/gate`: `RuleMetadata` type on `SkillNet`, `formatBlockReason()` export
 - `@petriflow/rules`: compiler emits `ruleMetadata` on every compiled net
-- `@petriflow/vercel-ai`: optional `formatBlockReason` hook on `GateOptions`
+- `@petriflow/vercel-ai`: optional `transformBlockReason` hook on `GateOptions`
 - Messages by rule type:
   - `require A before B` → "B requires a successful call to A first."
   - `block A` → "A is blocked and cannot be called."
