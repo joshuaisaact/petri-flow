@@ -98,6 +98,23 @@ const tutorials = [
       "Formal verification",
     ],
   },
+  {
+    href: `${base}docs/tutorial-server-integration/`,
+
+    title: "Server Integration",
+    description: "Compile rules once at startup, create fresh sessions per request.",
+    rules: [
+      `<span class="comment"># compile once, session per request</span>`,
+      `${kw("factory")} = createPetriflowFactory(rules)`,
+      `${kw("session")} = factory.${str("createSession()")}`,
+    ].join("\n"),
+    concepts: [
+      "Session factory",
+      "Per-request isolation",
+      "Server integration",
+      "Streaming responses",
+    ],
+  },
 ];
 ---
 <Layout title="Tutorials — PetriFlow" description="Step-by-step tutorials for building safe AI agents with PetriFlow. Learn sequencing, blocking, human approval gates, rate limits, and tool mapping.">
