@@ -61,13 +61,11 @@ export function wrapTools<T extends Record<string, Tool>>(
         try {
           const result = await originalExecute(input, options);
           let isError = false;
-          if (opts.isToolResultError) {
-            try {
-              isError = opts.isToolResultError(name, result);
-            } catch {
-              // Callback threw — treat as error to avoid advancing on unknown state
-              isError = true;
-            }
+          try {
+            isError = opts.isToolResultError(name, result);
+          } catch {
+            // Callback threw — treat as error to avoid advancing on unknown state
+            isError = true;
           }
           manager.handleToolResult({
             toolCallId,

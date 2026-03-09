@@ -27,7 +27,7 @@ const gate = createPetriflowGate(nets, {
 - `isToolResultError: (toolName: string, result: unknown) => boolean` is required on `GateOptions`
 - Live execution: after `execute()` returns, the callback determines `isError` for `handleToolResult`
 - Replay: SDK output wrappers (`{ type: "json", value: ... }`) are stripped before calling the callback, so it always receives the raw tool return value
-- Built-in detection for SDK error types (`error-text`, `error-json`, `execution-denied`) still runs as a fallback during replay
+- Built-in detection for SDK error types (`error-text`, `error-json`, `execution-denied`) runs first during replay; the callback is only consulted when the built-in check does not already classify the result as an error
 - If the callback throws, the result is treated as an error (fail-closed)
 
 ### Why

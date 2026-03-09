@@ -18,7 +18,7 @@ const gate = createPetriflowGate(nets, {
 - Applied in both live execution and replay
 - SDK output wrappers stripped during replay so the callback always receives raw values
 - Callback throwing is fail-closed (treated as error)
-- Built-in detection for SDK error types (`error-text`, `error-json`, `execution-denied`) still runs as a fallback
+- Built-in detection for SDK error types (`error-text`, `error-json`, `execution-denied`) runs first during replay; the callback is only consulted when the built-in check does not already classify the result as an error
 
 ## 0.3.1 — @petriflow/gate, @petriflow/vercel-ai
 
