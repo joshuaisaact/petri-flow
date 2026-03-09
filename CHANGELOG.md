@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.2.0 — @petriflow/vercel-ai
+
+### Breaking: stateless gate, session-scoped state
+
+`createPetriflowGate` is now stateless. `wrapTools()` returns a `GateSession` with fresh markings, deferred tracking, and rate-limit budgets. The gate is safe to share across requests.
+
+```typescript
+// Before (0.1.x)
+const gate = createPetriflowGate(nets, opts);
+const tools = gate.wrapTools(myTools);
+generateText({ tools, system: gate.systemPrompt() });
+
+// After (0.2.0)
+const gate = createPetriflowGate(nets, opts);
+const session = gate.wrapTools(myTools);
+generateText({ tools: session.tools, system: session.systemPrompt() });
+```
+
+- `wrapTools()` returns `GateSession<T>` instead of `T`
+- `systemPrompt()`, `formatStatus()`, `addNet()`, `removeNet()` moved from gate to session
+- `createPetriflowFactory` removed (no longer needed)
+- Tutorial 6: Server Integration added
+- CHANGELOG.md added to package
+
 ## 0.1.0 — Initial Release
 
 ### @petriflow/engine
