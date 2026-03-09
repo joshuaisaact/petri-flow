@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { extractReplayEntries } from "../replay.js";
-import { createPetriflowGate } from "../index.js";
+import { createPetriflowGate, ToolCallBlockedError } from "../index.js";
 import { defineSkillNet } from "@petriflow/gate";
 
 describe("extractReplayEntries", () => {
@@ -352,12 +352,9 @@ describe("isToolResultError (gate-level)", () => {
     expect(result).toEqual({ success: false, error: "sandbox crashed" });
 
     // But deferred transition should NOT have fired — deploy still blocked
-    try {
-      await session.tools.deploy.execute({}, { toolCallId: "c2" });
-      expect.unreachable("should have thrown");
-    } catch (e) {
-      expect((e as Error).message).toContain("blocked");
-    }
+    expect(
+      session.tools.deploy.execute({}, { toolCallId: "c2" }),
+    ).rejects.toThrow(ToolCallBlockedError);
   });
 
   it("live: successful result fires deferred transition normally", async () => {
@@ -391,12 +388,9 @@ describe("isToolResultError (gate-level)", () => {
     expect(result).toBe("ok");
 
     // Deferred transition should NOT have fired
-    try {
-      await session.tools.deploy.execute({}, { toolCallId: "c2" });
-      expect.unreachable("should have thrown");
-    } catch (e) {
-      expect((e as Error).message).toContain("blocked");
-    }
+    expect(
+      session.tools.deploy.execute({}, { toolCallId: "c2" }),
+    ).rejects.toThrow(ToolCallBlockedError);
   });
 
   it("replay: callback throwing treats result as error (fail-closed)", () => {
