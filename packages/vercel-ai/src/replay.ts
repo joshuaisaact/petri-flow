@@ -50,6 +50,15 @@ function isErrorResult(part: ToolResultPart): boolean {
   return false;
 }
 
+export type ExtractReplayOptions = {
+  /**
+   * Custom predicate to classify a tool result as an error.
+   * Called after the built-in check for Vercel AI error output types.
+   * Receives the tool name and the `output` field from the stored message part.
+   */
+  isToolResultError?: (toolName: string, result: unknown) => boolean;
+};
+
 /**
  * Extract replay entries from Vercel AI SDK message history.
  *
@@ -64,6 +73,7 @@ function isErrorResult(part: ToolResultPart): boolean {
  */
 export function extractReplayEntries(
   messages: { role: string; content: unknown }[],
+  opts?: ExtractReplayOptions,
 ): ReplayEntry[] {
   // Index tool-call inputs by toolCallId
   const callInputs = new Map<string, Record<string, unknown>>();
@@ -88,10 +98,14 @@ export function extractReplayEntries(
     if (msg.role === "tool" && Array.isArray(msg.content)) {
       for (const part of msg.content) {
         if (isToolResultPart(part)) {
+          const builtinError = isErrorResult(part);
+          const customError = !builtinError && opts?.isToolResultError
+            ? opts.isToolResultError(part.toolName, part.output)
+            : false;
           entries.push({
             toolName: part.toolName,
             input: callInputs.get(part.toolCallId),
-            isError: isErrorResult(part),
+            isError: builtinError || customError,
           });
         }
       }

@@ -12,8 +12,9 @@ type Tool = {
  * Wraps each tool's `execute` with Petri net gating.
  *
  * - Before execute: `manager.handleToolCall()` — blocks if disallowed
- * - After success: `manager.handleToolResult({ isError: false })`
- * - After error: `manager.handleToolResult({ isError: true })`, re-throws
+ * - After success: `manager.handleToolResult({ isError })` where `isError`
+ *   is determined by the optional `isToolResultError` callback
+ * - After thrown error: `manager.handleToolResult({ isError: true })`, re-throws
  * - Tools without `execute` (schema-only) pass through unchanged
  *
  * Note: tool execution is not wrapped with a timeout. If `execute` hangs,
@@ -24,6 +25,7 @@ export function wrapTools<T extends Record<string, Tool>>(
   manager: GateManager,
   ctx: GateContext,
   transformBlockReason?: (toolName: string, reason: string) => string,
+  isToolResultError?: (toolName: string, result: unknown) => boolean,
 ): T {
   const wrapped = {} as Record<string, Tool>;
 
@@ -54,11 +56,12 @@ export function wrapTools<T extends Record<string, Tool>>(
 
         try {
           const result = await originalExecute(input, options);
+          const isError = isToolResultError ? isToolResultError(name, result) : false;
           manager.handleToolResult({
             toolCallId,
             toolName: name,
             input: input ?? {},
-            isError: false,
+            isError,
           });
           return result;
         } catch (error) {

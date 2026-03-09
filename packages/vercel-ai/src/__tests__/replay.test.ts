@@ -119,6 +119,61 @@ describe("extractReplayEntries", () => {
       { toolName: "test", input: undefined, isError: false },
     ]);
   });
+
+  it("uses isToolResultError to classify custom error results", () => {
+    const messages = [
+      {
+        role: "assistant",
+        content: [
+          { type: "tool-call", toolCallId: "c1", toolName: "runCode", input: {} },
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "c1",
+            toolName: "runCode",
+            output: { success: false, error: "sandbox crashed" },
+          },
+        ],
+      },
+    ];
+
+    // Without callback — treated as success
+    expect(extractReplayEntries(messages)[0]!.isError).toBe(false);
+
+    // With callback — treated as error
+    const entries = extractReplayEntries(messages, {
+      isToolResultError: (_name, result) =>
+        typeof result === "object" && result !== null && (result as any).success === false,
+    });
+    expect(entries[0]!.isError).toBe(true);
+  });
+
+  it("isToolResultError does not override built-in error detection", () => {
+    const messages = [
+      {
+        role: "assistant",
+        content: [
+          { type: "tool-call", toolCallId: "c1", toolName: "deploy", input: {} },
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          { type: "tool-result", toolCallId: "c1", toolName: "deploy", output: { type: "error-text", value: "failed" } },
+        ],
+      },
+    ];
+
+    // Custom says "not error", but built-in detects it — still isError: true
+    const entries = extractReplayEntries(messages, {
+      isToolResultError: () => false,
+    });
+    expect(entries[0]!.isError).toBe(true);
+  });
 });
 
 const net = defineSkillNet({
@@ -192,5 +247,103 @@ describe("wrapTools with messages", () => {
 
     const state = session.manager.getActiveNets()[0]!;
     expect(state.state.marking.ready).toBe(1);
+  });
+});
+
+describe("isToolResultError (gate-level)", () => {
+  it("replay: skips deferred transition when isToolResultError matches", () => {
+    const gate = createPetriflowGate([net], {
+      isToolResultError: (_name, result) =>
+        typeof result === "object" && result !== null && (result as any).success === false,
+    });
+
+    const session = gate.wrapTools(toolDefs, {
+      messages: [
+        {
+          role: "assistant",
+          content: [{ type: "tool-call", toolCallId: "c1", toolName: "test", input: {} }],
+        },
+        {
+          role: "tool",
+          content: [
+            {
+              type: "tool-result",
+              toolCallId: "c1",
+              toolName: "test",
+              output: { success: false, error: "sandbox 500" },
+            },
+          ],
+        },
+      ],
+    });
+
+    const state = session.manager.getActiveNets()[0]!;
+    expect(state.state.marking.ready).toBe(1);
+    expect(state.state.marking.tested).toBe(0);
+  });
+
+  it("replay: fires deferred only for successes in mixed history", () => {
+    const gate = createPetriflowGate([net], {
+      isToolResultError: (_name, result) =>
+        typeof result === "object" && result !== null && (result as any).success === false,
+    });
+
+    const session = gate.wrapTools(toolDefs, {
+      messages: [
+        // Failure 1
+        { role: "assistant", content: [{ type: "tool-call", toolCallId: "c1", toolName: "test", input: {} }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "test", output: { success: false, error: "sandbox 500" } }] },
+        // Failure 2
+        { role: "assistant", content: [{ type: "tool-call", toolCallId: "c2", toolName: "test", input: {} }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c2", toolName: "test", output: { success: false, error: "sandbox 500" } }] },
+        // Success
+        { role: "assistant", content: [{ type: "tool-call", toolCallId: "c3", toolName: "test", input: {} }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c3", toolName: "test", output: { success: true } }] },
+      ],
+    });
+
+    const state = session.manager.getActiveNets()[0]!;
+    expect(state.state.marking.ready).toBe(0);
+    expect(state.state.marking.tested).toBe(1);
+  });
+
+  it("live: non-throwing error result does not fire deferred transition", async () => {
+    const gate = createPetriflowGate([net], {
+      isToolResultError: (_name, result) =>
+        typeof result === "object" && result !== null && (result as any).success === false,
+    });
+
+    const failingTest = { execute: async (_input: unknown, _opts: { toolCallId: string }) => ({ success: false, error: "sandbox crashed" }) };
+    const deployTool = { execute: async (_input: unknown, _opts: { toolCallId: string }) => "deployed" };
+    const session = gate.wrapTools({ test: failingTest, deploy: deployTool });
+
+    // Tool executes and returns the error object (doesn't throw)
+    const result = await session.tools.test.execute({}, { toolCallId: "c1" });
+    expect(result).toEqual({ success: false, error: "sandbox crashed" });
+
+    // But deferred transition should NOT have fired — deploy still blocked
+    try {
+      await session.tools.deploy.execute({}, { toolCallId: "c2" });
+      expect.unreachable("should have thrown");
+    } catch (e) {
+      expect((e as Error).message).toContain("blocked");
+    }
+  });
+
+  it("live: successful result fires deferred transition normally", async () => {
+    const gate = createPetriflowGate([net], {
+      isToolResultError: (_name, result) =>
+        typeof result === "object" && result !== null && (result as any).success === false,
+    });
+
+    const passingTest = { execute: async (_input: unknown, _opts: { toolCallId: string }) => ({ success: true, output: "all pass" }) };
+    const deployTool = { execute: async (_input: unknown, _opts: { toolCallId: string }) => "deployed" };
+    const session = gate.wrapTools({ test: passingTest, deploy: deployTool });
+
+    await session.tools.test.execute({}, { toolCallId: "c1" });
+
+    // Deploy should now be allowed
+    const result = await session.tools.deploy.execute({}, { toolCallId: "c2" });
+    expect(result).toBe("deployed");
   });
 });

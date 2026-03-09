@@ -45,8 +45,19 @@ const howItWorks = `// session = gate.wrapTools() instruments each tool's execut
 // 2. Execute → original tool.execute(input, options)
 
 // 3. After execute → handleToolResult
-//    Success (isError: false) → deferred transitions advance
-//    Failure (isError: true)  → marking unchanged`;
+//    Success → deferred transitions advance
+//    Failure (thrown error or isToolResultError) → marking unchanged`;
+
+const isToolResultErrorExample = `const gate = createPetriflowGate(nets, {
+  // Classify non-throwing error results as failures.
+  // Applied in both live execution and replay.
+  isToolResultError: (toolName, result) => {
+    if (typeof result === "object" && result !== null) {
+      return (result as any).success === false;
+    }
+    return false;
+  },
+});`;
 
 const rulesExample = `import { compile } from "@petriflow/rules";
 import { createPetriflowGate, ToolCallBlockedError } from "@petriflow/vercel-ai";
@@ -181,6 +192,7 @@ const gateOptionsType = `type GateOptions = {
   confirm?: (title: string, message: string) => Promise<boolean>;
   onDecision?: (event: GateToolCall, decision: GateDecision) => void;
   transformBlockReason?: (toolName: string, reason: string) => string;
+  isToolResultError?: (toolName: string, result: unknown) => boolean;
 };`;
 
 const petriflowGateType = `type PetriflowGate = {
@@ -284,6 +296,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <a href="#shadow-mode">Shadow mode</a>
         <a href="#registry-mode">Registry mode</a>
         <a href="#replay">Replay</a>
+        <a href="#error-classification">Error classification</a>
         <a href="#error-handling">Error handling</a>
         <a href="#api-reference">API reference</a>
       </nav>
@@ -365,6 +378,15 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
       <p><strong>Security note:</strong> replay treats the message history as authoritative. If messages are round-tripped through the client, a caller could forge tool results to unlock gated tools. Use server-persisted message history for replay — the same best practice the AI SDK recommends for any stateless setup.</p>
     </div>
 
+    <!-- Error classification -->
+    <div class="doc-section" id="error-classification">
+      <h2>Error classification</h2>
+      <p>By default, deferred transitions fire whenever a tool returns without throwing. But some tools signal errors through return values (e.g. <code>{"{"} success: false, error: "sandbox crashed" {"}"}</code>) rather than exceptions. Without classification, these "soft failures" advance the net as if they succeeded — inflating token counts and unlocking downstream transitions that shouldn't be available.</p>
+      <p>Use <code>isToolResultError</code> to teach the gate which return values are failures. It applies in both live execution and replay:</p>
+      <Code code={isToolResultErrorExample} lang="typescript" />
+      <p>During <strong>live execution</strong>, the callback receives the raw return value from <code>execute()</code>. During <strong>replay</strong>, it receives the <code>output</code> field from the stored tool-result message. Built-in detection for Vercel AI error types (<code>error-text</code>, <code>error-json</code>, <code>execution-denied</code>) always runs first — the callback is only consulted when the built-in check passes.</p>
+    </div>
+
     <!-- Error handling -->
     <div class="doc-section" id="error-handling">
       <h2>Error handling</h2>
@@ -388,6 +410,7 @@ const gate = createPetriflowGate([vercelAiToolApprovalNet]);
         <li><strong style="color:var(--text-secondary)">confirm</strong>: callback for <code>require human-approval</code> rules. If omitted, manual transitions are blocked.</li>
         <li><strong style="color:var(--text-secondary)">onDecision</strong>: fires after every gating decision. Receives the tool call event and the decision (<code>{"{"} block: true, reason {"}"}</code> or <code>undefined</code>).</li>
         <li><strong style="color:var(--text-secondary)">transformBlockReason</strong>: optional hook to transform block reasons before they reach the model. Receives the tool name and the default constraint-stating message. Return a custom string to override it.</li>
+        <li><strong style="color:var(--text-secondary)">isToolResultError</strong>: classifies a tool result as an error. Applied in both live execution (receives the raw return value) and replay (receives the stored <code>output</code> field). When this returns <code>true</code>, deferred transitions do not fire and the net marking stays unchanged. Built-in detection for Vercel AI error types (<code>error-text</code>, <code>error-json</code>, <code>execution-denied</code>) always runs first; this callback is only consulted when the built-in check passes.</li>
       </ul>
 
       <h3><code>PetriflowGate</code></h3>

@@ -10,6 +10,20 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
   confirm?: (title: string, message: string) => Promise<boolean>;
   /** Transform block reasons before they reach the model. Receives the default constraint message. */
   transformBlockReason?: (toolName: string, reason: string) => string;
+  /**
+   * Classify a tool result as an error. Applied in both live execution and
+   * replay. During live execution, `result` is the raw return value from the
+   * tool's `execute`. During replay, `result` is the `output` field from the
+   * stored tool-result message part.
+   *
+   * When this returns `true`, the result is treated as a failure: deferred
+   * transitions do not fire, and the net marking stays unchanged.
+   *
+   * Built-in detection for Vercel AI error output types (`error-text`,
+   * `error-json`, `execution-denied`) always runs first. This callback is
+   * only consulted when the built-in check passes.
+   */
+  isToolResultError?: (toolName: string, result: unknown) => boolean;
 };
 
 type WrapToolsOptions = {
@@ -37,11 +51,14 @@ export function createPetriflowGate(
       const manager = createGateManager(input, managerOpts);
 
       if (wrapOpts?.messages) {
-        manager.replay(extractReplayEntries(wrapOpts.messages));
+        manager.replay(extractReplayEntries(
+          wrapOpts.messages,
+          opts?.isToolResultError ? { isToolResultError: opts.isToolResultError } : undefined,
+        ));
       }
 
       return {
-        tools: wrapToolsInternal(tools, manager, ctx, opts?.transformBlockReason),
+        tools: wrapToolsInternal(tools, manager, ctx, opts?.transformBlockReason, opts?.isToolResultError),
         systemPrompt: () => manager.formatSystemPrompt(),
         formatStatus: () => manager.formatStatus(),
         addNet: (name: string) => manager.addNet(name),
