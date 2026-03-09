@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.1 — @petriflow/gate, @petriflow/rules, @petriflow/vercel-ai
+## 0.3.0 — @petriflow/gate, @petriflow/rules, @petriflow/vercel-ai
 
 ### Breaking: constraint-stating block reasons
 

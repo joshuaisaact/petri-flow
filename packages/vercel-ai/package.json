@@ -1,6 +1,6 @@
 {
   "name": "@petriflow/vercel-ai",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -26,7 +26,7 @@
     "lint": "oxlint src/"
   },
   "dependencies": {
-    "@petriflow/gate": "^0.2.1"
+    "@petriflow/gate": "^0.3.0"
   },
   "peerDependencies": {
     "ai": "^6.0.0"
