@@ -61,6 +61,9 @@ console.log(verification);
 // ]
 
 // 2. Create the gate
+// files.backup() throws on failure (node:fs), so error-as-value
+// detection isn't needed here. See the Error Classification docs
+// if your tools return errors as values (e.g. { success: false }).
 const gate = createPetriflowGate(nets, {
   isToolResultError: () => false,
 });

@@ -34,7 +34,7 @@ const config = configure(".")
         <Code code={`import { createPetriflowGate } from "@petriflow/vercel-ai"
 
 const gate = createPetriflowGate([safetyNet], {
-  isToolResultError: () => false,
+  isToolResultError: /* classify in-band errors */ () => false,
 })
 const session = gate.wrapTools({ bash, write })
 

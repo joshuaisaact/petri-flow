@@ -99,7 +99,7 @@ const { nets } = compile("require human-approval before deploy");
 
 // CLI: prompt on stdin
 const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
   confirm: async (title, message) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     return new Promise((resolve) => {
@@ -113,14 +113,14 @@ const gate = createPetriflowGate(nets, {
 
 // React: show a dialog
 const gate2 = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
   confirm: async (title, message) => {
     return await showApprovalDialog({ title, message });
   },
 });`;
 
 const shadowExample = `const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
   mode: "shadow",
   onDecision: (event, decision) => {
     if (decision?.block) {
@@ -152,7 +152,7 @@ const gate = createPetriflowGate({
   },
   active: ["safety"],
 }, {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
 });
 
 // myTools = your tool definitions (see Quick Start above)
@@ -278,7 +278,7 @@ const bundledNetExample = `import { vercelAiToolApprovalNet } from "@petriflow/v
 // or: import { vercelAiToolApprovalNet } from "@petriflow/vercel-ai/nets/tool-approval";
 
 const gate = createPetriflowGate([vercelAiToolApprovalNet], {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
 });
 // Free tools: readData, fetchData (always allowed)
 // Gated tools: writeData, sendEmail (require "ready" state)`;

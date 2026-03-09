@@ -69,6 +69,8 @@ const { nets: ruleNets } = compile(rulesText);
 const allNets = [...ruleNets, deploymentPipelineNet];
 
 // Both layers compose via AND-logic
+// Classify in-band errors so deferred transitions don't fire on failures.
+// Replace () => false with your app's error shape (e.g. result.passed === false).
 const gate = createPetriflowGate(allNets, {
   isToolResultError: () => false,
   confirm: askApproval,

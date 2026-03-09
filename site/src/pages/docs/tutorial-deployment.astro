@@ -64,8 +64,12 @@ import { pipeline } from "./tools";
 const { nets, verification } = await loadRules("./pipeline.rules");
 
 // 2. Create the gate with a confirm callback for human-approval rules
+// pipeline.lint() and pipeline.test() return { passed: boolean } on failure
+// instead of throwing — classify these so deferred transitions don't fire.
 const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: (_toolName, result) =>
+    typeof result === "object" && result !== null &&
+    "passed" in result && (result as any).passed === false,
   confirm: async (title, message) => {
     // In production: show a dialog, send a Slack message, etc.
     // Return true to approve, false to reject.

@@ -146,8 +146,12 @@ console.log(verification);
 // ]
 
 // 2. Create the gate — deploy and sendEmail pause for real human approval
+// pipeline.lint() and pipeline.test() return { passed: boolean } on failure
+// instead of throwing — classify these so deferred transitions don't fire.
 const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: (_toolName, result) =>
+    typeof result === "object" && result !== null &&
+    "passed" in result && (result as any).passed === false,
   confirm: askApproval,
 });
 

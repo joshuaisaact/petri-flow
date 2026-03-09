@@ -24,7 +24,9 @@ import { Hono } from "hono";
 const { nets } = await loadRules("./safety.rules");
 
 const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: (_toolName, result) =>
+    typeof result === "object" && result !== null &&
+    "passed" in result && (result as any).passed === false,
   mode: "enforce",
   onDecision: (event, decision) => {
     if (decision?.block) {
@@ -70,7 +72,7 @@ export default app;`;
 const oldPattern = `// Old pattern — gate created once, shared across all requests
 const { nets } = await loadRules("./safety.rules");
 const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
 });
 
 // BUG: one session shared by all users!
@@ -87,7 +89,7 @@ app.post("/chat", async (c) => {
 const newPattern = `// New pattern — gate is stateless, each wrapTools() creates fresh state
 const { nets } = await loadRules("./safety.rules");
 const gate = createPetriflowGate(nets, {
-  isToolResultError: () => false,
+  isToolResultError: /* your classifier */ () => false,
 });
 
 app.post("/chat", async (c) => {
