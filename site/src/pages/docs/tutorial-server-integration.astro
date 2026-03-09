@@ -13,14 +13,17 @@ const rulesFile = `require lint before deploy
 require human-approval before deploy
 limit deploy to 3 per session`;
 
-const serverCode = `import { createPetriflowFactory } from "@petriflow/vercel-ai";
+const serverCode = `import { loadRules } from "@petriflow/rules";
+import { createPetriflowGate } from "@petriflow/vercel-ai";
 import { streamText, tool } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { Hono } from "hono";
 
 // 1. Compile once at startup
-const factory = await createPetriflowFactory("./safety.rules", {
+const { nets } = await loadRules("./safety.rules");
+
+const gate = createPetriflowGate(nets, {
   mode: "enforce",
   onDecision: (event, decision) => {
     if (decision?.block) {
@@ -29,7 +32,7 @@ const factory = await createPetriflowFactory("./safety.rules", {
   },
 });
 
-console.log(\`Loaded \${factory.nets.length} nets\`);
+console.log(\`Loaded \${nets.length} nets\`);
 
 // 2. Define tools (shared across all requests)
 const myTools = {
@@ -49,12 +52,12 @@ const app = new Hono();
 
 // 3. Per request — fresh session
 app.post("/chat", async (c) => {
-  const gate = factory.createSession();
+  const session = gate.wrapTools(myTools);
 
   const result = streamText({
     model: openai("gpt-4o"),
-    tools: gate.wrapTools(myTools),
-    system: gate.systemPrompt(),
+    tools: session.tools,
+    system: session.systemPrompt(),
     prompt: await c.req.text(),
   });
 
@@ -63,42 +66,34 @@ app.post("/chat", async (c) => {
 
 export default app;`;
 
-const withoutFactory = `// Without factory — works, but easy to get wrong
+const oldPattern = `// Old pattern — gate created once, shared across all requests
 const { nets } = await loadRules("./safety.rules");
+const gate = createPetriflowGate(nets);
+
+// BUG: one session shared by all users!
+const session = gate.wrapTools(myTools);
 
 app.post("/chat", async (c) => {
-  // Easy to accidentally lift this out of the handler
-  const gate = createPetriflowGate(nets, {
-    mode: "enforce",
-    onDecision: (event, decision) => { /* ... */ },
+  const result = streamText({
+    tools: session.tools,        // shared state!
+    system: session.systemPrompt(),
+    // ...
   });
-  // ...
 });`;
 
-const withFactory = `// With factory — lifecycle is explicit
-const factory = await createPetriflowFactory("./safety.rules", {
-  mode: "enforce",
-  onDecision: (event, decision) => { /* ... */ },
-});
+const newPattern = `// New pattern — gate is stateless, each wrapTools() creates fresh state
+const { nets } = await loadRules("./safety.rules");
+const gate = createPetriflowGate(nets);
 
 app.post("/chat", async (c) => {
-  const gate = factory.createSession();
-  // ...
+  // Fresh session per request — independent markings, rate limits, state
+  const session = gate.wrapTools(myTools);
+  const result = streamText({
+    tools: session.tools,
+    system: session.systemPrompt(),
+    // ...
+  });
 });`;
-
-const inlineRules = `// Inline rules — no .rules file needed
-const factory = await createPetriflowFactory({
-  rules: \`
-    require lint before deploy
-    limit deploy to 3 per session
-  \`,
-});`;
-
-const precompiled = `// Pre-compiled nets — skip the file read
-import { compile } from "@petriflow/rules";
-
-const { nets } = compile("require lint before deploy");
-const factory = await createPetriflowFactory({ nets });`;
 
 const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/openai zod hono`;
 ---
@@ -110,8 +105,8 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       <div class="tutorial-heading">
         <h1>Server Integration</h1>
       </div>
-      <ConceptTags concepts={["Session factory", "Per-request isolation", "Server integration", "Streaming responses"]} />
-      <p>Integrate PetriFlow into a multi-user server. <strong>Compile rules once at startup</strong>, <strong>create fresh sessions per request</strong>. You'll learn the factory pattern, per-request isolation, and multiple input formats.</p>
+      <ConceptTags concepts={["Stateless gate", "Per-request sessions", "Server integration", "Streaming responses"]} />
+      <p>Integrate PetriFlow into a multi-user server. <strong>Compile rules once at startup</strong>, <strong>create fresh sessions per request</strong>. The gate is stateless by design — each <code>wrapTools()</code> call creates independent session state.</p>
     </div>
 
     <aside class="doc-sidebar" aria-label="Page navigation">
@@ -119,9 +114,8 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
         <a href="#what-youll-build">What you'll build</a>
         <a href="#prerequisites">Prerequisites</a>
         <a href="#the-problem">The problem</a>
-        <a href="#the-factory-pattern">The factory pattern</a>
+        <a href="#the-solution">The solution</a>
         <a href="#full-server">Full server</a>
-        <a href="#input-formats">Input formats</a>
         <a href="#concepts">Concepts</a>
         <a href="#next-steps">Next steps</a>
       </nav>
@@ -142,15 +136,16 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
     <div class="doc-section" id="the-problem">
       <h2>The problem</h2>
-      <p>In a single-request script, you create one gate and use it once. In a server, you need fresh state per request — but the compiled rules are the same every time. The naive approach works but is fragile:</p>
-      <Code code={withoutFactory} lang="typescript" />
-      <p>The compiled nets are immutable, but the gate holds mutable state: markings, deferred transitions, rate-limit budgets. If someone refactors the gate creation out of the handler for "performance", all users share one set of markings. Rate limits become global. Sequencing breaks across requests.</p>
+      <p>In a single-request script, you create one gate and one session. In a server, you need fresh state per request — but the compiled rules are the same every time. The mistake to avoid: calling <code>wrapTools()</code> once and sharing the session across requests.</p>
+      <Code code={oldPattern} lang="typescript" />
+      <p>A session holds mutable state: markings, deferred transitions, rate-limit budgets. If you create one session at startup, all users share that state. Rate limits become global. Sequencing breaks across requests.</p>
     </div>
 
-    <div class="doc-section" id="the-factory-pattern">
-      <h2>The factory pattern</h2>
-      <Code code={withFactory} lang="typescript" />
-      <p><code>createPetriflowFactory</code> captures the compiled nets and options once. <code>createSession()</code> returns a fresh <code>PetriflowGate</code> with independent state. The lifecycle is explicit: one factory = one rule set, one session = one user's markings.</p>
+    <div class="doc-section" id="the-solution">
+      <h2>The solution</h2>
+      <Code code={newPattern} lang="typescript" />
+      <p>The gate itself is stateless. It holds the compiled nets and options, but no mutable state. Each <code>wrapTools()</code> call returns a fresh <code>GateSession</code> with independent markings, deferred tracking, and rate-limit budgets. The lifecycle is natural: one gate = one rule set, one session = one user's state.</p>
+      <p>This design makes the shared-state mistake structurally obvious. The gate is safe to share — it's the session you must create per request. And since sessions come from <code>wrapTools()</code>, the only way to get tools is to create a session.</p>
     </div>
 
     <div class="doc-section" id="full-server">
@@ -163,7 +158,7 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
 
       <p>Wire it up:</p>
       <Code code={serverCode} lang="typescript" />
-      <p>Each POST to <code>/chat</code> gets its own gate session. The factory compiles <code>safety.rules</code> once. <code>gate.systemPrompt()</code> tells the model about the constraints. <code>gate.wrapTools()</code> instruments each tool. Blocked calls throw <code>ToolCallBlockedError</code>, which the Vercel AI SDK feeds back to the model as a tool error.</p>
+      <p>Each POST to <code>/chat</code> creates a fresh session via <code>gate.wrapTools()</code>. The gate compiles <code>safety.rules</code> once at startup. <code>session.systemPrompt()</code> tells the model about the constraints. <code>session.tools</code> contains the instrumented tools. Blocked calls throw <code>ToolCallBlockedError</code>, which the Vercel AI SDK feeds back to the model as a tool error.</p>
 
       <Trace label="// Two users, independent sessions" steps={[
         { icon: "ok", html: `User A calls <strong>lint()</strong><br><span class="ok-text">OK</span> Session A advances: deploy now reachable` },
@@ -173,27 +168,19 @@ const installCmd = `bun add @petriflow/vercel-ai @petriflow/rules ai @ai-sdk/ope
       ]} />
     </div>
 
-    <div class="doc-section" id="input-formats">
-      <h2>Input formats</h2>
-      <p>The factory accepts four input formats:</p>
-      <Code code={inlineRules} lang="typescript" />
-      <Code code={precompiled} lang="typescript" />
-      <p>The string and <code>{'{ rules }'}</code> forms dynamically import <code>@petriflow/rules</code>. The <code>{'{ nets }'}</code> form works with any pre-compiled nets.</p>
-    </div>
-
     <div class="doc-section" id="concepts">
       <h2>Concepts</h2>
       <DocTable borderless rows={[
-        ["Session factory", "Compile once, create fresh sessions on demand. <code>createPetriflowFactory</code> &rarr; <code>factory.createSession()</code>"],
-        ["Per-request isolation", "Each session has independent markings, deferred tracking, and rate-limit budgets. No shared mutable state."],
-        ["Immutable nets", "Compiled rule nets are structurally immutable. The factory captures them once and shares them across all sessions."],
+        ["Stateless gate", "The gate holds compiled nets and options but no mutable state. Safe to share across requests and create once at startup."],
+        ["Per-request sessions", "Each <code>gate.wrapTools()</code> call returns a <code>GateSession</code> with independent markings, deferred tracking, and rate-limit budgets."],
+        ["Immutable nets", "Compiled rule nets are structurally immutable. The gate captures them once and shares them across all sessions."],
       ]} />
     </div>
 
     <div class="doc-section" id="next-steps">
       <h2>Next steps</h2>
       <DocTable borderless rows={[
-        [`<a href="${base}docs/vercel-ai/#session-factory">Session factory API reference</a>`, "Full API docs for <code>createPetriflowFactory</code> and <code>createSession</code>."],
+        [`<a href="${base}docs/vercel-ai/">Vercel AI SDK API reference</a>`, "Full API docs for <code>createPetriflowGate</code>, <code>GateSession</code>, and <code>wrapTools</code>."],
         [`<a href="${base}docs/vercel-ai/#shadow-mode">Shadow mode</a>`, "Audit decisions before enforcing them in production."],
         [`<a href="${base}docs/vercel-ai/#registry-mode">Registry mode</a>`, "Dynamic rule activation for multi-tenant servers."],
       ]} />

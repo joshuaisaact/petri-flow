@@ -22,7 +22,7 @@ describe("01-file-management", () => {
   describe("free tools", () => {
     it("listFiles is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({ listFiles: mockTool(async () => ["a.txt"]) });
+      const { tools } = gate.wrapTools({ listFiles: mockTool(async () => ["a.txt"]) });
 
       const result = await tools.listFiles.execute({}, { toolCallId: "c1" });
       expect(result).toEqual(["a.txt"]);
@@ -30,7 +30,7 @@ describe("01-file-management", () => {
 
     it("readFile is always allowed", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({ readFile: mockTool(async () => "contents") });
+      const { tools } = gate.wrapTools({ readFile: mockTool(async () => "contents") });
 
       const result = await tools.readFile.execute({}, { toolCallId: "c1" });
       expect(result).toBe("contents");
@@ -40,7 +40,7 @@ describe("01-file-management", () => {
   describe("block rm", () => {
     it("rm is permanently blocked", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({ rm: mockTool() });
+      const { tools } = gate.wrapTools({ rm: mockTool() });
 
       expect(tools.rm.execute({}, { toolCallId: "c1" })).rejects.toThrow(
         ToolCallBlockedError,
@@ -51,7 +51,7 @@ describe("01-file-management", () => {
   describe("require backup before delete", () => {
     it("delete is blocked before backup", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
       });
@@ -63,7 +63,7 @@ describe("01-file-management", () => {
 
     it("delete is allowed after backup succeeds", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
       });
@@ -75,7 +75,7 @@ describe("01-file-management", () => {
 
     it("backup failure does not unlock delete", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => {
           throw new Error("backup failed");
         }),
@@ -93,7 +93,7 @@ describe("01-file-management", () => {
 
     it("backup → delete cycle is repeatable", async () => {
       const gate = createGate();
-      const tools = gate.wrapTools({
+      const { tools } = gate.wrapTools({
         backup: mockTool(async () => "backed-up"),
         delete: mockTool(async () => "deleted"),
       });

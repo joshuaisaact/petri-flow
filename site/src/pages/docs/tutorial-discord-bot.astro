@@ -68,7 +68,7 @@ console.log(verification);
 const gate = createPetriflowGate(nets);
 
 // 3. Define and wrap tools — a single "discord" tool with an action enum
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   discord: tool({
     description:
       "Interact with Discord: read messages, send messages, add reactions, or create threads",
@@ -98,8 +98,8 @@ const tools = gate.wrapTools({
 // 4. Run the agent
 const { text } = await generateText({
   model: openai("gpt-4o"),
-  tools,
-  system: gate.systemPrompt(),
+  tools: session.tools,
+  system: session.systemPrompt(),
   stopWhen: stepCountIs(15),
   prompt:
     "In #dev-general: read messages, reply about the build failure, and send a few follow-ups.",

@@ -151,7 +151,7 @@ const gate = createPetriflowGate(nets, {
 });
 
 // 3. Define and wrap all 13 tools (see "Define the tools" above)
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   webSearch: tool({ /* ... */ }),
   slack: tool({ /* ... */ }),
   readInbox: tool({ /* ... */ }),
@@ -170,8 +170,8 @@ const tools = gate.wrapTools({
 // 4. Run the agent
 const { text } = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
-  tools,
-  system: \`You are a DevOps assistant.\\n\\n\${gate.systemPrompt()}\`,
+  tools: session.tools,
+  system: \`You are a DevOps assistant.\\n\\n\${session.systemPrompt()}\`,
   stopWhen: stepCountIs(20),
   prompt:
     "Check my inbox for dependency update notifications, research the latest " +

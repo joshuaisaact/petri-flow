@@ -28,7 +28,7 @@ const gate = createPetriflowGate(nets, {
 // Define tools — checkStatus and rollback are free (no rules mention them).
 // lint must run before test, test must run before deploy.
 // deploy also requires human-approval and is limited to 2 per session.
-const tools = gate.wrapTools({
+const session = gate.wrapTools({
   lint: tool({
     description: "Run the linter on the codebase",
     inputSchema: z.object({}),
@@ -64,8 +64,8 @@ const tools = gate.wrapTools({
 
 const result = await generateText({
   model: anthropic("claude-sonnet-4-5-20250929"),
-  system: `You are a deployment agent that manages CI/CD pipelines.\n\n${gate.systemPrompt()}`,
-  tools,
+  system: `You are a deployment agent that manages CI/CD pipelines.\n\n${session.systemPrompt()}`,
+  tools: session.tools,
   stopWhen: stepCountIs(15),
   prompt:
     "Deploy the latest version to production. Then deploy again to staging.",
