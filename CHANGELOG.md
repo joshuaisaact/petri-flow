@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 — @petriflow/vercel-ai
+
+### Breaking: required `isToolResultError` for deferred transition error classification
+
+`createPetriflowGate(nets, opts)` now requires `opts` with an `isToolResultError` callback. This fixes deferred transitions firing on failed tool results in both live execution and replay.
+
+The AI SDK converts thrown errors to content parts, so most tool failures arrive as return values. Without this callback, PetriFlow had no way to distinguish `{success: false}` from `{success: true}` — both advanced the net.
+
+```typescript
+const gate = createPetriflowGate(nets, {
+  isToolResultError: (toolName, result) =>
+    typeof result === "object" && result !== null && (result as any).success === false,
+});
+```
+
+- Applied in both live execution and replay
+- SDK output wrappers stripped during replay so the callback always receives raw values
+- Callback throwing is fail-closed (treated as error)
+- Built-in detection for SDK error types (`error-text`, `error-json`, `execution-denied`) still runs as a fallback
+
 ## 0.3.1 — @petriflow/gate, @petriflow/vercel-ai
 
 ### Replay: derive gate state from message history

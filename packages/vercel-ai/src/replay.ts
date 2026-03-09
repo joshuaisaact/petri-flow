@@ -36,9 +36,18 @@ function isToolResultPart(part: unknown): part is ToolResultPart {
   );
 }
 
+/**
+ * SDK error output types that indicate a tool execution failure.
+ * Tracks ToolResultOutput from @ai-sdk/provider-utils — update if the SDK
+ * adds new error variants.
+ */
 const ERROR_OUTPUT_TYPES = new Set(["error-text", "error-json", "execution-denied"]);
 
-/** Known SDK wrapper types that carry a `.value` with the raw tool result */
+/**
+ * SDK wrapper types that carry a `.value` with the raw tool result.
+ * Tracks ToolResultOutput from @ai-sdk/provider-utils — update if the SDK
+ * adds new output variants with a `.value` field.
+ */
 const VALUE_OUTPUT_TYPES = new Set(["text", "json", "error-text", "error-json"]);
 
 function isErrorResult(part: ToolResultPart): boolean {
