@@ -12,9 +12,9 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
   transformBlockReason?: (toolName: string, reason: string) => string;
   /**
    * Classify a tool result as an error. Applied in both live execution and
-   * replay. During live execution, `result` is the raw return value from the
-   * tool's `execute`. During replay, `result` is the `output` field from the
-   * stored tool-result message part.
+   * replay. `result` is always the raw return value from the tool's
+   * `execute` — during replay, SDK output wrappers (`{ type: "json",
+   * value: ... }`) are stripped automatically before calling this callback.
    *
    * When this returns `true`, the result is treated as a failure: deferred
    * transitions do not fire, and the net marking stays unchanged.

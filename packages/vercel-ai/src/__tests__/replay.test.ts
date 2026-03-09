@@ -120,7 +120,7 @@ describe("extractReplayEntries", () => {
     ]);
   });
 
-  it("uses isToolResultError to classify custom error results", () => {
+  it("uses isToolResultError to classify custom error results (SDK-wrapped output)", () => {
     const messages = [
       {
         role: "assistant",
@@ -135,16 +135,46 @@ describe("extractReplayEntries", () => {
             type: "tool-result",
             toolCallId: "c1",
             toolName: "runCode",
-            output: { success: false, error: "sandbox crashed" },
+            // SDK wraps object results as { type: "json", value: <raw> }
+            output: { type: "json", value: { success: false, error: "sandbox crashed" } },
           },
         ],
       },
     ];
 
-    // Without callback — treated as success
+    // Without callback — treated as success (not a built-in error type)
     expect(extractReplayEntries(messages)[0]!.isError).toBe(false);
 
-    // With callback — treated as error
+    // With callback — unwrapped value is passed, so checking .success works
+    const entries = extractReplayEntries(messages, {
+      isToolResultError: (_name, result) =>
+        typeof result === "object" && result !== null && (result as any).success === false,
+    });
+    expect(entries[0]!.isError).toBe(true);
+  });
+
+  it("passes through non-SDK output formats to isToolResultError as-is", () => {
+    const messages = [
+      {
+        role: "assistant",
+        content: [
+          { type: "tool-call", toolCallId: "c1", toolName: "custom", input: {} },
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "c1",
+            toolName: "custom",
+            // Not an SDK wrapper — no { type, value } structure
+            output: { success: false, error: "raw format" },
+          },
+        ],
+      },
+    ];
+
     const entries = extractReplayEntries(messages, {
       isToolResultError: (_name, result) =>
         typeof result === "object" && result !== null && (result as any).success === false,
@@ -270,7 +300,7 @@ describe("isToolResultError (gate-level)", () => {
               type: "tool-result",
               toolCallId: "c1",
               toolName: "test",
-              output: { success: false, error: "sandbox 500" },
+              output: { type: "json", value: { success: false, error: "sandbox 500" } },
             },
           ],
         },
@@ -292,13 +322,13 @@ describe("isToolResultError (gate-level)", () => {
       messages: [
         // Failure 1
         { role: "assistant", content: [{ type: "tool-call", toolCallId: "c1", toolName: "test", input: {} }] },
-        { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "test", output: { success: false, error: "sandbox 500" } }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "test", output: { type: "json", value: { success: false, error: "sandbox 500" } } }] },
         // Failure 2
         { role: "assistant", content: [{ type: "tool-call", toolCallId: "c2", toolName: "test", input: {} }] },
-        { role: "tool", content: [{ type: "tool-result", toolCallId: "c2", toolName: "test", output: { success: false, error: "sandbox 500" } }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c2", toolName: "test", output: { type: "json", value: { success: false, error: "sandbox 500" } } }] },
         // Success
         { role: "assistant", content: [{ type: "tool-call", toolCallId: "c3", toolName: "test", input: {} }] },
-        { role: "tool", content: [{ type: "tool-result", toolCallId: "c3", toolName: "test", output: { success: true } }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c3", toolName: "test", output: { type: "json", value: { success: true } } }] },
       ],
     });
 
@@ -377,7 +407,7 @@ describe("isToolResultError (gate-level)", () => {
     const session = gate.wrapTools(toolDefs, {
       messages: [
         { role: "assistant", content: [{ type: "tool-call", toolCallId: "c1", toolName: "test", input: {} }] },
-        { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "test", output: "ok" }] },
+        { role: "tool", content: [{ type: "tool-result", toolCallId: "c1", toolName: "test", output: { type: "text", value: "ok" } }] },
       ],
     });
 
