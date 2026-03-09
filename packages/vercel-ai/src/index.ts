@@ -20,8 +20,9 @@ type GateOptions = Omit<GateManagerOptions, "mode"> & {
    * transitions do not fire, and the net marking stays unchanged.
    *
    * Built-in detection for Vercel AI error output types (`error-text`,
-   * `error-json`, `execution-denied`) always runs first. This callback is
-   * only consulted when the built-in check passes.
+   * `error-json`, `execution-denied`) always runs first during replay. This
+   * callback is only consulted when the built-in check does not already
+   * classify the result as an error.
    */
   isToolResultError: (toolName: string, result: unknown) => boolean;
 };
