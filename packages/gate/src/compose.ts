@@ -3,11 +3,11 @@ import type { GateToolCall, GateContext, GateDecision } from "./events.js";
 import type { SkillNet } from "./types.js";
 import { autoAdvance } from "./advance.js";
 import {
-  formatMarking,
   getEnabledToolTransitions,
   resolveTool,
 } from "./gate.js";
 import type { GateState } from "./gate.js";
+import { formatBlockReason } from "./format.js";
 
 /** Classification of a net's opinion on a tool call */
 export type NetVerdict<P extends string> = {
@@ -72,7 +72,7 @@ export function classifyNets<P extends string>(
       return {
         ...base,
         kind: "blocked" as const,
-        reason: `[${net.name}] Tool '${resolvedTool}' not available in current state. Marking: ${formatMarking(state.marking)}`,
+        reason: formatBlockReason(net as SkillNet<string>, resolvedTool),
       };
     }
 
@@ -117,10 +117,11 @@ export async function composedToolCall(
   for (const v of gated) {
     if (v.transition.type === "manual") {
       if (!ctx.hasUI) {
-        return {
-          block: true,
-          reason: `[${v.net.name}] Manual transition '${v.transition.name}' requires UI approval`,
-        };
+        const meta = v.net.ruleMetadata;
+        const reason = meta?.kind === "approval"
+          ? `${meta.tool} requires human approval.`
+          : `${v.resolvedTool} requires human approval.`;
+        return { block: true, reason };
       }
       const approved = await ctx.confirm(
         `Approve: ${v.transition.name} (${v.net.name})`,
@@ -129,7 +130,7 @@ export async function composedToolCall(
       if (!approved) {
         return {
           block: true,
-          reason: `[${v.net.name}] Human rejected '${v.transition.name}'`,
+          reason: `${v.resolvedTool} was rejected by human review.`,
         };
       }
     }

@@ -262,7 +262,7 @@ describe("require human-approval before B", () => {
     );
     expect(result).toEqual({
       block: true,
-      reason: expect.stringContaining("requires UI"),
+      reason: expect.stringContaining("requires human approval"),
     });
   });
 
@@ -282,7 +282,7 @@ describe("require human-approval before B", () => {
     );
     expect(result).toEqual({
       block: true,
-      reason: expect.stringContaining("rejected"),
+      reason: expect.stringContaining("rejected by human review"),
     });
   });
 
@@ -436,7 +436,7 @@ describe("multiple rules compose via GateManager", () => {
     const result = await manager.handleToolCall(makeEvent("rm"), makeCtx());
     expect(result).toEqual({
       block: true,
-      reason: expect.stringContaining("block-rm"),
+      reason: "rm is blocked and cannot be called.",
     });
 
     // delete is blocked by sequence net (no backup yet)
@@ -446,7 +446,7 @@ describe("multiple rules compose via GateManager", () => {
     );
     expect(result2).toEqual({
       block: true,
-      reason: expect.stringContaining("require-backup-before-delete"),
+      reason: "delete requires a successful call to backup first.",
     });
 
     // backup is allowed (deferred in sequence net, abstain in block net)
@@ -548,7 +548,7 @@ describe("dot notation — action dispatch", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("requires UI"),
+      reason: "discord.sendMessage requires human approval.",
     });
 
     // sendMessage allowed with approval
@@ -649,7 +649,7 @@ describe("dot notation — action dispatch", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-discord.timeout"),
+      reason: "discord.timeout is blocked and cannot be called.",
     });
 
     // sendMessage needs approval (and has budget)
@@ -795,7 +795,7 @@ describe("map statements — bash command gating", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-delete"),
+      reason: "delete is blocked and cannot be called.",
     });
 
     // DROP TABLE blocked
@@ -805,7 +805,7 @@ describe("map statements — bash command gating", () => {
     );
     expect(r2).toEqual({
       block: true,
-      reason: expect.stringContaining("block-drop-table"),
+      reason: "drop-table is blocked and cannot be called.",
     });
 
     // ls passes through (no map matches, all nets abstain)
@@ -834,7 +834,7 @@ describe("map statements — bash command gating", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("requires UI"),
+      reason: "git-push requires human approval.",
     });
 
     // git status passes through (no map matches)
@@ -886,7 +886,7 @@ describe("map statements — bash command gating", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-slack-send"),
+      reason: "slack-send is blocked and cannot be called.",
     });
 
     // readMessages passes through
@@ -923,7 +923,7 @@ describe("map statements — bash command gating", () => {
     );
     expect(r2).toEqual({
       block: true,
-      reason: expect.stringContaining("block-discord.timeout"),
+      reason: "discord.timeout is blocked and cannot be called.",
     });
 
     // discord react passes through
@@ -949,7 +949,7 @@ describe("map statements — bash command gating", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-delete"),
+      reason: "delete is blocked and cannot be called.",
     });
   });
 });
@@ -973,7 +973,7 @@ describe("map with bare word patterns", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-delete"),
+      reason: "delete is blocked and cannot be called.",
     });
   });
 
@@ -991,7 +991,7 @@ describe("map with bare word patterns", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-delete"),
+      reason: "delete is blocked and cannot be called.",
     });
   });
 
@@ -1031,7 +1031,7 @@ describe("map with bare word patterns", () => {
     );
     expect(r1).toEqual({
       block: true,
-      reason: expect.stringContaining("block-run-node"),
+      reason: "run-node is blocked and cannot be called.",
     });
 
     // "nodejs" should not match (no dot)

@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0 — @petriflow/gate, @petriflow/rules, @petriflow/vercel-ai
+
+### Breaking: constraint-stating block reasons
+
+Block reasons now state the constraint plainly instead of exposing internal Petri net state. LLMs can interpret these and recover instead of giving up.
+
+```text
+# Before
+Tool 'deploy' blocked: [require-test-before-deploy] Tool 'deploy' not available in current state. Marking: ready:1
+
+# After
+Tool 'deploy' blocked: deploy requires a successful call to test first.
+```
+
+- `@petriflow/gate`: `RuleMetadata` type on `SkillNet`, `formatBlockReason()` export
+- `@petriflow/rules`: compiler emits `ruleMetadata` on every compiled net
+- `@petriflow/vercel-ai`: optional `transformBlockReason` hook on `GateOptions`
+- Messages by rule type:
+  - `require A before B` → "B requires a successful call to A first."
+  - `block A` → "A is blocked and cannot be called."
+  - `limit A to N per session` → "A has reached its limit of N calls per session."
+  - `require human-approval before B` → "B requires human approval."
+- Hand-built nets without metadata: "Tool 'X' is not available in the current state."
+
 ## 0.2.0 — @petriflow/vercel-ai
 
 ### Breaking: stateless gate, session-scoped state

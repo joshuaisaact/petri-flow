@@ -3,6 +3,7 @@ import type { Marking } from "@petriflow/engine";
 import type { GateToolCall, GateToolResult, GateContext, GateDecision } from "./events.js";
 import type { GatedTransition, SkillNet } from "./types.js";
 import { autoAdvance } from "./advance.js";
+import { formatBlockReason } from "./format.js";
 
 /** Resolve the virtual tool name for a tool call event */
 export function resolveTool<P extends string>(
@@ -87,7 +88,7 @@ export async function handleToolCall<P extends string>(
   if (matching.length === 0) {
     return {
       block: true,
-      reason: `Tool '${resolvedTool}' not available in current state. Marking: ${formatMarking(state.marking)}`,
+      reason: formatBlockReason(net as SkillNet<string>, resolvedTool),
     };
   }
 
@@ -106,14 +107,18 @@ export async function handleToolCall<P extends string>(
 
   if (transition.type === "manual") {
     if (!ctx.hasUI) {
-      return { block: true, reason: `Manual transition '${transition.name}' requires UI approval` };
+      const meta = net.ruleMetadata;
+      const reason = meta?.kind === "approval"
+        ? `${meta.tool} requires human approval.`
+        : `${resolvedTool} requires human approval.`;
+      return { block: true, reason };
     }
     const approved = await ctx.confirm(
       `Approve: ${transition.name}`,
       `Allow '${resolvedTool}' via transition '${transition.name}'?`,
     );
     if (!approved) {
-      return { block: true, reason: `Human rejected '${transition.name}'` };
+      return { block: true, reason: `${resolvedTool} was rejected by human review.` };
     }
   }
 

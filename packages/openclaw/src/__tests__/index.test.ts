@@ -142,7 +142,7 @@ describe("createPetriGatePlugin — tool gating", () => {
     createPetriGatePlugin([toolApprovalNet]).register!(api);
 
     const result = await callHook("before_tool_call", { toolName: "bash", params: {} }, { toolName: "bash" });
-    expect(result).toEqual({ block: true, blockReason: expect.stringContaining("requires UI") });
+    expect(result).toEqual({ block: true, blockReason: expect.stringContaining("requires human approval") });
   });
 });
 
@@ -327,6 +327,6 @@ describe("createPetriGatePlugin — integration with real nets", () => {
     createPetriGatePlugin([toolApprovalNet]).register!(api);
 
     const result = await callHook("before_tool_call", { toolName: "write", params: {} }, { toolName: "write" });
-    expect(result).toEqual({ block: true, blockReason: expect.stringContaining("requires UI") });
+    expect(result).toEqual({ block: true, blockReason: expect.stringContaining("requires human approval") });
   });
 });

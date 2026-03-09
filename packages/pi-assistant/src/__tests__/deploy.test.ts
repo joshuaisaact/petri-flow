@@ -148,7 +148,7 @@ describe("deployNet", () => {
       state,
     );
     expect(result?.block).toBe(true);
-    expect(result?.reason).toContain("UI");
+    expect(result?.reason).toContain("requires human approval");
   });
 
   test("deploy-prod succeeds with UI approval", async () => {

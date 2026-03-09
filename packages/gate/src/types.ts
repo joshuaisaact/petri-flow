@@ -1,5 +1,12 @@
 import type { Marking } from "@petriflow/engine";
 
+/** Structured metadata for generating user-facing block messages */
+export type RuleMetadata =
+  | { kind: "sequence"; prerequisite: string; dependent: string }
+  | { kind: "approval"; tool: string }
+  | { kind: "block"; tool: string }
+  | { kind: "limit"; tool: string; limit: number; scope: "session" | string };
+
 /** A transition that optionally gates tool access */
 export type GatedTransition<Place extends string> = {
   name: string;
@@ -62,6 +69,8 @@ export type SkillNet<Place extends string> = {
     transition: GatedTransition<Place>,
     state: { marking: Marking<Place>; meta: Record<string, unknown> },
   ): void;
+  /** Structured rule metadata for generating constraint-stating block messages */
+  ruleMetadata?: RuleMetadata;
 };
 
 /** Type-safe helper — validates places/marking at the type level */
