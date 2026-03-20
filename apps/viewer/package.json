@@ -16,7 +16,7 @@
     "@xyflow/react": "^12",
     "framer-motion": "^12",
     "@petriflow/engine": "workspace:*",
-    "petri-ts": "^0.1.5",
+    "petri-ts": "^0.2.0",
     "react": "^19",
     "react-dom": "^19"
   },

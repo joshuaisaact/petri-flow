@@ -1,5 +1,4 @@
-import type { WorkflowAnalysisResult } from "@petriflow/engine";
-import type { Marking } from "petri-ts";
+import type { WorkflowAnalysisResult, Marking } from "@petriflow/engine";
 
 const useColor =
   !process.env.NO_COLOR && process.stdout.isTTY;

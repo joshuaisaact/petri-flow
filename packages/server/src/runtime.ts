@@ -14,8 +14,8 @@ import type {
   SchedulerEvents,
   SerializedDefinition,
   DefinitionStore,
+  Marking,
 } from "@petriflow/engine";
-import type { Marking } from "petri-ts";
 
 export type RuntimeEvent =
   | {
@@ -216,6 +216,10 @@ export class WorkflowRuntime {
     const wf = this.workflows.get(row.workflow_name);
     if (!wf) throw new Error(`Workflow not registered: ${row.workflow_name}`);
 
+    if (!wf.places.includes(place)) {
+      throw new Error(`Unknown place "${place}" for workflow "${row.workflow_name}". Valid places: ${wf.places.join(", ")}`);
+    }
+
     await wf.scheduler.injectToken(instanceId, place, count);
   }
 
@@ -300,7 +304,11 @@ export class WorkflowRuntime {
 
   private emit(event: RuntimeEvent): void {
     for (const listener of this.listeners) {
-      listener(event);
+      try {
+        listener(event);
+      } catch {
+        // Don't let a failing listener break event delivery to others
+      }
     }
   }
 }

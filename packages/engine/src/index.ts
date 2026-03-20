@@ -18,6 +18,8 @@ export type {
   PetriNet,
   InstanceState,
   PersistenceAdapter,
+  Dispatcher,
+  DispatcherOptions,
 } from "petri-ts";
 
 // PetriFlow types
