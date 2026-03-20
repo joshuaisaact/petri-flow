@@ -17,7 +17,6 @@ const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["start"],
       outputs: ["step1"],
-      guard: null,
       execute: async (ctx) => ({ log: [...ctx.log, "began"] }),
     },
     {
@@ -25,7 +24,6 @@ const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["step1"],
       outputs: ["step2"],
-      guard: null,
       execute: async (ctx) => ({ log: [...ctx.log, "processed"] }),
     },
     {
@@ -33,7 +31,6 @@ const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["step2"],
       outputs: ["end"],
-      guard: null,
       execute: async (ctx) => ({ log: [...ctx.log, "completed"] }),
     },
   ],
@@ -152,7 +149,6 @@ describe("Scheduler", () => {
           type: "automatic",
           inputs: ["start"],
           outputs: ["end"],
-          guard: null,
           execute: async () => {
             throw new Error("boom");
           },
@@ -193,7 +189,6 @@ describe("Scheduler", () => {
           type: "automatic",
           inputs: ["waiting", "approved"],
           outputs: ["done"],
-          guard: null,
           execute: async (ctx) => ({ approvedBy: "external" }),
         },
       ],

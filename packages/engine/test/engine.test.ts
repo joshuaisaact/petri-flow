@@ -20,7 +20,6 @@ const def = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["idle"],
       outputs: ["review"],
-      guard: null,
     },
     {
       name: "approve",

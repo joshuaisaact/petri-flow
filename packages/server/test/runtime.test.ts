@@ -20,7 +20,6 @@ const coffeeDefinition = defineWorkflow<string, Record<string, unknown>>({
       type: "script",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
-      guard: null,
       execute: async () => ({ waterTemp: 96 }),
     },
     {
@@ -28,7 +27,6 @@ const coffeeDefinition = defineWorkflow<string, Record<string, unknown>>({
       type: "script",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
-      guard: null,
       execute: async () => ({ grindSize: "medium" }),
     },
     {
@@ -56,7 +54,7 @@ const simpleDefinition = defineWorkflow({
   name: "simple",
   places: ["start", "end"] as const,
   transitions: [
-    { name: "go", type: "automatic", inputs: ["start"], outputs: ["end"], guard: null },
+    { name: "go", type: "automatic", inputs: ["start"], outputs: ["end"] },
   ],
   initialMarking: { start: 1, end: 0 },
   initialContext: {},
@@ -318,7 +316,7 @@ describe("WorkflowRuntime", () => {
       const serialized = {
         name: "dynamic",
         places: ["a", "b"],
-        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null }],
+        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"] }],
         initialMarking: { a: 1, b: 0 },
         initialContext: {},
         terminalPlaces: ["b"],
@@ -339,7 +337,7 @@ describe("WorkflowRuntime", () => {
         runtime.saveDefinition({
           name: "bad",
           places: ["a"],
-          transitions: [{ name: "t", type: "automatic", inputs: ["a"], outputs: ["z"], guard: null }],
+          transitions: [{ name: "t", type: "automatic", inputs: ["a"], outputs: ["z"] }],
           initialMarking: { a: 1 },
           initialContext: {},
           terminalPlaces: [],
@@ -351,7 +349,7 @@ describe("WorkflowRuntime", () => {
       const v1 = {
         name: "evolving",
         places: ["a", "b"],
-        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null }],
+        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"] }],
         initialMarking: { a: 1, b: 0 },
         initialContext: {},
         terminalPlaces: ["b"],
@@ -363,8 +361,8 @@ describe("WorkflowRuntime", () => {
         ...v1,
         places: ["a", "b", "c"],
         transitions: [
-          { name: "go", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null },
-          { name: "continue", type: "automatic", inputs: ["b"], outputs: ["c"], guard: null },
+          { name: "go", type: "automatic", inputs: ["a"], outputs: ["b"] },
+          { name: "continue", type: "automatic", inputs: ["b"], outputs: ["c"] },
         ],
         initialMarking: { a: 1, b: 0, c: 0 },
         terminalPlaces: ["c"],
@@ -402,7 +400,6 @@ describe("WorkflowRuntime", () => {
               type: "http",
               inputs: ["start"],
               outputs: ["done"],
-              guard: null,
               config: { url: "http://mock-server/api", method: "POST", body: { key: "value" } },
             },
           ],

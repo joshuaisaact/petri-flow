@@ -35,7 +35,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["submitted"],
       outputs: ["awaitingFinance", "awaitingLegal"],
-      guard: null,
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 500));
         return { submittedBy: "requester" };
@@ -46,7 +45,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["awaitingFinance"],
       outputs: ["financeApproved"],
-      guard: null,
       config: { label: "Approve" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 300));
@@ -58,7 +56,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["awaitingFinance"],
       outputs: ["financeRejected"],
-      guard: null,
       config: { label: "Reject" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 300));
@@ -70,7 +67,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["awaitingLegal"],
       outputs: ["legalApproved"],
-      guard: null,
       config: { label: "Approve" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 300));
@@ -82,7 +78,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["awaitingLegal"],
       outputs: ["legalRejected"],
-      guard: null,
       config: { label: "Reject" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 300));
@@ -94,23 +89,13 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["financeApproved", "legalApproved"],
       outputs: ["executed"],
-      guard: null,
       execute: async () => {
         await new Promise((r) => setTimeout(r, 2000));
         return {};
       },
     },
   ],
-  initialMarking: {
-    submitted: 1,
-    awaitingFinance: 0,
-    awaitingLegal: 0,
-    financeApproved: 0,
-    financeRejected: 0,
-    legalApproved: 0,
-    legalRejected: 0,
-    executed: 0,
-  },
+  initialMarking: { submitted: 1 },
   initialContext: {
     contractId: "contract-001",
     submittedBy: "",

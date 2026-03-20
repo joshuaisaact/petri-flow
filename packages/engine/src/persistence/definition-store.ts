@@ -91,7 +91,7 @@ export function serializeDefinition<
       type: t.type,
       inputs: [...t.inputs],
       outputs: [...t.outputs],
-      guard: t.guard,
+      guard: t.guard ?? null,
       ...(t.timeout && { timeout: t.timeout }),
       ...(t.config && { config: t.config }),
     })),
