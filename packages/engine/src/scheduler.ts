@@ -190,6 +190,11 @@ export class Scheduler<
         } catch (err) {
           this.events.onError?.(id, err);
           try {
+            await this.adapter.clearTimeouts(id);
+          } catch {
+            // best-effort cleanup
+          }
+          try {
             await this.adapter.saveExtended(id, {
               ...state,
               status: "failed",

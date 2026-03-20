@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
-import { defineWorkflow } from "../src/workflow.js";
-import { createExecutor } from "../src/executor.js";
-import type { DecisionProvider } from "../src/decision.js";
+import { defineWorkflow } from "./workflow.js";
+import { createExecutor } from "./executor.js";
+import type { DecisionProvider } from "./decision.js";
 
 type Place = "start" | "middle" | "end";
 type Ctx = { log: string[] };

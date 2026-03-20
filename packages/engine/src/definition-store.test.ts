@@ -1,8 +1,8 @@
 import { describe, it, expect } from "bun:test";
 import { Database } from "bun:sqlite";
-import { createDefinitionStore, serializeDefinition } from "../src/persistence/definition-store.js";
-import { defineWorkflow } from "../src/workflow.js";
-import type { SerializedDefinition } from "../src/persistence/definition-store.js";
+import { createDefinitionStore, serializeDefinition } from "./persistence/definition-store.js";
+import { defineWorkflow } from "./workflow.js";
+import type { SerializedDefinition } from "./persistence/definition-store.js";
 
 const sample: SerializedDefinition = {
   name: "test-workflow",

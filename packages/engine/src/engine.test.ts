@@ -3,9 +3,9 @@ import {
   canFireWorkflow,
   enabledWorkflowTransitions,
   fireWorkflow,
-} from "../src/engine.js";
-import { defineWorkflow } from "../src/workflow.js";
-import type { WorkflowNet } from "../src/types.js";
+} from "./engine.js";
+import { defineWorkflow } from "./workflow.js";
+import type { WorkflowNet } from "./types.js";
 import type { Marking } from "petri-ts";
 
 type Place = "idle" | "review" | "approved" | "rejected";

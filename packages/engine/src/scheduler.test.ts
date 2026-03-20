@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
 import { Database } from "bun:sqlite";
-import { Scheduler } from "../src/scheduler.js";
-import { defineWorkflow } from "../src/workflow.js";
-import { createExecutor } from "../src/executor.js";
-import { sqliteAdapter } from "../src/persistence/sqlite-adapter.js";
+import { Scheduler } from "./scheduler.js";
+import { defineWorkflow } from "./workflow.js";
+import { createExecutor } from "./executor.js";
+import { sqliteAdapter } from "./persistence/sqlite-adapter.js";
 
 type Place = "start" | "step1" | "step2" | "end";
 type Ctx = { log: string[] };

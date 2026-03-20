@@ -9,8 +9,8 @@ import {
   fire,
   toDot,
 } from "petri-ts";
-import { defineWorkflow, toNet } from "../src/workflow.js";
-import type { WorkflowNet, WorkflowTransition } from "../src/types.js";
+import { defineWorkflow, toNet } from "./workflow.js";
+import type { WorkflowNet, WorkflowTransition } from "./types.js";
 import type { PetriNet, Marking } from "petri-ts";
 
 type Place = "idle" | "processing" | "done";
