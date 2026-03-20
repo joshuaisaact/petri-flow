@@ -219,7 +219,11 @@ export class Scheduler<
 
   start(): void {
     if (this.timer) return;
-    this.timer = setInterval(() => this.tick(), this.pollIntervalMs);
+    this.timer = setInterval(() => {
+      this.tick().catch((err) => {
+        this.events.onError?.("_scheduler", err);
+      });
+    }, this.pollIntervalMs);
   }
 
   stop(): void {

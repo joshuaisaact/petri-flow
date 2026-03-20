@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@petriflow/gate": "^0.3.0",
-    "petri-ts": "^0.1.6"
+    "petri-ts": "^0.2.0"
   },
   "license": "MIT",
   "repository": {

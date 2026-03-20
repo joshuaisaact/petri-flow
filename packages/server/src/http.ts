@@ -3,7 +3,6 @@ import { streamSSE } from "hono/streaming";
 import type { Server } from "bun";
 import type { WorkflowRuntime, RuntimeEvent } from "./runtime.js";
 import type { SerializedDefinition } from "@petriflow/engine";
-import { loadWorkflow } from "./loader.js";
 
 export type ServerOptions = {
   runtime: WorkflowRuntime;
@@ -16,20 +15,6 @@ export function createApp(runtime: WorkflowRuntime): Hono {
 
   app.get("/workflows", (c) => {
     return c.json(runtime.listWorkflows());
-  });
-
-  app.post("/workflows/register", async (c) => {
-    const body = await c.req.json<{ path?: string }>();
-    if (!body.path) {
-      return c.json({ error: "Missing 'path' in request body" }, 400);
-    }
-    try {
-      const definition = await loadWorkflow(body.path);
-      runtime.register(definition);
-      return c.json({ registered: definition.name }, 201);
-    } catch (err) {
-      return c.json({ error: (err as Error).message }, 400);
-    }
   });
 
   // --- Definition CRUD ---
@@ -50,8 +35,15 @@ export function createApp(runtime: WorkflowRuntime): Hono {
   app.put("/definitions/:name", async (c) => {
     const name = c.req.param("name");
     const body = await c.req.json<SerializedDefinition>();
-    if (!body.name || !body.places || !body.transitions || !body.initialMarking || !body.terminalPlaces) {
-      return c.json({ error: "Missing required fields: name, places, transitions, initialMarking, terminalPlaces" }, 400);
+    if (
+      typeof body.name !== "string" ||
+      !Array.isArray(body.places) ||
+      !Array.isArray(body.transitions) ||
+      !Array.isArray(body.terminalPlaces) ||
+      typeof body.initialMarking !== "object" ||
+      body.initialMarking === null
+    ) {
+      return c.json({ error: "Missing or invalid required fields: name (string), places (array), transitions (array), initialMarking (object), terminalPlaces (array)" }, 400);
     }
     if (body.name !== name) {
       return c.json({ error: `URL name "${name}" does not match body name "${body.name}"` }, 400);
@@ -122,8 +114,12 @@ export function createApp(runtime: WorkflowRuntime): Hono {
     if (!body.place) {
       return c.json({ error: "Missing 'place' in request body" }, 400);
     }
+    const count = body.count ?? 1;
+    if (typeof count !== "number" || !Number.isInteger(count) || count < 1) {
+      return c.json({ error: "'count' must be a positive integer" }, 400);
+    }
     try {
-      await runtime.injectToken(id, body.place, body.count ?? 1);
+      await runtime.injectToken(id, body.place, count);
       return c.json({ ok: true });
     } catch (err) {
       return c.json({ error: (err as Error).message }, 400);
@@ -165,7 +161,7 @@ export function createApp(runtime: WorkflowRuntime): Hono {
 }
 
 export function createServer(options: ServerOptions): Server<undefined> {
-  const { runtime, port = 3000, hostname = "0.0.0.0" } = options;
+  const { runtime, port = 3000, hostname = "127.0.0.1" } = options;
   const app = createApp(runtime);
 
   return Bun.serve({

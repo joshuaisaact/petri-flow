@@ -144,8 +144,20 @@ export function sqliteAdapter<
       };
     },
 
-    async save(id: string, state: InstanceState<Place>): Promise<void> {
+    async save(id: string, state: InstanceState<Place>, expectedVersion?: string | null): Promise<void> {
       const existing = selectOne.get(id);
+
+      if (expectedVersion === null) {
+        if (existing) throw new Error(`Instance already exists: ${id}`);
+      } else if (expectedVersion !== undefined) {
+        if (!existing) throw new Error(`Instance not found: ${id}`);
+        if ((existing.version ?? undefined) !== expectedVersion) {
+          throw new Error(
+            `Version conflict for ${id}: expected ${expectedVersion}, got ${existing.version}`,
+          );
+        }
+      }
+
       if (existing) {
         updateMarking.run(
           JSON.stringify(state.marking),
