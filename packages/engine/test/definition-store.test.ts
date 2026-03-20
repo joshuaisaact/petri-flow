@@ -8,7 +8,7 @@ const sample: SerializedDefinition = {
   name: "test-workflow",
   places: ["start", "middle", "end"],
   transitions: [
-    { name: "begin", type: "automatic", inputs: ["start"], outputs: ["middle"], guard: null },
+    { name: "begin", type: "automatic", inputs: ["start"], outputs: ["middle"] },
     { name: "finish", type: "automatic", inputs: ["middle"], outputs: ["end"], guard: "ready" },
   ],
   initialMarking: { start: 1, middle: 0, end: 0 },
@@ -96,7 +96,7 @@ describe("serializeDefinition", () => {
       places: ["waiting", "timed_out", "done"],
       transitions: [
         { name: "wait", type: "timer", inputs: ["waiting"], outputs: ["done"], guard: "approved", timeout: { place: "timed_out" as any, ms: 5000 } },
-        { name: "escalate", type: "automatic", inputs: ["waiting", "timed_out"], outputs: ["done"], guard: null },
+        { name: "escalate", type: "automatic", inputs: ["waiting", "timed_out"], outputs: ["done"] },
       ],
       initialMarking: { waiting: 1, timed_out: 0, done: 0 },
       initialContext: { approved: false },
@@ -136,8 +136,8 @@ describe("serializeDefinition", () => {
       name: "config-ser",
       places: ["a", "b"],
       transitions: [
-        { name: "call", type: "http", inputs: ["a"], outputs: ["b"], guard: null, config: { url: "https://example.com", method: "POST" } },
-        { name: "auto", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null },
+        { name: "call", type: "http", inputs: ["a"], outputs: ["b"], config: { url: "https://example.com", method: "POST" } },
+        { name: "auto", type: "automatic", inputs: ["a"], outputs: ["b"] },
       ],
       initialMarking: { a: 1, b: 0 },
       initialContext: {},
@@ -157,7 +157,7 @@ describe("serializeDefinition", () => {
       name: "config-trip",
       places: ["idle", "done"],
       transitions: [
-        { name: "fetch", type: "http", inputs: ["idle"], outputs: ["done"], guard: null, config },
+        { name: "fetch", type: "http", inputs: ["idle"], outputs: ["done"], config },
       ],
       initialMarking: { idle: 1, done: 0 },
       initialContext: {},
@@ -179,7 +179,7 @@ describe("serializeDefinition", () => {
       name: "full-trip",
       places: ["idle", "done"],
       transitions: [
-        { name: "finish", type: "automatic", inputs: ["idle"], outputs: ["done"], guard: null },
+        { name: "finish", type: "automatic", inputs: ["idle"], outputs: ["done"] },
       ],
       initialMarking: { idle: 1, done: 0 },
       initialContext: {},

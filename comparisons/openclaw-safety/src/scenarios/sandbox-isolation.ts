@@ -39,7 +39,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["agentIdle"],
       outputs: ["sandboxReady"],
-      guard: null,
     },
 
     // Run command in sandbox (consumes budget)
@@ -48,7 +47,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "script",
       inputs: ["sandboxReady", "budget"],
       outputs: ["sandboxExecRunning"],
-      guard: null,
     },
 
     // Sandbox exec completes
@@ -57,7 +55,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["sandboxExecRunning"],
       outputs: ["sandboxExecDone"],
-      guard: null,
     },
 
     // Request elevation to escape sandbox (consumes budget at request time)
@@ -66,7 +63,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["sandboxReady", "budget"],
       outputs: ["elevationRequested"],
-      guard: null,
     },
 
     // Approve elevation (manual — human must approve)
@@ -75,7 +71,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["elevationRequested"],
       outputs: ["elevationApproved"],
-      guard: null,
     },
 
     // Deny elevation (manual — returns to sandbox and refunds budget)
@@ -84,7 +79,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["elevationRequested"],
       outputs: ["sandboxReady", "budget"],
-      guard: null,
     },
 
     // Run on host (requires elevation approval; budget already consumed at request)
@@ -93,7 +87,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "script",
       inputs: ["elevationApproved"],
       outputs: ["hostExecRunning"],
-      guard: null,
     },
 
     // Host exec completes
@@ -102,7 +95,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["hostExecRunning"],
       outputs: ["hostExecDone"],
-      guard: null,
     },
 
     // Collect results (from either sandbox or host)
@@ -111,14 +103,12 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["sandboxExecDone"],
       outputs: ["resultCollected"],
-      guard: null,
     },
     {
       name: "collectHostResult",
       type: "automatic",
       inputs: ["hostExecDone"],
       outputs: ["resultCollected"],
-      guard: null,
     },
 
     // Continue working (loop back to sandbox)
@@ -127,7 +117,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["resultCollected"],
       outputs: ["sandboxReady"],
-      guard: null,
     },
 
     // Finish
@@ -136,7 +125,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["sandboxReady"],
       outputs: ["done"],
-      guard: null,
     },
   ],
   initialMarking: {
@@ -178,28 +166,24 @@ export const lockedDefinition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["agentIdle"],
       outputs: ["sandboxReady"],
-      guard: null,
     },
     {
       name: "runSandbox",
       type: "script",
       inputs: ["sandboxReady", "budget"],
       outputs: ["sandboxExecRunning"],
-      guard: null,
     },
     {
       name: "completeSandbox",
       type: "automatic",
       inputs: ["sandboxExecRunning"],
       outputs: ["sandboxExecDone"],
-      guard: null,
     },
     {
       name: "requestElevation",
       type: "automatic",
       inputs: ["sandboxReady", "budget"],
       outputs: ["elevationRequested"],
-      guard: null,
     },
     // approveElevation REMOVED — elevation can never be granted
     {
@@ -207,49 +191,42 @@ export const lockedDefinition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["elevationRequested"],
       outputs: ["sandboxReady", "budget"],
-      guard: null,
     },
     {
       name: "runHost",
       type: "script",
       inputs: ["elevationApproved"],
       outputs: ["hostExecRunning"],
-      guard: null,
     },
     {
       name: "completeHost",
       type: "automatic",
       inputs: ["hostExecRunning"],
       outputs: ["hostExecDone"],
-      guard: null,
     },
     {
       name: "collectSandboxResult",
       type: "automatic",
       inputs: ["sandboxExecDone"],
       outputs: ["resultCollected"],
-      guard: null,
     },
     {
       name: "collectHostResult",
       type: "automatic",
       inputs: ["hostExecDone"],
       outputs: ["resultCollected"],
-      guard: null,
     },
     {
       name: "continueWork",
       type: "automatic",
       inputs: ["resultCollected"],
       outputs: ["sandboxReady"],
-      guard: null,
     },
     {
       name: "finish",
       type: "automatic",
       inputs: ["sandboxReady"],
       outputs: ["done"],
-      guard: null,
     },
   ],
   initialMarking: {

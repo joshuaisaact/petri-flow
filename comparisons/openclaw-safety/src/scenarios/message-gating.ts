@@ -35,7 +35,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["inboundMessage"],
       outputs: ["senderCheck"],
-      guard: null,
     },
 
     // Known sender → paired
@@ -62,7 +61,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["unknownSender"],
       outputs: ["pairingPrompted"],
-      guard: null,
     },
 
     // User submits pairing code
@@ -71,7 +69,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["pairingPrompted"],
       outputs: ["pairingCodeReceived"],
-      guard: null,
     },
 
     // Valid code → paired
@@ -80,7 +77,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["pairingCodeReceived"],
       outputs: ["pairedSender"],
-      guard: null,
     },
 
     // Invalid code → rejected
@@ -89,7 +85,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["pairingCodeReceived"],
       outputs: ["rejected"],
-      guard: null,
     },
 
     // Reject unknown sender directly
@@ -98,7 +93,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["unknownSender"],
       outputs: ["rejected"],
-      guard: null,
     },
 
     // Paired sender proceeds to processing
@@ -107,7 +101,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["pairedSender"],
       outputs: ["processing"],
-      guard: null,
     },
 
     // Process and deliver
@@ -116,7 +109,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "ai",
       inputs: ["processing"],
       outputs: ["responseDelivered"],
-      guard: null,
     },
   ],
   initialMarking: {
