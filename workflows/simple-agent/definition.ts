@@ -33,7 +33,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "ai",
       inputs: ["userQuery"],
       outputs: ["planReady"],
-      guard: null,
+
       config: { model: "claude-sonnet-4-20250514", prompt: "Analyze the user query and produce a plan.", temperature: 0.7 },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 1500));
@@ -45,7 +45,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["planReady"],
       outputs: ["toolPending"],
-      guard: null,
+
       config: { url: "https://tools.example.com/dispatch", method: "POST" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 500));
@@ -57,7 +57,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["toolPending"],
       outputs: ["resultsReady"],
-      guard: null,
+
       config: { url: "https://tools.example.com/result", method: "GET" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 1000));
@@ -69,7 +69,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "ai",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
-      guard: null,
+
       config: { model: "claude-sonnet-4-20250514", prompt: "Generate a response based on tool results.", temperature: 0.5 },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 2000));
@@ -81,20 +81,13 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["resultsReady", "iterationBudget"],
       outputs: ["userQuery"],
-      guard: null,
+
       execute: async (ctx) => ({
         iteration: ctx.iteration + 1,
       }),
     },
   ],
-  initialMarking: {
-    userQuery: 1,
-    planReady: 0,
-    toolPending: 0,
-    resultsReady: 0,
-    responseGenerated: 0,
-    iterationBudget: ITERATION_BUDGET,
-  },
+  initialMarking: { userQuery: 1, iterationBudget: ITERATION_BUDGET },
   initialContext: {
     query: "What is the weather today?",
     iteration: 0,

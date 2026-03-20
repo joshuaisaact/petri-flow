@@ -30,7 +30,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "script",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
-      guard: null,
       config: { code: "ctx.waterTemp = 96" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 2000));
@@ -42,7 +41,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "script",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
-      guard: null,
       config: { code: "ctx.grindSize = 'medium'" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 1000));
@@ -62,14 +60,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       },
     },
   ],
-  initialMarking: {
-    waterCold: 1,
-    waterHot: 0,
-    beansWhole: 1,
-    beansGround: 0,
-    cupEmpty: 1,
-    coffeeReady: 0,
-  },
+  initialMarking: { waterCold: 1, beansWhole: 1, cupEmpty: 1 },
   initialContext: {
     waterTemp: 20,
     grindSize: "none",

@@ -33,7 +33,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["idle"],
       outputs: ["toolChoice"],
-      guard: null,
     },
 
     // Search tool — consumes budget, recirculates control
@@ -42,7 +41,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["toolChoice", "toolBudget"],
       outputs: ["toolChoice", "searchDone"],
-      guard: null,
     },
 
     // File tool — consumes budget, recirculates control
@@ -51,7 +49,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["toolChoice", "toolBudget"],
       outputs: ["toolChoice", "fileDone"],
-      guard: null,
     },
 
     // Privileged tool — requires privilege token (starts at 0, never produced)
@@ -60,7 +57,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "script",
       inputs: ["toolChoice", "toolBudget", "privilegeToken"],
       outputs: ["toolChoice", "privilegedDone"],
-      guard: null,
     },
 
     // Finish — when done choosing tools
@@ -69,7 +65,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["toolChoice"],
       outputs: ["responseGenerated"],
-      guard: null,
     },
   ],
   initialMarking: {

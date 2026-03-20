@@ -160,7 +160,7 @@ export function useEditorState() {
     const def = emptyDefinition();
     if (name) def.name = name;
     def.places = ["start"];
-    def.transitions = [{ name: "doSomething", type: "automatic", inputs: ["start"], outputs: [], guard: null }];
+    def.transitions = [{ name: "doSomething", type: "automatic", inputs: ["start"], outputs: [] }];
     def.initialMarking = { start: 1 };
     setDefinition(def);
     setPositions(computeLayout(def));
@@ -215,7 +215,7 @@ export function useEditorState() {
       ...d,
       transitions: [
         ...d.transitions,
-        { name, type: "automatic", inputs: [], outputs: [], guard: null },
+        { name, type: "automatic", inputs: [], outputs: [] },
       ],
     }));
     const tid = `t:${name}`;

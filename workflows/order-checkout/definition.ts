@@ -30,7 +30,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["order_placed", "inventory"],
       outputs: ["reserved", "payment"],
-      guard: null,
       execute: async () => {
         await new Promise((r) => setTimeout(r, 800));
         return {};
@@ -41,7 +40,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["payment", "reserved"],
       outputs: ["shipped"],
-      guard: null,
       config: { url: "https://payments.example.com/charge", method: "POST" },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 2500));
@@ -56,14 +54,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       guard: "marking.inventory == 0",
     },
   ],
-  initialMarking: {
-    order_placed: 1,
-    inventory: 3, // 3 units of stock
-    reserved: 0,
-    payment: 0,
-    shipped: 0,
-    out_of_stock: 0,
-  },
+  initialMarking: { order_placed: 1, inventory: 3 },
   initialContext: {
     orderId: "order-001",
     quantity: 1,

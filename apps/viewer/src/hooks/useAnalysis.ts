@@ -27,7 +27,6 @@ export function useAnalysis(viewerNet: ViewerNet) {
           transitions: viewerNet.net.transitions.map((t) => ({
             ...t,
             type: "automatic",
-            guard: null as string | null,
           })),
           initialMarking: viewerNet.net.initialMarking,
         },

@@ -33,7 +33,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["start"],
       outputs: ["userLoaded"],
-      guard: null,
       config: {
         url: `https://api.github.com/users/${USERNAME}`,
         headers: { "User-Agent": "petriflow-example" },
@@ -44,14 +43,13 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["userLoaded"],
       outputs: ["done"],
-      guard: null,
       config: {
         url: `https://api.github.com/users/${USERNAME}/repos?per_page=5&sort=updated`,
         headers: { "User-Agent": "petriflow-example" },
       },
     },
   ],
-  initialMarking: { start: 1, userLoaded: 0, done: 0 },
+  initialMarking: { start: 1 },
   initialContext: {
     username: USERNAME,
     fetchUser: null,

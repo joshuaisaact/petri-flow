@@ -8,7 +8,7 @@ import type { Server } from "bun";
 const simpleDefinition = defineWorkflow({
   name: "simple",
   places: ["start", "end"] as const,
-  transitions: [{ name: "go", type: "automatic", inputs: ["start"], outputs: ["end"], guard: null }],
+  transitions: [{ name: "go", type: "automatic", inputs: ["start"], outputs: ["end"] }],
   initialMarking: { start: 1, end: 0 },
   initialContext: {},
   terminalPlaces: ["end"],
@@ -30,7 +30,6 @@ const coffeeDefinition = defineWorkflow<string, Record<string, unknown>>({
       type: "script",
       inputs: ["waterCold"],
       outputs: ["waterHot"],
-      guard: null,
       execute: async () => ({ waterTemp: 96 }),
     },
     {
@@ -38,7 +37,6 @@ const coffeeDefinition = defineWorkflow<string, Record<string, unknown>>({
       type: "script",
       inputs: ["beansWhole"],
       outputs: ["beansGround"],
-      guard: null,
       execute: async () => ({ grindSize: "medium" }),
     },
     {
@@ -318,7 +316,7 @@ describe("HTTP API", () => {
       const def = {
         name: "dynamic",
         places: ["a", "b"],
-        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"], guard: null }],
+        transitions: [{ name: "go", type: "automatic", inputs: ["a"], outputs: ["b"] }],
         initialMarking: { a: 1, b: 0 },
         initialContext: {},
         terminalPlaces: ["b"],
@@ -360,7 +358,7 @@ describe("HTTP API", () => {
         body: JSON.stringify({
           name: "bad",
           places: ["a"],
-          transitions: [{ name: "t", inputs: ["a"], outputs: ["unknown"], guard: null }],
+          transitions: [{ name: "t", inputs: ["a"], outputs: ["unknown"] }],
           initialMarking: { a: 1 },
           initialContext: {},
           terminalPlaces: [],

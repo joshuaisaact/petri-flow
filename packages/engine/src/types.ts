@@ -22,7 +22,7 @@ export type WorkflowTransition<
   _Ctx extends Record<string, unknown> = Record<string, unknown>,
 > = Transition<Place> & {
   type: string;
-  guard: string | null;
+  guard?: string | null;
   timeout?: { place: Place; ms: number };
   config?: Record<string, unknown>;
 };

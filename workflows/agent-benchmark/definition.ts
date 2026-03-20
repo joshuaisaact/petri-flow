@@ -59,7 +59,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "ai",
       inputs: ["userQuery"],
       outputs: ["planReady"],
-      guard: null,
+
       config: { model: "claude-sonnet-4-20250514", prompt: "Analyze the query and decide which tools to use.", temperature: 0.7 },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 1500));
@@ -77,7 +77,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["planReady"],
       outputs: ["searchDecision", "dbDecision", "codeDecision"],
-      guard: null,
+
     },
 
     // === Search tool ===
@@ -104,7 +104,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["searchPending"],
       outputs: ["searchDone"],
-      guard: null,
+
       execute: async () => {
         await new Promise((r) => setTimeout(r, 1200));
         return { searchResult: "search: found 3 results" };
@@ -135,7 +135,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["dbPending"],
       outputs: ["dbDone"],
-      guard: null,
+
       execute: async () => {
         await new Promise((r) => setTimeout(r, 1000));
         return { dbResult: "db: 42 rows matched" };
@@ -162,7 +162,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["codePending"],
       outputs: ["humanApproval"],
-      guard: null,
+
       execute: async () => {
         await new Promise((r) => setTimeout(r, 300));
         return {};
@@ -173,7 +173,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["humanApproval"],
       outputs: ["codeApproved"],
-      guard: null,
+
       config: { label: "Approve" },
       execute: async () => {
         await new Promise((r) => setTimeout(r, 300));
@@ -185,7 +185,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "manual",
       inputs: ["humanApproval"],
       outputs: ["codeDone"],
-      guard: null,
+
       config: { label: "Reject" },
       execute: async () => {
         await new Promise((r) => setTimeout(r, 300));
@@ -197,7 +197,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "script",
       inputs: ["codeApproved"],
       outputs: ["codeDone"],
-      guard: null,
+
       execute: async () => {
         await new Promise((r) => setTimeout(r, 1500));
         return { codeResult: "code: executed successfully" };
@@ -210,7 +210,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["searchDone", "dbDone", "codeDone"],
       outputs: ["resultsReady"],
-      guard: null,
+
     },
 
     // Generate response — does NOT consume iterationBudget
@@ -220,7 +220,7 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "ai",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
-      guard: null,
+
       config: { model: "claude-sonnet-4-20250514", prompt: "Synthesize results into a final response.", temperature: 0.5 },
       execute: async (ctx) => {
         await new Promise((r) => setTimeout(r, 2000));
@@ -234,30 +234,13 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["resultsReady", "iterationBudget"],
       outputs: ["userQuery"],
-      guard: null,
+
       execute: async (ctx) => ({
         iteration: ctx.iteration + 1,
       }),
     },
   ],
-  initialMarking: {
-    userQuery: 1,
-    planReady: 0,
-    searchDecision: 0,
-    dbDecision: 0,
-    codeDecision: 0,
-    searchPending: 0,
-    searchDone: 0,
-    dbPending: 0,
-    dbDone: 0,
-    codePending: 0,
-    humanApproval: 0,
-    codeApproved: 0,
-    codeDone: 0,
-    resultsReady: 0,
-    responseGenerated: 0,
-    iterationBudget: ITERATION_BUDGET,
-  },
+  initialMarking: { userQuery: 1, iterationBudget: ITERATION_BUDGET },
   initialContext: {
     query: "What were last quarter's sales figures?",
     iteration: 0,

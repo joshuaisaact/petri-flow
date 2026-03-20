@@ -41,7 +41,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["idle"],
       outputs: ["taskReceived"],
-      guard: null,
     },
 
     // Fan-out to three tool tracks
@@ -50,7 +49,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["taskReceived"],
       outputs: ["searchReady", "fileReadReady", "shellPending"],
-      guard: null,
     },
 
     // === Search (no approval needed) ===
@@ -59,7 +57,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["searchReady", "budget"],
       outputs: ["searchDone"],
-      guard: null,
     },
 
     // === File read (no approval needed) ===
@@ -68,7 +65,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "http",
       inputs: ["fileReadReady", "budget"],
       outputs: ["fileReadDone"],
-      guard: null,
     },
 
     // === Shell (requires approval gate) ===
@@ -77,28 +73,24 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["shellPending"],
       outputs: ["shellAwaitingApproval"],
-      guard: null,
     },
     {
       name: "approveShell",
       type: "manual",
       inputs: ["shellAwaitingApproval"],
       outputs: ["shellApproved"],
-      guard: null,
     },
     {
       name: "rejectShell",
       type: "manual",
       inputs: ["shellAwaitingApproval"],
       outputs: ["shellDone"],
-      guard: null,
     },
     {
       name: "execShell",
       type: "script",
       inputs: ["shellApproved", "budget"],
       outputs: ["shellDone"],
-      guard: null,
     },
 
     // Skip shell entirely
@@ -107,7 +99,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["shellPending"],
       outputs: ["shellDone"],
-      guard: null,
     },
 
     // AND-join: all three tracks must complete
@@ -116,7 +107,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "automatic",
       inputs: ["searchDone", "fileReadDone", "shellDone"],
       outputs: ["resultsReady"],
-      guard: null,
     },
 
     // Generate response
@@ -125,7 +115,6 @@ export const definition = defineWorkflow<Place, Ctx>({
       type: "ai",
       inputs: ["resultsReady"],
       outputs: ["responseGenerated"],
-      guard: null,
     },
   ],
   initialMarking: {

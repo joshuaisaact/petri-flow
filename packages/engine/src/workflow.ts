@@ -31,7 +31,7 @@ export function defineWorkflow<
   name: string;
   places: Place[];
   transitions: TransitionInput<Place, Ctx>[];
-  initialMarking: Marking<Place>;
+  initialMarking: Partial<Marking<Place>>;
   initialContext: Ctx;
   terminalPlaces: Place[];
   invariants?: { weights: Partial<Record<Place, number>> }[];
@@ -80,6 +80,12 @@ export function defineWorkflow<
     }
   }
 
+  // Fill in zero-markings for places not specified
+  const fullMarking = {} as Marking<Place>;
+  for (const p of def.places) {
+    fullMarking[p] = (def.initialMarking[p] ?? 0) as Marking<Place>[Place];
+  }
+
   // Compile guard expressions into a separate map
   const guards = new Map<string, ReturnType<typeof compileGuard>>();
   for (const t of def.transitions) {
@@ -116,7 +122,7 @@ export function defineWorkflow<
     name: def.name,
     net: {
       transitions,
-      initialMarking: def.initialMarking,
+      initialMarking: fullMarking,
     },
     guards,
     executors,
