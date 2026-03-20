@@ -83,9 +83,17 @@ export function serializeDefinition<
   Place extends string,
   Ctx extends Record<string, unknown>,
 >(def: WorkflowDefinition<Place, Ctx>): SerializedDefinition {
+  const placeSet = new Set<string>(Object.keys(def.net.initialMarking));
+  for (const t of def.net.transitions) {
+    for (const p of t.inputs) placeSet.add(p);
+    for (const p of t.outputs) placeSet.add(p);
+    if (t.timeout) placeSet.add(t.timeout.place);
+  }
+  for (const p of def.terminalPlaces) placeSet.add(p);
+
   return {
     name: def.name,
-    places: Object.keys(def.net.initialMarking),
+    places: [...placeSet],
     transitions: def.net.transitions.map((t) => ({
       name: t.name,
       type: t.type,

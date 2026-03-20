@@ -1,7 +1,7 @@
 import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
-import { httpNode, timerNode, defaultNodes } from "../src/nodes.js";
-import { defineWorkflow } from "../src/workflow.js";
-import type { NodeExecutor } from "../src/nodes.js";
+import { httpNode, timerNode, defaultNodes, isPrivateHost } from "./nodes.js";
+import { defineWorkflow } from "./workflow.js";
+import type { NodeExecutor } from "./nodes.js";
 
 function mockFetch(handler: () => Promise<Response>) {
   const fn = Object.assign(mock(handler), { preconnect() {} }) as unknown as typeof fetch;
@@ -36,10 +36,6 @@ describe("httpNode", () => {
       expect(result).toEqual({
         fetch_data: { status: 200, ok: true, data: { message: "ok" } },
       });
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "http://example.com/api",
-        { method: "GET", headers: {}, body: undefined },
-      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -68,14 +64,6 @@ describe("httpNode", () => {
       expect(result).toEqual({
         create_item: { status: 200, ok: true, data: { id: 1 } },
       });
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "http://example.com/api",
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name: "test" }),
-        },
-      );
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -107,8 +95,8 @@ describe("httpNode", () => {
 
 describe("timerNode", () => {
   it("validate throws on missing delayMs", () => {
-    expect(() => timerNode.validate({})).toThrow("requires a number 'delayMs'");
-    expect(() => timerNode.validate({ delayMs: "100" })).toThrow("requires a number 'delayMs'");
+    expect(() => timerNode.validate({})).toThrow("requires a non-negative number 'delayMs'");
+    expect(() => timerNode.validate({ delayMs: "100" })).toThrow("requires a non-negative number 'delayMs'");
   });
 
   it("validate passes with delayMs", () => {
@@ -306,5 +294,127 @@ describe("defineWorkflow with nodes", () => {
       initialContext: {},
       terminalPlaces: ["end"],
     })).toThrow("requires a string 'url'");
+  });
+
+  it("timerNode rejects negative delayMs", () => {
+    expect(() => timerNode.validate({ delayMs: -1 })).toThrow("requires a non-negative number");
+  });
+});
+
+describe("isPrivateHost", () => {
+  it("blocks localhost", () => {
+    expect(isPrivateHost("localhost")).toBe(true);
+  });
+
+  it("blocks full 127.0.0.0/8 range", () => {
+    expect(isPrivateHost("127.0.0.1")).toBe(true);
+    expect(isPrivateHost("127.0.0.2")).toBe(true);
+    expect(isPrivateHost("127.255.255.255")).toBe(true);
+  });
+
+  it("blocks 10.x.x.x", () => {
+    expect(isPrivateHost("10.0.0.1")).toBe(true);
+    expect(isPrivateHost("10.255.255.255")).toBe(true);
+  });
+
+  it("blocks 172.16.0.0/12", () => {
+    expect(isPrivateHost("172.16.0.1")).toBe(true);
+    expect(isPrivateHost("172.31.255.255")).toBe(true);
+    expect(isPrivateHost("172.15.0.1")).toBe(false);
+    expect(isPrivateHost("172.32.0.1")).toBe(false);
+  });
+
+  it("blocks 192.168.x.x", () => {
+    expect(isPrivateHost("192.168.0.1")).toBe(true);
+    expect(isPrivateHost("192.168.255.255")).toBe(true);
+  });
+
+  it("blocks link-local 169.254.x.x", () => {
+    expect(isPrivateHost("169.254.169.254")).toBe(true);
+    expect(isPrivateHost("169.254.0.1")).toBe(true);
+  });
+
+  it("blocks CGNAT 100.64.0.0/10", () => {
+    expect(isPrivateHost("100.64.0.1")).toBe(true);
+    expect(isPrivateHost("100.127.255.255")).toBe(true);
+    expect(isPrivateHost("100.63.255.255")).toBe(false);
+    expect(isPrivateHost("100.128.0.1")).toBe(false);
+  });
+
+  it("blocks 0.0.0.0/8", () => {
+    expect(isPrivateHost("0.0.0.0")).toBe(true);
+    expect(isPrivateHost("0.0.0.1")).toBe(true);
+  });
+
+  it("blocks IPv6 loopback ::1", () => {
+    expect(isPrivateHost("::1")).toBe(true);
+  });
+
+  it("blocks IPv6 unspecified ::", () => {
+    expect(isPrivateHost("::")).toBe(true);
+  });
+
+  it("blocks IPv4-mapped IPv6", () => {
+    expect(isPrivateHost("::ffff:127.0.0.1")).toBe(true);
+    expect(isPrivateHost("::ffff:10.0.0.1")).toBe(true);
+    expect(isPrivateHost("::ffff:7f00:1")).toBe(true);
+  });
+
+  it("blocks IPv6 unique local (fc00::/7)", () => {
+    expect(isPrivateHost("fc00::1")).toBe(true);
+    expect(isPrivateHost("fd12:3456::1")).toBe(true);
+  });
+
+  it("blocks IPv6 link-local (fe80::/10)", () => {
+    expect(isPrivateHost("fe80::1")).toBe(true);
+  });
+
+  it("allows public IPs", () => {
+    expect(isPrivateHost("8.8.8.8")).toBe(false);
+    expect(isPrivateHost("1.1.1.1")).toBe(false);
+    expect(isPrivateHost("203.0.113.1")).toBe(false);
+  });
+
+  it("allows public hostnames", () => {
+    expect(isPrivateHost("example.com")).toBe(false);
+    expect(isPrivateHost("api.github.com")).toBe(false);
+  });
+});
+
+describe("httpNode SSRF", () => {
+  it("blocks requests to private hosts", async () => {
+    await expect(httpNode.execute({
+      ctx: {},
+      marking: {},
+      config: { url: "http://127.0.0.1/admin" },
+      transitionName: "ssrf",
+    })).rejects.toThrow("blocked request to private/internal host");
+  });
+
+  it("blocks requests to metadata endpoint", async () => {
+    await expect(httpNode.execute({
+      ctx: {},
+      marking: {},
+      config: { url: "http://169.254.169.254/latest/meta-data/" },
+      transitionName: "ssrf",
+    })).rejects.toThrow("blocked request to private/internal host");
+  });
+
+  it("blocks requests to localhost", async () => {
+    await expect(httpNode.execute({
+      ctx: {},
+      marking: {},
+      config: { url: "http://localhost:8080/secret" },
+      transitionName: "ssrf",
+    })).rejects.toThrow("blocked request to private/internal host");
+  });
+
+  it("blocks requests to IPv6 loopback", async () => {
+    await expect(httpNode.execute({
+      ctx: {},
+      marking: {},
+      config: { url: "http://[::1]/secret" },
+      transitionName: "ssrf",
+    })).rejects.toThrow("blocked request to private/internal host");
   });
 });

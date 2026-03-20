@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { Database } from "bun:sqlite";
 import { createDispatcher } from "petri-ts";
 import type { Marking } from "petri-ts";
-import { sqliteAdapter } from "../src/persistence/sqlite-adapter.js";
-import type { WorkflowNet } from "../src/types.js";
+import { sqliteAdapter } from "./persistence/sqlite-adapter.js";
+import type { WorkflowNet } from "./types.js";
 
 type Place = "idle" | "processing" | "done";
 

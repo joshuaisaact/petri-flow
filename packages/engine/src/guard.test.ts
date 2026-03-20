@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { compileGuard } from "../src/guard.js";
+import { compileGuard } from "./guard.js";
 
 describe("compileGuard", () => {
   it("numeric comparison: waterTemp >= 90", () => {
