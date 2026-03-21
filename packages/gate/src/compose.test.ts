@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
-import type { GateToolCall, GateToolResult, GateContext } from "../events.js";
-import { autoAdvance } from "../advance.js";
-import { createGateState } from "../gate.js";
-import { defineSkillNet } from "../types.js";
-import type { SkillNet } from "../types.js";
-import { classifyNets } from "../compose.js";
-import { createGateManager } from "../manager.js";
+import type { GateToolCall, GateToolResult, GateContext } from "./events.js";
+import { autoAdvance } from "./advance.js";
+import { createGateState } from "./gate.js";
+import { defineSkillNet } from "./types.js";
+import type { SkillNet } from "./types.js";
+import { classifyNets } from "./compose.js";
+import { createGateManager } from "./manager.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -424,8 +424,8 @@ describe("createGateManager — system prompt and status", () => {
 
 describe("createGateManager — real nets composition", () => {
   it("compose communicate + cleanup: read is free in both", async () => {
-    const { communicateNet } = await import("../../../pi-assistant/src/nets/communicate.js");
-    const { cleanupNet } = await import("../../../pi-assistant/src/nets/cleanup.js");
+    const { communicateNet } = await import("../../pi-assistant/src/nets/communicate.js");
+    const { cleanupNet } = await import("../../pi-assistant/src/nets/cleanup.js");
 
     const manager = createGateManager([communicateNet, cleanupNet]);
     const result = await manager.handleToolCall(makeEvent("read"), makeCtx());
@@ -433,8 +433,8 @@ describe("createGateManager — real nets composition", () => {
   });
 
   it("compose communicate + cleanup: rm -rf blocked by cleanup", async () => {
-    const { communicateNet } = await import("../../../pi-assistant/src/nets/communicate.js");
-    const { cleanupNet } = await import("../../../pi-assistant/src/nets/cleanup.js");
+    const { communicateNet } = await import("../../pi-assistant/src/nets/communicate.js");
+    const { cleanupNet } = await import("../../pi-assistant/src/nets/cleanup.js");
 
     const manager = createGateManager([communicateNet, cleanupNet]);
     const result = await manager.handleToolCall(makeBashEvent("rm -rf build/"), makeCtx());
@@ -442,8 +442,8 @@ describe("createGateManager — real nets composition", () => {
   });
 
   it("compose communicate + cleanup: slack unknown to cleanup, communicate gates it", async () => {
-    const { communicateNet } = await import("../../../pi-assistant/src/nets/communicate.js");
-    const { cleanupNet } = await import("../../../pi-assistant/src/nets/cleanup.js");
+    const { communicateNet } = await import("../../pi-assistant/src/nets/communicate.js");
+    const { cleanupNet } = await import("../../pi-assistant/src/nets/cleanup.js");
 
     const manager = createGateManager([communicateNet, cleanupNet]);
     const result = await manager.handleToolCall(

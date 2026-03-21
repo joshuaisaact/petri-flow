@@ -1,24 +1,24 @@
 import { describe, expect, it } from "bun:test";
 import type { Marking } from "@petriflow/engine";
-import type { GateToolCall, GateToolResult, GateContext } from "../events.js";
-import { autoAdvance } from "../advance.js";
+import type { GateToolCall, GateToolResult, GateContext } from "./events.js";
+import { autoAdvance } from "./advance.js";
 import {
   handleToolCall,
   handleToolResult,
   formatMarking,
   getEnabledToolTransitions,
   createGateState,
-} from "../gate.js";
-import type { GateState } from "../gate.js";
-import { defineSkillNet } from "../types.js";
-import { toolApprovalNet } from "../../../pi-extension/src/nets/tool-approval.js";
-import { implementNet } from "../../../pi-extension/src/nets/implement.js";
+} from "./gate.js";
+import type { GateState } from "./gate.js";
+import { defineSkillNet } from "./types.js";
+import { toolApprovalNet } from "../../pi-extension/src/nets/tool-approval.js";
+import { implementNet } from "../../pi-extension/src/nets/implement.js";
 import {
   nukeNet,
   extractBackupTarget,
   extractDestructiveTarget,
   pathCovers,
-} from "../../../pi-extension/src/nets/nuke.js";
+} from "../../pi-extension/src/nets/nuke.js";
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { defineSkillNet } from "../types.js";
-import { createGateManager } from "../manager.js";
-import type { GateContext } from "../events.js";
+import { defineSkillNet } from "./types.js";
+import { createGateManager } from "./manager.js";
+import type { GateContext } from "./events.js";
 
 function makeCtx(): GateContext {
   return { hasUI: false, confirm: async () => false };
