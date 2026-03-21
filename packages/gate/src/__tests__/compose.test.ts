@@ -316,6 +316,53 @@ describe("createGateManager — meta rollback", () => {
     const result2 = await manager.handleToolCall(event2, makeCtx());
     expect(result2).toEqual({ block: true, reason: "validatorB blocks" });
   });
+
+  it("rolls back the rejecting validator's own meta mutations", async () => {
+    // validatorC mutates meta then rejects
+    const validatorC: SkillNet<string> = defineSkillNet({
+      name: "validatorC",
+      places: ["idle", "ready"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { idle: 1, ready: 0 },
+      transitions: [
+        { name: "start", type: "auto" as const, inputs: ["idle"], outputs: ["ready"] },
+        { name: "validate", type: "auto" as const, inputs: ["ready"], outputs: ["ready"], tools: ["validated-tool"] },
+      ],
+      validateToolCall(_event, _resolved, _transition, state) {
+        state.meta.leaked = true;
+        return { block: true, reason: "self-reject" };
+      },
+    });
+
+    const manager = createGateManager([validatorC]);
+    await manager.handleToolCall(makeEvent("validated-tool"), makeCtx());
+
+    // The meta mutation should have been rolled back
+    const meta = manager.getActiveNets()[0]!.state.meta;
+    expect(meta.leaked).toBeUndefined();
+  });
+});
+
+describe("createGateManager — TOCTOU re-check", () => {
+  it("blocks in composed mode when marking changes during manual approval", async () => {
+    const manager = createGateManager([netB]);
+    const nets = manager.getActiveNets();
+    const state = nets[0]!.state;
+
+    // Simulate a concurrent mutation during confirm()
+    const racyCtx: GateContext = {
+      hasUI: true,
+      confirm: async () => {
+        // Another caller consumes the token during approval
+        state.marking = { idle: 0, ready: 0 };
+        return true;
+      },
+    };
+
+    const result = await manager.handleToolCall(makeEvent("dangerous"), racyCtx);
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("no longer available") });
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -122,6 +122,14 @@ export async function handleToolCall<P extends string>(
     }
   }
 
+  // Re-check enablement — marking may have changed during await ctx.confirm()
+  if (!canFire(state.marking, transition)) {
+    return {
+      block: true,
+      reason: formatBlockReason(net as SkillNet<string>, resolvedTool),
+    };
+  }
+
   if (transition.deferred) {
     // Allow the tool call but don't fire yet — wait for tool_result
     state.pending.set(event.toolCallId, { toolCallId: event.toolCallId, transition, resolvedTool });
