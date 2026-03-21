@@ -1,4 +1,4 @@
-import { canFire, type Marking } from "petri-ts";
+import { canFire, fire, type Marking } from "petri-ts";
 import type { WorkflowDefinition, WorkflowTransition } from "./types.js";
 import type { DecisionProvider } from "./decision.js";
 import { enabledWorkflowTransitions, fireWorkflow } from "./engine.js";
@@ -14,6 +14,19 @@ export type StepResult<
       transition: string;
       terminal: boolean;
       decision?: { reasoning: string; candidates: string[] };
+    }
+  | { kind: "idle" };
+
+export type BatchStepResult<
+  Place extends string,
+  Ctx extends Record<string, unknown>,
+> =
+  | {
+      kind: "fired";
+      marking: Marking<Place>;
+      context: Ctx;
+      transitions: string[];
+      terminal: boolean;
     }
   | { kind: "idle" };
 
@@ -35,6 +48,31 @@ export interface WorkflowExecutor<
     marking: Marking<Place>,
     ctx: Ctx,
   ): Promise<StepResult<Place, Ctx>>;
+  /**
+   * Fire up to `maxConcurrent` non-conflicting transitions in parallel.
+   *
+   * **Execution model:** Each executor receives the original (pre-fire)
+   * marking and context snapshot. Executors cannot see each other's
+   * patches — they run concurrently via Promise.all.
+   *
+   * **Context merge:** Patches are merged in transition-name order
+   * (alphabetical) using shallow spread. Executors in a batch should
+   * write to disjoint context keys. Overlapping keys use last-writer-wins
+   * based on name order — compound values (arrays, objects) are replaced,
+   * not deep-merged.
+   *
+   * **Error handling:** If any executor throws, the entire batch fails
+   * (Promise.all semantics). The scheduler marks the instance as failed
+   * with the pre-fire marking. Executors that perform side effects should
+   * be idempotent, since a partial batch failure means some executors
+   * completed but none are recorded.
+   */
+  stepBatch(
+    instanceId: string,
+    marking: Marking<Place>,
+    ctx: Ctx,
+    maxConcurrent: number,
+  ): Promise<BatchStepResult<Place, Ctx>>;
   getTimeoutCandidates(marking: Marking<Place>): TimeoutCandidate<Place>[];
 }
 
@@ -119,6 +157,75 @@ export function createExecutor<
         transition: result.firedTransition,
         terminal: nextEnabled.length === 0,
         decision,
+      };
+    },
+
+    async stepBatch(
+      instanceId: string,
+      marking: Marking<Place>,
+      ctx: Ctx,
+      maxConcurrent: number,
+    ): Promise<BatchStepResult<Place, Ctx>> {
+      if (maxConcurrent < 1) {
+        throw new Error("maxConcurrent must be >= 1");
+      }
+
+      const enabled = enabledWorkflowTransitions(
+        definition.net,
+        marking,
+        ctx,
+        definition.guards,
+      );
+
+      if (enabled.length === 0) {
+        return { kind: "idle" };
+      }
+
+      // Greedily select non-conflicting transitions by tracking a working marking.
+      // First-enabled wins: if two transitions compete for the same input tokens,
+      // only the first one gets selected.
+      const selected: WorkflowTransition<Place, Ctx>[] = [];
+      let workingMarking = { ...marking } as Marking<Place>;
+
+      for (const t of enabled) {
+        if (selected.length >= maxConcurrent) break;
+        if (canFire(workingMarking, t)) {
+          // Reserve tokens by firing structurally (consume inputs, produce outputs)
+          workingMarking = fire(workingMarking, t);
+          selected.push(t);
+        }
+      }
+
+      // Run all executors in parallel
+      const executorPromises = selected.map(async (t) => {
+        const executeFn = definition.executors.get(t.name);
+        const patch = executeFn ? await executeFn(ctx, marking) : {};
+        return { name: t.name, patch };
+      });
+
+      const results = await Promise.all(executorPromises);
+
+      // Merge context patches in transition-name order (deterministic)
+      const sorted = [...results].sort((a, b) => a.name.localeCompare(b.name));
+      let mergedCtx = { ...ctx };
+      for (const r of sorted) {
+        mergedCtx = { ...mergedCtx, ...r.patch };
+      }
+
+      // workingMarking already reflects all fires
+      const nextEnabled = enabledWorkflowTransitions(
+        definition.net,
+        workingMarking,
+        mergedCtx,
+        definition.guards,
+      );
+
+      return {
+        kind: "fired",
+        marking: workingMarking,
+        context: mergedCtx,
+        transitions: selected.map((t) => t.name),
+        terminal: nextEnabled.length === 0,
       };
     },
   };
