@@ -1,6 +1,5 @@
 import { describe, it, expect, afterAll } from "bun:test";
-import { analyse, toNet } from "@petriflow/engine";
-import { reachableStates } from "petri-ts";
+import { analyse, toNet, reachableStates } from "@petriflow/engine";
 import { definition, ITERATION_BUDGET } from "@petriflow/workflow-agent-benchmark";
 import { analyseCalls } from "@petriflow/workflow-agent-benchmark/call-analysis";
 import n8nWorkflow from "./workflow.json";

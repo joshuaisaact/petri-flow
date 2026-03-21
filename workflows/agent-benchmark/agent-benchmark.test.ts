@@ -1,6 +1,5 @@
 import { describe, it, expect, afterAll } from "bun:test";
-import { analyse, toNet } from "@petriflow/engine";
-import { reachableStates, terminalStates } from "petri-ts";
+import { analyse, toNet, reachableStates, terminalStates } from "@petriflow/engine";
 import { definition, ITERATION_BUDGET } from "./index.js";
 
 describe("agent-benchmark: formal properties", () => {

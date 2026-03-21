@@ -15,8 +15,10 @@
     "@petriflow/rules": "workspace:*"
   },
   "devDependencies": {
-    "openclaw": "file:../../../openclaw",
     "@types/bun": "^1",
     "typescript": "^5.7"
+  },
+  "optionalDependencies": {
+    "openclaw": "file:../../../openclaw"
   }
 }

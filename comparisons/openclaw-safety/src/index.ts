@@ -1,5 +1,4 @@
-import { analyse, toNet } from "@petriflow/engine";
-import { reachableStates, terminalStates, checkInvariant } from "petri-ts";
+import { analyse, toNet, reachableStates, terminalStates, checkInvariant } from "@petriflow/engine";
 
 import { definition as toolApproval } from "./scenarios/tool-approval.js";
 import { definition as messageGating } from "./scenarios/message-gating.js";
