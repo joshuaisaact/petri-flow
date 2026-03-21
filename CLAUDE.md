@@ -29,6 +29,7 @@ petri-ts (external, v0.1.5)
        │    ├─ @petriflow/vercel-ai      (Vercel AI SDK adapter)
        │    ├─ @petriflow/pi-extension   (pi-mono adapter)
        │    ├─ @petriflow/claude-code    (Claude Code hook)
+       │    ├─ @petriflow/agent-sdk     (Claude Agent SDK adapter)
        │    └─ @petriflow/openclaw       (OpenClaw adapter)
        ├─ @petriflow/cli                 (analysis CLI)
        └─ @petriflow/viewer             (React + xyflow visualizer)
@@ -47,6 +48,8 @@ petri-ts (external, v0.1.5)
 **Rules** (`packages/rules`) — Compiles a `.rules` DSL into verified SkillNets. Four rule types: `require A before B`, `require human-approval before B`, `block A`, `limit A to N per scope`. Also supports `map tool.field pattern as name` for tool discrimination. Each rule becomes an independent, small net — composition via AND logic at the manager level.
 
 **Vercel AI** (`packages/vercel-ai`) — `createPetriflowGate(nets)` returns `{ wrapTools, systemPrompt, formatStatus }`. `wrapTools()` intercepts each tool's `execute` method with gate checks. Blocked tools throw `ToolCallBlockedError`.
+
+**Agent SDK** (`packages/agent-sdk`) — `createPetriflowGate(nets)` returns `{ hooks, manager, systemPrompt, formatStatus }`. `hooks` is a config object to spread into the Agent SDK's `options.hooks`. Unlike the claude-code hook (which serializes state to disk per invocation), the manager lives in-process — no state files needed.
 
 ## Key Types
 

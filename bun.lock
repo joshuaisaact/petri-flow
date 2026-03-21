@@ -70,6 +70,23 @@
         "zod": "^4",
       },
     },
+    "packages/agent-sdk": {
+      "name": "@petriflow/agent-sdk",
+      "version": "0.1.0",
+      "dependencies": {
+        "@petriflow/gate": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1",
+        "typescript": "^5.7",
+      },
+      "peerDependencies": {
+        "@anthropic-ai/claude-agent-sdk": ">=0.1.0",
+      },
+      "optionalPeers": [
+        "@anthropic-ai/claude-agent-sdk",
+      ],
+    },
     "packages/claude-code": {
       "name": "@petriflow/claude-code",
       "version": "0.1.0",
