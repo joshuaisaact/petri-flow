@@ -14,7 +14,7 @@ bun test packages/gate            # single package tests
 bun test packages/rules/src/__tests__/compiler.test.ts  # single file
 bun build                         # build all packages (via turbo)
 bun check                         # typecheck all packages
-bun dev                           # run server + viewer
+bun dev                           # run viewer
 ```
 
 Turbo handles dependency ordering: `test` and `check` depend on `^build` (dependencies build first).
@@ -30,7 +30,6 @@ petri-ts (external, v0.1.5)
        │    ├─ @petriflow/pi-extension   (pi-mono adapter)
        │    ├─ @petriflow/claude-code    (Claude Code hook)
        │    └─ @petriflow/openclaw       (OpenClaw adapter)
-       ├─ @petriflow/server              (Hono HTTP API + SSE)
        ├─ @petriflow/cli                 (analysis CLI)
        └─ @petriflow/viewer             (React + xyflow visualizer)
 ```

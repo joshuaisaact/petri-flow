@@ -8,7 +8,7 @@
     "lint": "turbo run lint",
     "fmt": "turbo run fmt",
     "check": "turbo run check",
-    "dev": "turbo run dev --filter=@petriflow/server --filter=@petriflow/viewer"
+    "dev": "turbo run dev --filter=@petriflow/viewer"
   },
   "packageManager": "bun@1.2.7",
   "devDependencies": {
