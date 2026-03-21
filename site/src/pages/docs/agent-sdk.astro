@@ -1,0 +1,345 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import InstallBar from "../../components/InstallBar.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const quickStart = `import { query } from "@anthropic-ai/claude-agent-sdk";
+import { createPetriflowGate, safeCodingNet } from "@petriflow/agent-sdk";
+
+const gate = createPetriflowGate([safeCodingNet]);
+
+for await (const message of query({
+  prompt: "Fix the bug in auth.py",
+  options: {
+    allowedTools: ["Read", "Edit", "Bash", "Glob", "Grep"],
+    hooks: gate.hooks,
+  },
+})) {
+  if ("result" in message) console.log(message.result);
+}`;
+
+const defaultNet = `// Built-in: safeCodingNet
+{
+  freeTools: ["Read", "Glob", "Grep", "WebSearch"],
+  gated:     ["Write", "Edit", "Bash", "WebFetch", "Agent"],
+}`;
+
+const customNetExample = `import { query } from "@anthropic-ai/claude-agent-sdk";
+import { createPetriflowGate, defineSkillNet } from "@petriflow/agent-sdk";
+
+const backupFirst = defineSkillNet({
+  name: "backup-before-delete",
+  places: ["idle", "ready", "backedUp"],
+  terminalPlaces: [],
+  freeTools: ["Read", "Glob", "Grep"],
+  initialMarking: { idle: 1, ready: 0, backedUp: 0 },
+  transitions: [
+    { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
+    { name: "backup", type: "auto", inputs: ["ready"], outputs: ["backedUp"],
+      tools: ["Backup"], deferred: true },
+    { name: "delete", type: "auto", inputs: ["backedUp"], outputs: ["ready"],
+      tools: ["Delete"] },
+  ],
+});
+
+const gate = createPetriflowGate([backupFirst]);
+
+for await (const message of query({
+  prompt: "Clean up old deployment artifacts",
+  options: {
+    allowedTools: ["Read", "Glob", "Grep", "Backup", "Delete"],
+    hooks: gate.hooks,
+  },
+})) {
+  if ("result" in message) console.log(message.result);
+}`;
+
+const shadowMode = `const gate = createPetriflowGate([safeCodingNet], { mode: "shadow" });
+
+// Tools always execute. Decisions are logged via onDecision callback
+// but never block. Use this to evaluate rules before enforcing.`;
+
+const systemPromptExample = `const gate = createPetriflowGate([safeCodingNet]);
+
+for await (const message of query({
+  prompt: "Refactor the auth module",
+  options: {
+    allowedTools: ["Read", "Edit", "Glob", "Grep"],
+    hooks: gate.hooks,
+    systemPrompt: gate.systemPrompt(),
+  },
+})) {
+  console.log(message);
+}`;
+
+const multiNetExample = `import { createPetriflowGate } from "@petriflow/agent-sdk";
+import { compile } from "@petriflow/rules";
+
+const { nets } = compile(\`
+  require Read before Edit
+  require backup before delete
+  limit Write to 10 per session
+  block rm
+\`);
+
+const gate = createPetriflowGate(nets);
+
+// gate.hooks is ready to spread into query options`;
+
+const confirmExample = `const gate = createPetriflowGate([myNet], {
+  confirm: async (title, message) => {
+    // Your approval logic — prompt user, call API, etc.
+    const response = await askUser(\`\${title}: \${message}\`);
+    return response === "yes";
+  },
+});`;
+
+const mergeHooksExample = `const gate = createPetriflowGate([safeCodingNet]);
+
+// Merge PetriFlow hooks with your own
+const hooks = {
+  ...gate.hooks,
+  PostToolUse: [
+    ...gate.hooks.PostToolUse,
+    { matcher: "Edit|Write", hooks: [myAuditLogger] },
+  ],
+};
+
+for await (const message of query({
+  prompt: "Update the config",
+  options: { hooks },
+})) {
+  console.log(message);
+}`;
+
+const inspectStateExample = `const gate = createPetriflowGate([safeCodingNet]);
+
+// After some tool calls...
+const status = gate.formatStatus();
+console.log(status);
+// safe-coding: ready=1
+
+for (const { name, state } of gate.manager.getActiveNets()) {
+  console.log(name, state.marking);
+}`;
+
+const apiCreateSignature = `function createPetriflowGate(
+  nets: SkillNet<string>[] | ComposeConfig,
+  opts?: PetriflowAgentOptions,
+): PetriflowAgentGate`;
+
+const apiReturnType = `type PetriflowAgentGate = {
+  hooks: HooksConfig;
+  manager: GateManager;
+  systemPrompt: () => string;
+  formatStatus: () => string;
+}`;
+
+const apiOptionsType = `type PetriflowAgentOptions = {
+  mode?: "enforce" | "shadow";
+  confirm?: (title: string, message: string) => Promise<boolean>;
+  onDecision?: (decision: GateDecision) => void;
+}`;
+---
+<Layout title="Claude Agent SDK | PetriFlow" description="Add Petri net safety to Claude Agent SDK agents. In-process hooks with no state serialization — gate tool calls before they execute.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Agent SDK</span>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/rules/`}>Rules</a>
+        <a href={`${base}docs/gate/`}>Gate</a>
+        <a href={`${base}docs/claude-code/`}>Claude Code</a>
+        <a href={`${base}docs/vercel-ai/`}>Vercel AI</a>
+      </nav>
+      <h1>Claude Agent SDK</h1>
+      <p>Add Petri net safety to agents built with the Claude Agent SDK. In-process callback hooks — no state files, no subprocess overhead, no serialization.</p>
+      <InstallBar packages="@petriflow/agent-sdk" />
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#quick-start">Quick start</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#default-net">Default net</a>
+        <a href="#custom-nets">Custom nets</a>
+        <a href="#composing-with-rules">Composing with rules</a>
+        <a href="#shadow-mode">Shadow mode</a>
+        <a href="#system-prompt">System prompt</a>
+        <a href="#manual-approval">Manual approval</a>
+        <a href="#merging-hooks">Merging hooks</a>
+        <a href="#inspecting-state">Inspecting state</a>
+        <a href="#vs-claude-code">vs Claude Code hook</a>
+        <a href="#api-reference">API reference</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <!-- Quick start -->
+    <div class="doc-section" id="quick-start">
+      <h2>Quick start</h2>
+      <Code code={quickStart} lang="typescript" />
+      <p>The <code>gate.hooks</code> object plugs directly into the Agent SDK's <code>options.hooks</code>. Every tool call passes through the Petri net gate before it executes. Blocked tools get <code>permissionDecision: "deny"</code> and never run.</p>
+    </div>
+
+    <!-- How it works -->
+    <div class="doc-section" id="how-it-works">
+      <h2>How it works</h2>
+      <p>Unlike the <a href={`${base}docs/claude-code/`} style="color:var(--accent-text)">Claude Code hook</a> (which spawns a new process per event and serializes state to disk), the Agent SDK adapter keeps the <code>GateManager</code> <strong style="color:var(--text-secondary)">in-process</strong>. The manager lives in a closure — state persists naturally across hook callbacks within the same agent session.</p>
+
+      <Trace label="// agent SDK hook lifecycle" steps={[
+        { icon: "ok", html: `<strong>PreToolUse</strong> fires<br>Callback calls <code>manager.handleToolCall()</code> — returns allow or deny` },
+        { icon: "ok", html: `<strong>PostToolUse</strong> fires<br>Callback calls <code>manager.handleToolResult()</code> — deferred transitions fire on success` },
+        { icon: "ok", html: `<strong>PostToolUseFailure</strong> fires<br>Callback calls <code>manager.handleToolResult({ isError: true })</code> — pending cleared, marking unchanged` },
+      ]} />
+
+      <p>No state files. No JSON serialization. No restore/save round-trips. The manager's marking mutates in memory, and every hook callback shares the same instance.</p>
+    </div>
+
+    <!-- Default net -->
+    <div class="doc-section" id="default-net">
+      <h2>Default net</h2>
+      <p>The bundled <code>safeCodingNet</code> gates common Agent SDK tools:</p>
+
+      <div class="net-structure" set:html={`<span class="dim">free tools:</span>     Read, Glob, Grep, WebSearch
+<span class="dim">gated tools:</span>    Write, Edit, Bash, WebFetch, Agent
+
+<span class="dim">places:</span>      <span class="place">idle</span>(1)  <span class="place">ready</span>(0)  <span class="place">locked</span>(0)
+<span class="dim">transitions:</span> start(<span class="place">idle</span>&rarr;<span class="place">ready</span>)
+             writeFile(<span class="place">ready</span>&rarr;<span class="place">ready</span>)   <span class="comment">tools: Write</span>
+             editFile(<span class="place">ready</span>&rarr;<span class="place">ready</span>)    <span class="comment">tools: Edit</span>
+             runBash(<span class="place">ready</span>&rarr;<span class="place">ready</span>)     <span class="comment">tools: Bash</span>
+             webFetch(<span class="place">ready</span>&rarr;<span class="place">ready</span>)    <span class="comment">tools: WebFetch</span>
+             spawnAgent(<span class="place">ready</span>&rarr;<span class="place">ready</span>)  <span class="comment">tools: Agent</span>`} />
+
+      <p>Free tools always pass through. Gated tools need the <code>ready</code> token — available after auto-advance fires the <code>start</code> transition. Override with your own nets for different policies.</p>
+
+      <Trace label="// default net in action" steps={[
+        { icon: "ok", html: `Agent calls <strong>Glob</strong> ("**/*.ts")<br><span class="ok-text">OK</span> free tool, always allowed` },
+        { icon: "ok", html: `Agent calls <strong>Edit</strong> (auth.py)<br><span class="ok-text">OK</span> gated, ready token present` },
+        { icon: "ok", html: `Agent calls <strong>Bash</strong> (npm test)<br><span class="ok-text">OK</span> gated, ready token present` },
+        { icon: "ok", html: `Agent calls <strong>Read</strong> (output.log)<br><span class="ok-text">OK</span> free tool` },
+      ]} />
+    </div>
+
+    <!-- Custom nets -->
+    <div class="doc-section" id="custom-nets">
+      <h2>Custom nets</h2>
+      <p>Define your own nets for domain-specific constraints. This example enforces "backup before delete" with a deferred transition — the net only advances after the backup tool succeeds:</p>
+      <Code code={customNetExample} lang="typescript" />
+
+      <Trace label="// backup-before-delete in action" steps={[
+        { icon: "blocked", html: `Agent calls <strong>Delete</strong><br><span class="blocked-text">BLOCKED</span> no token in backedUp` },
+        { icon: "wait", html: `Agent calls <strong>Backup</strong><br><span class="ok-text">ALLOWED</span> (deferred — net waits for result)` },
+        { icon: "ok", html: `Backup succeeds &rarr; net advances to backedUp` },
+        { icon: "ok", html: `Agent calls <strong>Delete</strong><br><span class="ok-text">ALLOWED</span> backedUp token present` },
+      ]} />
+    </div>
+
+    <!-- Composing with rules -->
+    <div class="doc-section" id="composing-with-rules">
+      <h2>Composing with rules</h2>
+      <p>Use the <a href={`${base}docs/rules/`} style="color:var(--accent-text)">rules DSL</a> to generate nets from simple declarations. Each rule compiles to its own net, and all nets compose via AND logic — a tool only fires if every net allows it.</p>
+      <Code code={multiNetExample} lang="typescript" />
+    </div>
+
+    <!-- Shadow mode -->
+    <div class="doc-section" id="shadow-mode">
+      <h2>Shadow mode</h2>
+      <p>Set <code>mode: "shadow"</code> to observe decisions without blocking. Tools always execute — use this to evaluate rules against real agent sessions before switching to <code>"enforce"</code>.</p>
+      <Code code={shadowMode} lang="typescript" />
+    </div>
+
+    <!-- System prompt -->
+    <div class="doc-section" id="system-prompt">
+      <h2>System prompt</h2>
+      <p>Inject constraint descriptions into the agent's system prompt so it knows what's allowed. This reduces wasted tool calls to blocked actions.</p>
+      <Code code={systemPromptExample} lang="typescript" />
+      <p><code>gate.systemPrompt()</code> returns a formatted string describing all active nets, their current markings, and which tools are free, gated, or blocked.</p>
+    </div>
+
+    <!-- Manual approval -->
+    <div class="doc-section" id="manual-approval">
+      <h2>Manual approval</h2>
+      <p>Transitions with <code>type: "manual"</code> require confirmation before firing. Pass a <code>confirm</code> callback to handle approval prompts:</p>
+      <Code code={confirmExample} lang="typescript" />
+      <p>Without a <code>confirm</code> callback, manual transitions are always denied. This is the key difference from the Claude Code hook, where no UI is available for interactive approval.</p>
+    </div>
+
+    <!-- Merging hooks -->
+    <div class="doc-section" id="merging-hooks">
+      <h2>Merging hooks</h2>
+      <p>Combine PetriFlow hooks with your own Agent SDK hooks by spreading and concatenating:</p>
+      <Code code={mergeHooksExample} lang="typescript" />
+    </div>
+
+    <!-- Inspecting state -->
+    <div class="doc-section" id="inspecting-state">
+      <h2>Inspecting state</h2>
+      <p>Since the manager lives in-process, you can inspect net state at any time:</p>
+      <Code code={inspectStateExample} lang="typescript" />
+    </div>
+
+    <!-- vs Claude Code hook -->
+    <div class="doc-section" id="vs-claude-code">
+      <h2>vs Claude Code hook</h2>
+      <p>Both packages use the same <code>GateManager</code> from <code>@petriflow/gate</code>. The difference is how they integrate:</p>
+      <div class="net-structure" set:html={`<span class="dim">                  @petriflow/claude-code          @petriflow/agent-sdk</span>
+<span class="dim">integration</span>       shell command hooks              in-process callbacks
+<span class="dim">state</span>             JSON on /tmp per session         in-memory (closure)
+<span class="dim">process model</span>    new process per event            same process
+<span class="dim">approval UI</span>      not available (hooks have no UI) confirm callback
+<span class="dim">input transform</span>  not possible                     updatedInput via hooks
+<span class="dim">use case</span>         Claude Code CLI sessions         programmatic agents`} />
+      <p>Use <code>@petriflow/claude-code</code> for interactive CLI sessions. Use <code>@petriflow/agent-sdk</code> for agents you build and deploy programmatically.</p>
+    </div>
+
+    <!-- API reference -->
+    <div class="doc-section" id="api-reference">
+      <h2>API reference</h2>
+
+      <h3><code>createPetriflowGate(nets, opts?)</code></h3>
+      <p>Creates a gate with in-process hooks for the Claude Agent SDK.</p>
+      <Code code={apiCreateSignature} lang="typescript" />
+
+      <h3>Return type</h3>
+      <Code code={apiReturnType} lang="typescript" />
+      <ul>
+        <li><strong>hooks</strong> — spread into <code>options.hooks</code> when calling <code>query()</code></li>
+        <li><strong>manager</strong> — the underlying <code>GateManager</code> for state inspection and dynamic net management</li>
+        <li><strong>systemPrompt()</strong> — formatted constraint descriptions for the model</li>
+        <li><strong>formatStatus()</strong> — current marking across all active nets</li>
+      </ul>
+
+      <h3>Options</h3>
+      <Code code={apiOptionsType} lang="typescript" />
+      <ul>
+        <li><strong>mode</strong> — <code>"enforce"</code> (default) blocks disallowed calls. <code>"shadow"</code> logs but never blocks.</li>
+        <li><strong>confirm</strong> — callback for manual transition approval. Without it, manual transitions are denied.</li>
+        <li><strong>onDecision</strong> — called on every gate decision for logging or telemetry.</li>
+      </ul>
+
+      <h3><code>safeCodingNet</code></h3>
+      <p>Bundled default net. Free: Read, Glob, Grep, WebSearch. Gated: Write, Edit, Bash, WebFetch, Agent.</p>
+
+      <h3><code>defineSkillNet(config)</code></h3>
+      <p>Re-exported from <code>@petriflow/gate</code>. Build custom nets. See the <a href={`${base}docs/gate/`} style="color:var(--accent-text)">gate docs</a> for the full <code>SkillNet</code> type.</p>
+
+      <h3><code>createGateManager(nets, opts)</code></h3>
+      <p>Re-exported from <code>@petriflow/gate</code>. Use directly if you need lower-level control beyond what the hooks provide.</p>
+    </div>
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

@@ -1,0 +1,52 @@
+{
+  "name": "@petriflow/agent-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./nets/safe-coding": {
+      "types": "./dist/nets/safe-coding.d.ts",
+      "import": "./dist/nets/safe-coding.js",
+      "require": "./dist/nets/safe-coding.cjs"
+    }
+  },
+  "keywords": ["petri-net", "claude-agent-sdk", "ai-agent", "guardrails", "tool-use", "safety"],
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "test": "bun test",
+    "check": "tsc --noEmit",
+    "lint": "oxlint src/"
+  },
+  "dependencies": {
+    "@petriflow/gate": "workspace:*"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/claude-agent-sdk": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joshuaisaact/petri-flow.git",
+    "directory": "packages/agent-sdk"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/bun": "^1",
+    "typescript": "^5.7"
+  }
+}
