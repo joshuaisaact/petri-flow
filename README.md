@@ -95,7 +95,6 @@ Separate from the safety layer, PetriFlow also includes a general-purpose workfl
 | Package | Description |
 |---|---|
 | `@petriflow/engine` | Core types, firing engine, scheduler, pluggable persistence (SQLite included), analysis |
-| `@petriflow/server` | HTTP API. Run workflows as a service, inject tokens via REST, observe via SSE |
 | `@petriflow/viewer` | Interactive React app. Click to fire transitions, live analysis, visual editor |
 | `@petriflow/cli` | `petriflow analyse <workflow.ts>`. Prove properties from the command line |
 
@@ -163,19 +162,6 @@ await scheduler.createInstance("instance-1");
 await scheduler.tick();
 ```
 
-### HTTP server
-
-```bash
-bun run packages/server/src/main.ts workflows/coffee/definition.ts
-```
-
-```
-GET    /definitions                    List all workflows
-POST   /workflows/:name/instances      Create instance
-GET    /instances/:id                  Inspect state
-POST   /instances/:id/inject           Inject token (webhooks, approvals)
-GET    /events                         SSE stream
-```
 
 ### Persistence
 
