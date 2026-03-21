@@ -328,8 +328,11 @@ const executionResultType = `type ExecutionResult<Place, Ctx> = {
       <Code code={batchConflictExample} lang="typescript" />
 
       <h3>Context merge</h3>
-      <p>Each executor runs independently against the original context and returns a partial patch. Patches are merged in transition-name order (alphabetical) for deterministic results. Later patches overwrite earlier ones on shared keys.</p>
+      <p>Each executor receives the original (pre-fire) context snapshot — executors cannot see each other's patches. Patches are merged in transition-name order (alphabetical) using shallow spread. Later patches overwrite earlier ones on shared keys. <strong style="color:var(--text-secondary)">Executors in a batch should write to disjoint context keys.</strong> Overlapping compound values (arrays, objects) are replaced, not deep-merged.</p>
       <Code code={batchMergeExample} lang="typescript" />
+
+      <h3>Error handling</h3>
+      <p><code>stepBatch</code> uses <code>Promise.all</code> — if any executor throws, the entire batch fails. The scheduler marks the instance as failed with the pre-fire marking (no tokens are lost). However, executors that completed before the failure already performed their side effects, which won't be recorded. <strong style="color:var(--text-secondary)">Executors that perform side effects should be idempotent</strong>, since a retry after partial failure may re-run executors that already succeeded.</p>
 
       <Trace label="// stepBatch fires independent transitions in parallel" steps={[
         { icon: "ok", html: `Two independent branches: <strong>do_a</strong> (a_ready&rarr;a_done) and <strong>do_b</strong> (b_ready&rarr;b_done)<br><span class="ok-text">BOTH FIRE</span> in parallel via Promise.all` },
@@ -394,7 +397,7 @@ const executionResultType = `type ExecutionResult<Place, Ctx> = {
       <h3><code>WorkflowExecutor</code></h3>
       <ul>
         <li><strong style="color:var(--text-secondary)">step(instanceId, marking, ctx)</strong>: fire one enabled transition. Returns <code>StepResult</code>.</li>
-        <li><strong style="color:var(--text-secondary)">stepBatch(instanceId, marking, ctx, maxConcurrent)</strong>: fire up to <code>maxConcurrent</code> non-conflicting transitions in parallel. Returns <code>BatchStepResult</code>.</li>
+        <li><strong style="color:var(--text-secondary)">stepBatch(instanceId, marking, ctx, maxConcurrent)</strong>: fire up to <code>maxConcurrent</code> non-conflicting transitions in parallel. Returns <code>BatchStepResult</code>. Executors receive the original context snapshot and should write to disjoint keys (shallow merge, last-writer-wins on conflicts). All-or-nothing on failure — executors should be idempotent.</li>
         <li><strong style="color:var(--text-secondary)">getTimeoutCandidates(marking)</strong>: returns transitions with timeouts that are currently enabled.</li>
       </ul>
 

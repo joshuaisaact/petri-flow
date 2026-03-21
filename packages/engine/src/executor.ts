@@ -48,6 +48,25 @@ export interface WorkflowExecutor<
     marking: Marking<Place>,
     ctx: Ctx,
   ): Promise<StepResult<Place, Ctx>>;
+  /**
+   * Fire up to `maxConcurrent` non-conflicting transitions in parallel.
+   *
+   * **Execution model:** Each executor receives the original (pre-fire)
+   * marking and context snapshot. Executors cannot see each other's
+   * patches — they run concurrently via Promise.all.
+   *
+   * **Context merge:** Patches are merged in transition-name order
+   * (alphabetical) using shallow spread. Executors in a batch should
+   * write to disjoint context keys. Overlapping keys use last-writer-wins
+   * based on name order — compound values (arrays, objects) are replaced,
+   * not deep-merged.
+   *
+   * **Error handling:** If any executor throws, the entire batch fails
+   * (Promise.all semantics). The scheduler marks the instance as failed
+   * with the pre-fire marking. Executors that perform side effects should
+   * be idempotent, since a partial batch failure means some executors
+   * completed but none are recorded.
+   */
   stepBatch(
     instanceId: string,
     marking: Marking<Place>,
