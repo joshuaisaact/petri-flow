@@ -226,6 +226,30 @@ describe("stepBatch", () => {
     expect(result.kind).toBe("idle");
   });
 
+  it("throws on maxConcurrent < 1", async () => {
+    type Place = "a" | "da";
+    type Ctx = Record<string, unknown>;
+
+    const def = defineWorkflow<Place, Ctx>({
+      name: "validate-max",
+      places: ["a", "da"],
+      transitions: [
+        { name: "do_a", type: "automatic", inputs: ["a"], outputs: ["da"], guard: null },
+      ],
+      initialMarking: { a: 1, da: 0 },
+      initialContext: {},
+      terminalPlaces: ["da"],
+    });
+
+    const executor = createExecutor(def);
+    await expect(executor.stepBatch("inst-1", { a: 1, da: 0 }, {}, 0)).rejects.toThrow(
+      "maxConcurrent must be >= 1",
+    );
+    await expect(executor.stepBatch("inst-1", { a: 1, da: 0 }, {}, -1)).rejects.toThrow(
+      "maxConcurrent must be >= 1",
+    );
+  });
+
   it("respects maxConcurrent limit", async () => {
     type Place = "a" | "b" | "c" | "da" | "db" | "dc";
     type Ctx = { log: string[] };

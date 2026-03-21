@@ -1,7 +1,7 @@
 import { canFire, fire, type Marking } from "petri-ts";
 import type { WorkflowDefinition, WorkflowTransition } from "./types.js";
 import type { DecisionProvider } from "./decision.js";
-import { enabledWorkflowTransitions, fireWorkflow, canFireWorkflow } from "./engine.js";
+import { enabledWorkflowTransitions, fireWorkflow } from "./engine.js";
 
 export type StepResult<
   Place extends string,
@@ -147,6 +147,10 @@ export function createExecutor<
       ctx: Ctx,
       maxConcurrent: number,
     ): Promise<BatchStepResult<Place, Ctx>> {
+      if (maxConcurrent < 1) {
+        throw new Error("maxConcurrent must be >= 1");
+      }
+
       const enabled = enabledWorkflowTransitions(
         definition.net,
         marking,

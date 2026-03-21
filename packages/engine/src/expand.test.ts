@@ -179,6 +179,20 @@ describe("expandWorkflow", () => {
     ).toThrow('Terminal place "nonexistent" is not a known place');
   });
 
+  it("rejects duplicate transition names", () => {
+    expect(() =>
+      expandWorkflow(baseDef, [
+        {
+          name: "begin", // already exists
+          type: "automatic",
+          inputs: ["start"],
+          outputs: ["middle"],
+          guard: null,
+        },
+      ]),
+    ).toThrow('Transition "begin" already exists in the definition');
+  });
+
   it("validates expanded definition end-to-end with executor", async () => {
     type EPlace = Place | "branch";
 
@@ -283,6 +297,46 @@ describe("injectTokens", () => {
 });
 
 describe("Scheduler.updateExecutor", () => {
+  it("mid-tick update does not affect the current tick", async () => {
+    const db = new Database(":memory:");
+    const fired: string[] = [];
+
+    const scheduler = new Scheduler(createExecutor(baseDef), { adapter: sqliteAdapter(db, baseDef.name) }, {
+      onFire: (_id, name, _result) => {
+        fired.push(name);
+        // Swap executor mid-tick (during onFire callback)
+        type EPlace = Place | "bonus";
+        const expanded = expandWorkflow<EPlace, Ctx>(
+          baseDef as any,
+          [
+            {
+              name: "do_bonus",
+              type: "automatic",
+              inputs: ["middle"],
+              outputs: ["bonus"],
+              guard: null,
+            },
+          ],
+          ["bonus"],
+          { terminalPlaces: ["bonus"] },
+        );
+        scheduler.updateExecutor(createExecutor(expanded) as any);
+      },
+    });
+
+    await scheduler.createInstance("toctou-1");
+
+    // First tick fires "begin" — the onFire callback swaps executor mid-tick.
+    // The tick should complete using the original executor (not the new one).
+    await scheduler.tick();
+    expect(fired).toEqual(["begin"]);
+
+    // Second tick uses the new executor — "finish" and "do_bonus" both available
+    await scheduler.tick();
+    // Should fire one of them (sequential mode)
+    expect(fired.length).toBe(2);
+  });
+
   it("picks up expanded workflow on next tick", async () => {
     const db = new Database(":memory:");
     const fired: string[] = [];

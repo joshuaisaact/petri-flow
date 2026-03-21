@@ -164,6 +164,16 @@ export function expandWorkflow<
     }
   }
 
+  // Check for duplicate transition names
+  const existingNames = new Set(definition.net.transitions.map((t) => t.name));
+  for (const t of newTransitions) {
+    if (existingNames.has(t.name)) {
+      throw new Error(
+        `Transition "${t.name}" already exists in the definition`,
+      );
+    }
+  }
+
   // Validate new transitions reference known places
   for (const t of newTransitions) {
     for (const p of t.inputs) {

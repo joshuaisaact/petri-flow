@@ -71,6 +71,8 @@ export class Scheduler<
     this.ticking = true;
     let totalFired = 0;
     const maxConcurrent = options?.maxConcurrent;
+    // Snapshot executor at tick start so updateExecutor() mid-tick is safe
+    const executor = this.executor;
 
     try {
       const activeIds = await this.adapter.listActive();
@@ -81,7 +83,7 @@ export class Scheduler<
         try {
           // Phase 1: Handle expired timeouts
           const expired = await this.adapter.getExpiredTimeouts(id, Date.now());
-          const preCandidates = this.executor.getTimeoutCandidates(state.marking);
+          const preCandidates = executor.getTimeoutCandidates(state.marking);
           const enabledSet = new Set(preCandidates.map((c) => c.transitionName));
 
           for (const entry of expired) {
@@ -99,7 +101,7 @@ export class Scheduler<
 
           // Phase 2: Step — use batch or sequential based on maxConcurrent
           if (maxConcurrent != null && maxConcurrent > 1) {
-            const result = await this.executor.stepBatch(
+            const result = await executor.stepBatch(
               id,
               state.marking,
               state.context,
@@ -112,9 +114,9 @@ export class Scheduler<
               for (const t of result.transitions) {
                 await this.adapter.clearTimeouts(id, t);
               }
-              postCandidates = this.executor.getTimeoutCandidates(result.marking);
+              postCandidates = executor.getTimeoutCandidates(result.marking);
             } else {
-              postCandidates = this.executor.getTimeoutCandidates(state.marking);
+              postCandidates = executor.getTimeoutCandidates(state.marking);
             }
 
             const postNames = new Set(postCandidates.map((c) => c.transitionName));
@@ -185,7 +187,7 @@ export class Scheduler<
             }
           } else {
             // Sequential path (original behavior)
-            const result = await this.executor.step(
+            const result = await executor.step(
               id,
               state.marking,
               state.context,
@@ -195,9 +197,9 @@ export class Scheduler<
             let postCandidates;
             if (result.kind === "fired") {
               await this.adapter.clearTimeouts(id, result.transition);
-              postCandidates = this.executor.getTimeoutCandidates(result.marking);
+              postCandidates = executor.getTimeoutCandidates(result.marking);
             } else {
-              postCandidates = this.executor.getTimeoutCandidates(state.marking);
+              postCandidates = executor.getTimeoutCandidates(state.marking);
             }
 
             // Cancel entries for transitions that lost enablement
