@@ -1,4 +1,4 @@
-import { createGateManager } from "@petriflow/gate";
+import { createGateManager, findBlockingNet } from "@petriflow/gate";
 import type {
   ComposeConfig,
   GateContext,
@@ -13,14 +13,14 @@ import type {
 // ---------------------------------------------------------------------------
 
 /** Hook callback matching the Agent SDK's HookCallback signature. */
-type HookCallback = (
+export type HookCallback = (
   input: Record<string, unknown>,
   toolUseId: string | undefined,
   context: { signal: AbortSignal },
 ) => Promise<Record<string, unknown>>;
 
 /** Matcher group matching the Agent SDK's hook registration shape. */
-type HookMatcher = {
+export type HookMatcher = {
   matcher?: string;
   hooks: HookCallback[];
 };
@@ -36,7 +36,12 @@ type PetriflowAgentOptions = Omit<GateManagerOptions, "mode"> & {
 export type PetriflowAgentGate = {
   /** Hook config to spread into the Agent SDK's `options.hooks`. */
   hooks: HooksConfig;
-  /** The underlying GateManager — inspect state, add/remove nets. */
+  /**
+   * The underlying GateManager — inspect state, add/remove nets.
+   *
+   * Note: a single manager is created per `createPetriflowGate()` call.
+   * For multi-conversation processes, create a new gate per conversation.
+   */
   manager: GateManager;
   /** Formatted system prompt describing active constraints. */
   systemPrompt: () => string;
@@ -68,11 +73,13 @@ export function createPetriflowGate(
 
   // PreToolUse callback — gate check before tool execution
   const preToolUse: HookCallback = async (input, toolUseId) => {
-    const toolName = input["tool_name"] as string;
+    const toolName = input["tool_name"];
+    if (typeof toolName !== "string") return {};
+
     const toolInput = (input["tool_input"] as Record<string, unknown>) ?? {};
 
     const decision: GateDecision = await manager.handleToolCall(
-      { toolCallId: toolUseId ?? crypto.randomUUID(), toolName, input: toolInput },
+      { toolCallId: toolUseId ?? "", toolName, input: toolInput },
       ctx,
     );
 
@@ -92,7 +99,9 @@ export function createPetriflowGate(
 
   // PostToolUse callback — fire deferred transitions on success
   const postToolUse: HookCallback = async (input, toolUseId) => {
-    const toolName = input["tool_name"] as string;
+    const toolName = input["tool_name"];
+    if (typeof toolName !== "string") return {};
+
     const toolInput = (input["tool_input"] as Record<string, unknown>) ?? {};
 
     manager.handleToolResult({
@@ -107,7 +116,9 @@ export function createPetriflowGate(
 
   // PostToolUseFailure callback — clear pending deferreds on error
   const postToolUseFailure: HookCallback = async (input, toolUseId) => {
-    const toolName = input["tool_name"] as string;
+    const toolName = input["tool_name"];
+    if (typeof toolName !== "string") return {};
+
     const toolInput = (input["tool_input"] as Record<string, unknown>) ?? {};
 
     manager.handleToolResult({
@@ -132,18 +143,9 @@ export function createPetriflowGate(
   };
 }
 
-/** Best-effort: find which net name has jurisdiction over this tool. */
-function findBlockingNet(manager: GateManager, toolName: string): string {
-  for (const { name, net } of manager.getActiveNets()) {
-    const hasJurisdiction = net.transitions.some((t) => t.tools?.includes(toolName));
-    if (hasJurisdiction) return name;
-  }
-  return manager.getActiveNets()[0]?.name ?? "petriflow";
-}
-
 // Re-export gate types for convenience
-export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, RuleMetadata } from "@petriflow/gate";
-export { defineSkillNet, createGateManager } from "@petriflow/gate";
+export type { SkillNet, ComposeConfig, GateManager, GateManagerOptions, GateDecision, GateContext, RuleMetadata } from "@petriflow/gate";
+export { defineSkillNet, createGateManager, findBlockingNet } from "@petriflow/gate";
 
 // Re-export bundled net
 export { safeCodingNet } from "./nets/safe-coding.js";

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { createGateManager } from "@petriflow/gate";
+import { createGateManager, findBlockingNet } from "@petriflow/gate";
 import type { SkillNet, GateManagerOptions } from "@petriflow/gate";
 import { saveState, restoreState, clearState } from "./state.js";
 import { safeCodingNet } from "./nets/safe-coding.js";
@@ -146,15 +146,6 @@ async function main(): Promise<void> {
     log(`${event.tool_name} result (${isError ? "error" : "ok"})`);
     return;
   }
-}
-
-/** Best-effort: find which net name would block this tool for the error message. */
-function findBlockingNet(manager: ReturnType<typeof createGateManager>, toolName: string): string {
-  for (const { name, net } of manager.getActiveNets()) {
-    const hasJurisdiction = net.transitions.some((t) => t.tools?.includes(toolName));
-    if (hasJurisdiction) return name;
-  }
-  return manager.getActiveNets()[0]?.name ?? "petriflow";
 }
 
 main().catch((err) => {

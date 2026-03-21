@@ -31,11 +31,6 @@
   "peerDependencies": {
     "@anthropic-ai/claude-agent-sdk": ">=0.1.0"
   },
-  "peerDependenciesMeta": {
-    "@anthropic-ai/claude-agent-sdk": {
-      "optional": true
-    }
-  },
   "license": "MIT",
   "repository": {
     "type": "git",

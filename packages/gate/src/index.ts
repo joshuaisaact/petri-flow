@@ -29,3 +29,6 @@ export type { ComposeConfig, NetVerdict } from "./compose.js";
 // Manager
 export { createGateManager } from "./manager.js";
 export type { GateManager, GateManagerOptions, ReplayEntry } from "./manager.js";
+
+// Utilities
+export { findBlockingNet } from "./find-blocking-net.js";

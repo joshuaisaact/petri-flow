@@ -1,20 +1,19 @@
 import { defineSkillNet } from "@petriflow/gate";
 
-type Place = "idle" | "ready" | "locked";
+type Place = "idle" | "ready";
 
 /**
  * Default safety net for Claude Agent SDK.
  *
  * - FREE (read-only, no side effects): Read, Glob, Grep, WebSearch
  * - GATED (allowed via ready): Write, Edit, Bash, WebFetch, Agent
- * - BLOCKED: none by default (override with your own nets)
  */
 export const safeCodingNet = defineSkillNet<Place>({
   name: "safe-coding",
-  places: ["idle", "ready", "locked"],
+  places: ["idle", "ready"],
   terminalPlaces: [],
   freeTools: ["Read", "Glob", "Grep", "WebSearch"],
-  initialMarking: { idle: 1, ready: 0, locked: 0 },
+  initialMarking: { idle: 1, ready: 0 },
   transitions: [
     { name: "start", type: "auto", inputs: ["idle"], outputs: ["ready"] },
     // Gated tools — consume and restore ready token

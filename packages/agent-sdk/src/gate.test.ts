@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { createPetriflowGate, defineSkillNet } from "./index.js";
 import { safeCodingNet } from "./nets/safe-coding.js";
 
@@ -132,6 +132,56 @@ describe("PreToolUse — blocked tools", () => {
     expect(output["hookEventName"]).toBe("PreToolUse");
     expect(output["permissionDecision"]).toBe("deny");
     expect(typeof output["permissionDecisionReason"]).toBe("string");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PreToolUse — missing tool_name guard
+// ---------------------------------------------------------------------------
+
+describe("PreToolUse — input validation", () => {
+  it("allows call when tool_name is missing (cannot gate without it)", async () => {
+    const gate = createPetriflowGate([safeCodingNet]);
+    const hook = getPreHook(gate);
+
+    const result = await hook({ session_id: "s", cwd: "/", hook_event_name: "PreToolUse" }, "tc-1", { signal });
+    expect(result).toEqual({});
+  });
+
+  it("allows call when tool_name is not a string", async () => {
+    const gate = createPetriflowGate([safeCodingNet]);
+    const hook = getPreHook(gate);
+
+    const result = await hook({ tool_name: 123, tool_input: {} }, "tc-1", { signal });
+    expect(result).toEqual({});
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PostToolUse — non-deferred (common path)
+// ---------------------------------------------------------------------------
+
+describe("PostToolUse — non-deferred", () => {
+  it("does not throw for a non-deferred gated tool", async () => {
+    const gate = createPetriflowGate([safeCodingNet]);
+    const preHook = getPreHook(gate);
+    const postHook = getPostHook(gate);
+
+    // Allow the gated tool
+    await preHook(preToolUseInput("Write"), "tc-write", { signal });
+
+    // PostToolUse for non-deferred is a no-op on the marking
+    const markingBefore = { ...gate.manager.getActiveNets()[0]!.state.marking };
+    await postHook(postToolUseInput("Write"), "tc-write", { signal });
+    expect(gate.manager.getActiveNets()[0]!.state.marking).toEqual(markingBefore);
+  });
+
+  it("handles missing tool_name gracefully", async () => {
+    const gate = createPetriflowGate([safeCodingNet]);
+    const postHook = getPostHook(gate);
+
+    const result = await postHook({ hook_event_name: "PostToolUse" }, "tc-1", { signal });
+    expect(result).toEqual({});
   });
 });
 
@@ -272,6 +322,155 @@ describe("multi-net composition", () => {
     const hook = getPreHook(gate);
 
     const result = await hook(preToolUseInput("Bash"), "tc-bash", { signal });
+    const output = result["hookSpecificOutput"] as Record<string, unknown>;
+    expect(output["permissionDecision"]).toBe("deny");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Shadow mode
+// ---------------------------------------------------------------------------
+
+describe("shadow mode", () => {
+  it("allows blocked tools in shadow mode", async () => {
+    const blockNet = defineSkillNet({
+      name: "block-bash",
+      places: ["idle", "locked"],
+      terminalPlaces: [],
+      freeTools: ["Read"],
+      initialMarking: { idle: 1, locked: 0 },
+      transitions: [
+        { name: "bashBlocked", type: "auto" as const, inputs: ["locked"], outputs: ["locked"], tools: ["Bash"] },
+      ],
+    });
+
+    const gate = createPetriflowGate([blockNet], { mode: "shadow" });
+    const hook = getPreHook(gate);
+
+    // In shadow mode, blocked tools should return {} (allow), not deny
+    const result = await hook(preToolUseInput("Bash"), "tc-bash", { signal });
+    expect(result).toEqual({});
+  });
+
+  it("still allows free tools in shadow mode", async () => {
+    const gate = createPetriflowGate([safeCodingNet], { mode: "shadow" });
+    const hook = getPreHook(gate);
+
+    const result = await hook(preToolUseInput("Read"), "tc-read", { signal });
+    expect(result).toEqual({});
+  });
+});
+
+// ---------------------------------------------------------------------------
+// onDecision callback
+// ---------------------------------------------------------------------------
+
+describe("onDecision callback", () => {
+  it("is called on every gate decision", async () => {
+    const onDecision = mock(() => {});
+
+    const gate = createPetriflowGate([safeCodingNet], { onDecision });
+    const hook = getPreHook(gate);
+
+    await hook(preToolUseInput("Read"), "tc-read", { signal });
+    await hook(preToolUseInput("Write"), "tc-write", { signal });
+
+    expect(onDecision).toHaveBeenCalledTimes(2);
+  });
+
+  it("receives the event and decision for blocked tools", async () => {
+    const blockNet = defineSkillNet({
+      name: "block-bash",
+      places: ["idle", "locked"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { idle: 1, locked: 0 },
+      transitions: [
+        { name: "bashBlocked", type: "auto" as const, inputs: ["locked"], outputs: ["locked"], tools: ["Bash"] },
+      ],
+    });
+
+    const onDecision = mock(() => {});
+
+    const gate = createPetriflowGate([blockNet], { onDecision });
+    const hook = getPreHook(gate);
+
+    await hook(preToolUseInput("Bash"), "tc-bash", { signal });
+
+    expect(onDecision).toHaveBeenCalledTimes(1);
+    const args = onDecision.mock.calls[0] as unknown as [{ toolName: string }, { block: boolean } | undefined];
+    expect(args[0].toolName).toBe("Bash");
+    expect(args[1]?.block).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// confirm callback (manual transitions)
+// ---------------------------------------------------------------------------
+
+describe("confirm callback", () => {
+  it("blocks manual transitions when no confirm is provided", async () => {
+    const manualNet = defineSkillNet({
+      name: "manual-approval",
+      places: ["idle", "ready"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { idle: 1, ready: 0 },
+      transitions: [
+        { name: "start", type: "auto" as const, inputs: ["idle"], outputs: ["ready"] },
+        { name: "dangerousTool", type: "manual" as const, inputs: ["ready"], outputs: ["ready"], tools: ["Danger"] },
+      ],
+    });
+
+    const gate = createPetriflowGate([manualNet]);
+    const hook = getPreHook(gate);
+
+    const result = await hook(preToolUseInput("Danger"), "tc-danger", { signal });
+    const output = result["hookSpecificOutput"] as Record<string, unknown>;
+    expect(output["permissionDecision"]).toBe("deny");
+  });
+
+  it("allows manual transitions when confirm returns true", async () => {
+    const manualNet = defineSkillNet({
+      name: "manual-approval",
+      places: ["idle", "ready"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { idle: 1, ready: 0 },
+      transitions: [
+        { name: "start", type: "auto" as const, inputs: ["idle"], outputs: ["ready"] },
+        { name: "dangerousTool", type: "manual" as const, inputs: ["ready"], outputs: ["ready"], tools: ["Danger"] },
+      ],
+    });
+
+    const gate = createPetriflowGate([manualNet], {
+      confirm: async () => true,
+    });
+    const hook = getPreHook(gate);
+
+    const result = await hook(preToolUseInput("Danger"), "tc-danger", { signal });
+    expect(result).toEqual({});
+  });
+
+  it("blocks manual transitions when confirm returns false", async () => {
+    const manualNet = defineSkillNet({
+      name: "manual-approval",
+      places: ["idle", "ready"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { idle: 1, ready: 0 },
+      transitions: [
+        { name: "start", type: "auto" as const, inputs: ["idle"], outputs: ["ready"] },
+        { name: "dangerousTool", type: "manual" as const, inputs: ["ready"], outputs: ["ready"], tools: ["Danger"] },
+      ],
+    });
+
+    const gate = createPetriflowGate([manualNet], {
+      confirm: async () => false,
+    });
+    const hook = getPreHook(gate);
+
+    const result = await hook(preToolUseInput("Danger"), "tc-danger", { signal });
     const output = result["hookSpecificOutput"] as Record<string, unknown>;
     expect(output["permissionDecision"]).toBe("deny");
   });
