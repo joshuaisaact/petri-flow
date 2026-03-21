@@ -324,6 +324,8 @@ describe("multi-net composition", () => {
     const result = await hook(preToolUseInput("Bash"), "tc-bash", { signal });
     const output = result["hookSpecificOutput"] as Record<string, unknown>;
     expect(output["permissionDecision"]).toBe("deny");
+    // Reason should name the blocking net, not the first net with jurisdiction
+    expect(output["permissionDecisionReason"]).toContain("[block-bash]");
   });
 });
 
