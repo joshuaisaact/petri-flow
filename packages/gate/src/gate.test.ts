@@ -1,24 +1,24 @@
 import { describe, expect, it } from "bun:test";
 import type { Marking } from "@petriflow/engine";
-import type { GateToolCall, GateToolResult, GateContext } from "../events.js";
-import { autoAdvance } from "../advance.js";
+import type { GateToolCall, GateToolResult, GateContext } from "./events.js";
+import { autoAdvance } from "./advance.js";
 import {
   handleToolCall,
   handleToolResult,
   formatMarking,
   getEnabledToolTransitions,
   createGateState,
-} from "../gate.js";
-import type { GateState } from "../gate.js";
-import { defineSkillNet } from "../types.js";
-import { toolApprovalNet } from "../../../pi-extension/src/nets/tool-approval.js";
-import { implementNet } from "../../../pi-extension/src/nets/implement.js";
+} from "./gate.js";
+import type { GateState } from "./gate.js";
+import { defineSkillNet } from "./types.js";
+import { toolApprovalNet } from "../../pi-extension/src/nets/tool-approval.js";
+import { implementNet } from "../../pi-extension/src/nets/implement.js";
 import {
   nukeNet,
   extractBackupTarget,
   extractDestructiveTarget,
   pathCovers,
-} from "../../../pi-extension/src/nets/nuke.js";
+} from "../../pi-extension/src/nets/nuke.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -121,6 +121,41 @@ describe("autoAdvance", () => {
     expect(result.right).toBe(0);
   });
 
+  it("terminates on structural self-loop", () => {
+    type SP = "a";
+    const selfLoopNet = defineSkillNet<SP>({
+      name: "self-loop",
+      places: ["a"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { a: 1 },
+      transitions: [
+        { name: "loop", type: "auto", inputs: ["a"], outputs: ["a"] },
+      ],
+    });
+    const result = autoAdvance(selfLoopNet, { ...selfLoopNet.initialMarking });
+    // Should terminate and preserve the marking
+    expect(result.a).toBe(1);
+  });
+
+  it("terminates on structural cycle", () => {
+    type CP = "p1" | "p2";
+    const cycleNet = defineSkillNet<CP>({
+      name: "cycle",
+      places: ["p1", "p2"],
+      terminalPlaces: [],
+      freeTools: [],
+      initialMarking: { p1: 1, p2: 0 },
+      transitions: [
+        { name: "forward", type: "auto", inputs: ["p1"], outputs: ["p2"] },
+        { name: "backward", type: "auto", inputs: ["p2"], outputs: ["p1"] },
+      ],
+    });
+    const result = autoAdvance(cycleNet, { ...cycleNet.initialMarking });
+    // Should terminate — either p1:1 or p2:1, not hang
+    expect(result.p1 + result.p2).toBe(1);
+  });
+
   it("handles AND-join (all inputs required)", () => {
     type JP = "x" | "y" | "z" | "joined";
     const joinNet = defineSkillNet<JP>({
@@ -186,6 +221,24 @@ describe("handleToolCall", () => {
     const result = await handleToolCall(makeEvent("write"), makeCtx(true), simpleNet, state);
     expect(result).toBeUndefined();
     expect(state.marking.d).toBe(0);
+    expect(state.marking.e).toBe(1);
+  });
+
+  it("blocks when marking changes during manual approval (TOCTOU guard)", async () => {
+    const state = gs<P>({ a: 0, b: 0, c: 0, d: 1, e: 0 });
+    // Simulate a concurrent mutation during the confirm() await
+    const racyCtx: GateContext = {
+      hasUI: true,
+      confirm: async () => {
+        // Another caller fires the transition while we're awaiting approval
+        state.marking = { a: 0, b: 0, c: 0, d: 0, e: 1 } as Marking<P>;
+        return true;
+      },
+    };
+    const result = await handleToolCall(makeEvent("write"), racyCtx, simpleNet, state);
+    // Should block because the transition is no longer enabled
+    expect(result).toEqual({ block: true, reason: expect.stringContaining("write") });
+    // Marking should not have been further mutated
     expect(state.marking.e).toBe(1);
   });
 

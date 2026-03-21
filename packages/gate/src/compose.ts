@@ -1,4 +1,4 @@
-import { fire } from "@petriflow/engine";
+import { canFire, fire } from "@petriflow/engine";
 import type { GateToolCall, GateContext, GateDecision } from "./events.js";
 import type { SkillNet } from "./types.js";
 import { autoAdvance } from "./advance.js";
@@ -150,8 +150,8 @@ export async function composedToolCall(
         v.state,
       );
       if (rejection) {
-        // Rollback all meta that may have been mutated by earlier validates
-        for (let j = 0; j < i; j++) {
+        // Rollback all meta that may have been mutated by earlier validates (including the rejector's own)
+        for (let j = 0; j <= i; j++) {
           gated[j]!.state.meta = metaSnapshots[j]!;
         }
         return rejection;
@@ -160,6 +160,16 @@ export async function composedToolCall(
   }
 
   // --- Phase 4: Commit ---
+  // Re-validate enablement — marking may have changed during awaits
+  for (const v of gated) {
+    if (!v.transition.deferred && !canFire(v.state.marking, v.transition)) {
+      return {
+        block: true,
+        reason: `Tool '${v.resolvedTool}' is no longer available (state changed).`,
+      };
+    }
+  }
+
   for (const v of gated) {
     if (v.transition.deferred) {
       v.state.pending.set(event.toolCallId, {

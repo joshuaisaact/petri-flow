@@ -40,6 +40,8 @@ export function autoAdvance<P extends string>(
   marking: Marking<P>,
 ): Marking<P> {
   let current = { ...marking };
+  const seen = new Set<string>();
+  seen.add(JSON.stringify(current));
 
   for (;;) {
     const structural = net.transitions.filter(
@@ -59,6 +61,11 @@ export function autoAdvance<P extends string>(
         current = fire(current, t);
       }
     }
+
+    // Break if we've returned to a previously-seen marking (cycle detection)
+    const key = JSON.stringify(current);
+    if (seen.has(key)) break;
+    seen.add(key);
   }
 
   return current;

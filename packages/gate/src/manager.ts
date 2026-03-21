@@ -77,7 +77,8 @@ function replayNets(
   states: GateState<string>[],
   entries: ReplayEntry[],
 ): void {
-  for (const entry of entries) {
+  for (let ei = 0; ei < entries.length; ei++) {
+    const entry = entries[ei]!;
     if (entry.isError) continue;
     for (let i = 0; i < nets.length; i++) {
       const net = nets[i]!;
@@ -96,7 +97,7 @@ function replayNets(
 
         if (transition.deferred && net.onDeferredResult) {
           net.onDeferredResult(
-            { toolCallId: `replay-${i}`, input: entry.input ?? {}, isError: false },
+            { toolCallId: `replay-${ei}-${i}`, input: entry.input ?? {}, isError: false },
             resolved,
             transition,
             state,
@@ -171,7 +172,9 @@ function createRegistryManager(config: ComposeConfig): GateManager {
     });
   }
 
-  const activeNames = new Set<string>(config.active ?? Object.keys(config.registry));
+  const activeNames = new Set<string>(
+    (config.active ?? Object.keys(config.registry)).filter((n) => registry.has(n)),
+  );
 
   const getActiveNets = () => [...activeNames].map((n) => registry.get(n)!.net);
   const getActiveStates = () => [...activeNames].map((n) => registry.get(n)!.state);
