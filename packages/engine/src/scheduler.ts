@@ -39,7 +39,7 @@ export class Scheduler<
   private ticking = false;
   private readonly pollIntervalMs: number;
   private readonly adapter: WorkflowPersistence<Place, Ctx>;
-  private readonly executor: WorkflowExecutor<Place, Ctx>;
+  private executor: WorkflowExecutor<Place, Ctx>;
   private readonly events: SchedulerEvents<Place, Ctx>;
 
   constructor(
@@ -66,10 +66,11 @@ export class Scheduler<
     return this.executor.initialMarking;
   }
 
-  async tick(): Promise<number> {
+  async tick(options?: { maxConcurrent?: number }): Promise<number> {
     if (this.ticking) return 0;
     this.ticking = true;
     let totalFired = 0;
+    const maxConcurrent = options?.maxConcurrent;
 
     try {
       const activeIds = await this.adapter.listActive();
@@ -96,96 +97,184 @@ export class Scheduler<
             await this.adapter.saveExtended(id, state);
           }
 
-          // Phase 2: Step (same as before)
-          const result = await this.executor.step(
-            id,
-            state.marking,
-            state.context,
-          );
+          // Phase 2: Step — use batch or sequential based on maxConcurrent
+          if (maxConcurrent != null && maxConcurrent > 1) {
+            const result = await this.executor.stepBatch(
+              id,
+              state.marking,
+              state.context,
+              maxConcurrent,
+            );
 
-          // Phase 3: Schedule/cancel timeouts based on new marking
-          let postCandidates;
-          if (result.kind === "fired") {
-            await this.adapter.clearTimeouts(id, result.transition);
-            postCandidates = this.executor.getTimeoutCandidates(result.marking);
-          } else {
-            postCandidates = this.executor.getTimeoutCandidates(state.marking);
-          }
-
-          // Cancel entries for transitions that lost enablement
-          const postNames = new Set(postCandidates.map((c) => c.transitionName));
-          for (const pre of preCandidates) {
-            if (!postNames.has(pre.transitionName)) {
-              await this.adapter.clearTimeouts(id, pre.transitionName);
+            // Phase 3: Schedule/cancel timeouts based on new marking
+            let postCandidates;
+            if (result.kind === "fired") {
+              for (const t of result.transitions) {
+                await this.adapter.clearTimeouts(id, t);
+              }
+              postCandidates = this.executor.getTimeoutCandidates(result.marking);
+            } else {
+              postCandidates = this.executor.getTimeoutCandidates(state.marking);
             }
-          }
 
-          // Schedule new timeouts
-          const now = Date.now();
-          for (const candidate of postCandidates) {
-            await this.adapter.scheduleTimeout({
-              id: `${id}:${candidate.transitionName}:${now}`,
-              instanceId: id,
-              transitionName: candidate.transitionName,
-              place: candidate.place,
-              fireAt: now + candidate.ms,
-            });
-          }
+            const postNames = new Set(postCandidates.map((c) => c.transitionName));
+            for (const pre of preCandidates) {
+              if (!postNames.has(pre.transitionName)) {
+                await this.adapter.clearTimeouts(id, pre.transitionName);
+              }
+            }
 
-          // Phase 4: Handle step result
-          if (result.kind === "idle") {
-            const hasPending = await this.adapter.hasPendingTimeouts(id);
-            if (!hasPending) {
-              await this.adapter.saveExtended(id, {
-                ...state,
-                status: "completed",
+            const now = Date.now();
+            for (const candidate of postCandidates) {
+              await this.adapter.scheduleTimeout({
+                id: `${id}:${candidate.transitionName}:${now}`,
+                instanceId: id,
+                transitionName: candidate.transitionName,
+                place: candidate.place,
+                fireAt: now + candidate.ms,
               });
+            }
+
+            // Phase 4: Handle batch result
+            if (result.kind === "idle") {
+              const hasPending = await this.adapter.hasPendingTimeouts(id);
+              if (!hasPending) {
+                await this.adapter.saveExtended(id, {
+                  ...state,
+                  status: "completed",
+                });
+                this.events.onComplete?.(id);
+              }
+              continue;
+            }
+
+            let status: "active" | "completed" = result.terminal ? "completed" : "active";
+            if (result.terminal) {
+              const hasPending = await this.adapter.hasPendingTimeouts(id);
+              if (hasPending) {
+                status = "active";
+              }
+            }
+            await this.adapter.saveExtended(id, {
+              marking: result.marking,
+              workflowName: state.workflowName,
+              context: result.context,
+              status,
+            });
+
+            for (const t of result.transitions) {
+              await this.adapter.recordTransition({
+                instanceId: id,
+                workflowName: state.workflowName,
+                transitionName: t,
+                markingBefore: state.marking,
+                markingAfter: result.marking,
+                contextAfter: result.context,
+                firedAt: Date.now(),
+              });
+
+              this.events.onFire?.(id, t, {
+                marking: result.marking,
+                context: result.context,
+              });
+            }
+            totalFired += result.transitions.length;
+
+            if (status === "completed") {
               this.events.onComplete?.(id);
             }
-            continue;
-          }
-
-          if (result.decision) {
-            this.events.onDecision?.(
+          } else {
+            // Sequential path (original behavior)
+            const result = await this.executor.step(
               id,
-              result.transition,
-              result.decision.reasoning,
-              result.decision.candidates,
+              state.marking,
+              state.context,
             );
-          }
 
-          let status: "active" | "completed" = result.terminal ? "completed" : "active";
-          if (result.terminal) {
-            const hasPending = await this.adapter.hasPendingTimeouts(id);
-            if (hasPending) {
-              status = "active";
+            // Phase 3: Schedule/cancel timeouts based on new marking
+            let postCandidates;
+            if (result.kind === "fired") {
+              await this.adapter.clearTimeouts(id, result.transition);
+              postCandidates = this.executor.getTimeoutCandidates(result.marking);
+            } else {
+              postCandidates = this.executor.getTimeoutCandidates(state.marking);
             }
-          }
-          await this.adapter.saveExtended(id, {
-            marking: result.marking,
-            workflowName: state.workflowName,
-            context: result.context,
-            status,
-          });
 
-          await this.adapter.recordTransition({
-            instanceId: id,
-            workflowName: state.workflowName,
-            transitionName: result.transition,
-            markingBefore: state.marking,
-            markingAfter: result.marking,
-            contextAfter: result.context,
-            firedAt: Date.now(),
-          });
+            // Cancel entries for transitions that lost enablement
+            const postNames = new Set(postCandidates.map((c) => c.transitionName));
+            for (const pre of preCandidates) {
+              if (!postNames.has(pre.transitionName)) {
+                await this.adapter.clearTimeouts(id, pre.transitionName);
+              }
+            }
 
-          this.events.onFire?.(id, result.transition, {
-            marking: result.marking,
-            context: result.context,
-          });
-          totalFired++;
+            // Schedule new timeouts
+            const now = Date.now();
+            for (const candidate of postCandidates) {
+              await this.adapter.scheduleTimeout({
+                id: `${id}:${candidate.transitionName}:${now}`,
+                instanceId: id,
+                transitionName: candidate.transitionName,
+                place: candidate.place,
+                fireAt: now + candidate.ms,
+              });
+            }
 
-          if (status === "completed") {
-            this.events.onComplete?.(id);
+            // Phase 4: Handle step result
+            if (result.kind === "idle") {
+              const hasPending = await this.adapter.hasPendingTimeouts(id);
+              if (!hasPending) {
+                await this.adapter.saveExtended(id, {
+                  ...state,
+                  status: "completed",
+                });
+                this.events.onComplete?.(id);
+              }
+              continue;
+            }
+
+            if (result.decision) {
+              this.events.onDecision?.(
+                id,
+                result.transition,
+                result.decision.reasoning,
+                result.decision.candidates,
+              );
+            }
+
+            let status: "active" | "completed" = result.terminal ? "completed" : "active";
+            if (result.terminal) {
+              const hasPending = await this.adapter.hasPendingTimeouts(id);
+              if (hasPending) {
+                status = "active";
+              }
+            }
+            await this.adapter.saveExtended(id, {
+              marking: result.marking,
+              workflowName: state.workflowName,
+              context: result.context,
+              status,
+            });
+
+            await this.adapter.recordTransition({
+              instanceId: id,
+              workflowName: state.workflowName,
+              transitionName: result.transition,
+              markingBefore: state.marking,
+              markingAfter: result.marking,
+              contextAfter: result.context,
+              firedAt: Date.now(),
+            });
+
+            this.events.onFire?.(id, result.transition, {
+              marking: result.marking,
+              context: result.context,
+            });
+            totalFired++;
+
+            if (status === "completed") {
+              this.events.onComplete?.(id);
+            }
           }
         } catch (err) {
           this.events.onError?.(id, err);
@@ -220,6 +309,10 @@ export class Scheduler<
       marking,
       status: "active",
     });
+  }
+
+  updateExecutor(executor: WorkflowExecutor<Place, Ctx>): void {
+    this.executor = executor;
   }
 
   start(): void {

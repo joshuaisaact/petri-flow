@@ -1,0 +1,448 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Trace from "../../components/Trace.astro";
+import InstallBar from "../../components/InstallBar.astro";
+import { Code } from "astro:components";
+
+const base = import.meta.env.BASE_URL;
+
+const defineWorkflowExample = `import { defineWorkflow, createExecutor, Scheduler } from "@petriflow/engine";
+
+const definition = defineWorkflow({
+  name: "deploy-pipeline",
+  places: ["idle", "tested", "staged", "deployed"],
+  transitions: [
+    {
+      name: "test",
+      type: "automatic",
+      inputs: ["idle"],
+      outputs: ["tested"],
+      guard: null,
+      execute: async (ctx) => ({ log: [...ctx.log, "tested"] }),
+    },
+    {
+      name: "stage",
+      type: "automatic",
+      inputs: ["tested"],
+      outputs: ["staged"],
+      guard: null,
+      execute: async (ctx) => ({ log: [...ctx.log, "staged"] }),
+    },
+    {
+      name: "deploy",
+      type: "automatic",
+      inputs: ["staged"],
+      outputs: ["deployed"],
+      guard: "approved == true",
+      execute: async (ctx) => ({ log: [...ctx.log, "deployed"] }),
+    },
+  ],
+  initialMarking: { idle: 1, tested: 0, staged: 0, deployed: 0 },
+  initialContext: { log: [], approved: false },
+  terminalPlaces: ["deployed"],
+});`;
+
+const guardExample = `// Guards are expressions evaluated against the context
+{
+  name: "approve",
+  type: "automatic",
+  inputs: ["review"],
+  outputs: ["approved"],
+  guard: "amount < 10000",        // simple comparison
+}
+
+{
+  name: "escalate",
+  type: "automatic",
+  inputs: ["review"],
+  outputs: ["escalated"],
+  guard: "amount >= 10000 and not vipCustomer",  // boolean logic
+}
+
+{
+  name: "timeout-check",
+  type: "automatic",
+  inputs: ["waiting"],
+  outputs: ["expired"],
+  guard: "marking.retries == 0",  // access marking via marking.place
+}`;
+
+const executorExample = `import { createExecutor } from "@petriflow/engine";
+
+const executor = createExecutor(definition);
+
+// Fire one transition at a time
+const result = await executor.step("instance-1", marking, context);
+
+if (result.kind === "fired") {
+  console.log(result.transition);  // "test"
+  console.log(result.marking);     // { idle: 0, tested: 1, staged: 0, deployed: 0 }
+  console.log(result.context);     // { log: ["tested"], approved: false }
+  console.log(result.terminal);    // false — more transitions available
+} else {
+  // result.kind === "idle" — no enabled transitions
+}`;
+
+const stepBatchExample = `// Fire multiple independent transitions concurrently
+const result = await executor.stepBatch("instance-1", marking, context, 4);
+
+if (result.kind === "fired") {
+  console.log(result.transitions);  // ["do_a", "do_b"] — all that fired
+  console.log(result.marking);      // tokens consumed/produced for all
+  console.log(result.context);      // patches merged in name order
+  console.log(result.terminal);     // true if no transitions remain
+}`;
+
+const batchConflictExample = `// Two transitions compete for the same input token:
+//   take_a: [shared] → [out_a]
+//   take_b: [shared] → [out_b]
+//
+// With shared:1, only take_a fires (first-enabled wins).
+// take_b is skipped — its input token was already consumed.
+
+const result = await executor.stepBatch("inst", { shared: 1, out_a: 0, out_b: 0 }, ctx, 10);
+// result.transitions === ["take_a"]`;
+
+const batchMergeExample = `// Context patches merge in transition-name order (deterministic).
+// If do_alpha and do_zeta both fire:
+//   1. do_alpha's patch applied first  (alphabetically first)
+//   2. do_zeta's patch applied second  (overwrites shared keys)
+//
+// stepBatch(id, m, ctx, 1) behaves identically to step(id, m, ctx)`;
+
+const schedulerExample = `import { Scheduler } from "@petriflow/engine";
+import { Database } from "bun:sqlite";
+import { sqliteAdapter } from "@petriflow/engine";
+
+const db = new Database("workflow.db");
+const scheduler = new Scheduler(
+  createExecutor(definition),
+  { adapter: sqliteAdapter(db, definition.name) },
+  {
+    onFire: (id, transition, result) => {
+      console.log(\`[\${id}] fired \${transition}\`);
+    },
+    onComplete: (id) => console.log(\`[\${id}] completed\`),
+    onError: (id, err) => console.error(\`[\${id}] error:\`, err),
+  },
+);
+
+await scheduler.createInstance("deploy-001");
+
+// Sequential: fires one transition per tick
+await scheduler.tick();
+
+// Concurrent: fires up to 4 independent transitions per tick
+await scheduler.tick({ maxConcurrent: 4 });
+
+// Poll automatically
+scheduler.start();  // ticks every 1000ms by default
+scheduler.stop();`;
+
+const expandExample = `import { expandWorkflow, injectTokens, createExecutor } from "@petriflow/engine";
+
+// Original definition has: idle → tested → staged → deployed
+// Add a rollback path from staged back to tested
+
+const expanded = expandWorkflow(
+  definition,
+  [
+    {
+      name: "rollback",
+      type: "automatic",
+      inputs: ["staged"],
+      outputs: ["tested"],
+      guard: "rollbackRequested == true",
+      execute: async (ctx) => ({
+        log: [...ctx.log, "rolled back"],
+        rollbackRequested: false,
+      }),
+    },
+  ],
+  // No new places needed — rollback uses existing places
+);
+
+// expanded is a new WorkflowDefinition. Original is unchanged.
+// Guards are compiled, executors extracted — same as defineWorkflow().`;
+
+const expandNewPlacesExample = `// Add entirely new places and terminal states
+const withAudit = expandWorkflow(
+  definition,
+  [
+    {
+      name: "audit",
+      type: "automatic",
+      inputs: ["deployed"],
+      outputs: ["audited"],
+      guard: null,
+      execute: async (ctx) => ({ log: [...ctx.log, "audited"] }),
+    },
+  ],
+  ["audited"],                      // new places
+  { terminalPlaces: ["audited"] },  // new terminal places
+);`;
+
+const injectTokensExample = `import { injectTokens } from "@petriflow/engine";
+
+// A transition needs tokens in two places: [waiting, approval] → [done]
+// "waiting" has a token but "approval" doesn't — transition is blocked.
+const marking = { waiting: 1, approval: 0, done: 0 };
+
+// Inject a token to represent an external approval
+const updated = injectTokens(marking, "approval");
+// { waiting: 1, approval: 1, done: 0 }
+// Now the transition is enabled.
+
+// injectTokens is pure — original marking is unchanged.
+// Works with the Scheduler too:
+await scheduler.injectToken("instance-1", "approval");`;
+
+const updateExecutorExample = `// Expand a running workflow without restarting
+const expanded = expandWorkflow(definition, newTransitions, newPlaces);
+scheduler.updateExecutor(createExecutor(expanded));
+
+// Next tick() uses the expanded definition.
+// Existing instance state (marking, context) is preserved in the database.
+// Inject tokens if the new transitions need already-satisfied prerequisites:
+await scheduler.injectToken("instance-1", "newPlace", 1);`;
+
+const workflowDefinitionType = `type WorkflowDefinition<Place, Ctx> = {
+  name: string;
+  net: WorkflowNet<Place, Ctx>;
+  guards: Map<string, GuardFn<Place, Ctx>>;
+  executors: Map<string, ExecuteFn<Place, Ctx>>;
+  initialContext: Ctx;
+  terminalPlaces: Place[];
+  invariants?: { weights: Partial<Record<Place, number>> }[];
+};`;
+
+const workflowTransitionType = `type WorkflowTransition<Place, Ctx> = Transition<Place> & {
+  type: string;
+  guard: string | null;
+  timeout?: { place: Place; ms: number };
+  config?: Record<string, unknown>;
+};`;
+
+const stepResultType = `type StepResult<Place, Ctx> =
+  | {
+      kind: "fired";
+      marking: Marking<Place>;
+      context: Ctx;
+      transition: string;
+      terminal: boolean;
+      decision?: { reasoning: string; candidates: string[] };
+    }
+  | { kind: "idle" };`;
+
+const batchStepResultType = `type BatchStepResult<Place, Ctx> =
+  | {
+      kind: "fired";
+      marking: Marking<Place>;
+      context: Ctx;
+      transitions: string[];   // all transitions that fired
+      terminal: boolean;
+    }
+  | { kind: "idle" };`;
+
+const executionResultType = `type ExecutionResult<Place, Ctx> = {
+  marking: Marking<Place>;
+  context: Ctx;
+  firedTransition: string;
+};`;
+---
+<Layout title="Engine | PetriFlow" description="Workflow engine with guards, executors, batch concurrent execution, dynamic net expansion, and SQLite persistence.">
+  <Nav currentPage="docs" />
+
+  <div class="doc-wrapper">
+    <div class="page-header">
+      <nav class="doc-breadcrumb" aria-label="Documentation navigation">
+        <a href={`${base}docs/`}>Docs</a>
+        <span aria-hidden="true">/</span>
+        <span>Engine</span>
+        <span class="doc-breadcrumb-sep" aria-hidden="true"></span>
+        <a href={`${base}docs/gate/`}>Gate</a>
+        <a href={`${base}docs/rules/`}>Rules</a>
+        <a href={`${base}docs/vercel-ai/`}>Vercel AI</a>
+      </nav>
+      <h1>Engine</h1>
+      <p>Workflow execution engine built on <a href="https://www.npmjs.com/package/petri-ts" style="color:var(--accent-text)">petri-ts</a>. Adds guards, executors, timeouts, batch concurrent execution, dynamic net expansion, and SQLite persistence to the core Petri net primitives.</p>
+      <InstallBar packages="@petriflow/engine" />
+    </div>
+
+    <aside class="doc-sidebar" aria-label="Page navigation">
+      <nav class="doc-nav">
+        <a href="#defining-a-workflow">Defining a workflow</a>
+        <a href="#guards">Guards</a>
+        <a href="#executor">Executor</a>
+        <a href="#batch-execution">Batch execution</a>
+        <a href="#scheduler">Scheduler</a>
+        <a href="#dynamic-expansion">Dynamic expansion</a>
+        <a href="#injecting-tokens">Injecting tokens</a>
+        <a href="#api-reference">API reference</a>
+      </nav>
+    </aside>
+
+    <main id="main-content">
+
+    <!-- Defining a workflow -->
+    <div class="doc-section" id="defining-a-workflow">
+      <h2>Defining a workflow</h2>
+      <p><code>defineWorkflow</code> takes places, transitions, initial marking, context, and terminal places. It validates all place references, compiles guard expressions, and extracts executor functions into separate maps.</p>
+      <Code code={defineWorkflowExample} lang="typescript" />
+      <p>Transitions are <code>WorkflowTransition</code> objects — an intersection with petri-ts <code>Transition</code>, so they pass directly to all petri-ts analysis functions (<code>reachableStates</code>, <code>isDeadlockFree</code>, <code>toDot</code>, etc.) via <code>toNet()</code>.</p>
+    </div>
+
+    <!-- Guards -->
+    <div class="doc-section" id="guards">
+      <h2>Guards</h2>
+      <p>Guards are expression strings evaluated against the workflow context. A transition is only enabled if it's structurally enabled (input places have tokens) <strong>and</strong> its guard passes. Guards are compiled at definition time via <a href="https://www.npmjs.com/package/filtrex" style="color:var(--accent-text)">filtrex</a>.</p>
+      <Code code={guardExample} lang="typescript" />
+      <p>Set <code>guard: null</code> for transitions with no guard condition. The marking is accessible inside guards via <code>marking.placeName</code>.</p>
+    </div>
+
+    <!-- Executor -->
+    <div class="doc-section" id="executor">
+      <h2>Executor</h2>
+      <p><code>createExecutor</code> wraps a <code>WorkflowDefinition</code> into a <code>WorkflowExecutor</code> with a <code>step()</code> method. Each step finds enabled transitions, picks one, fires it (consuming input tokens, producing output tokens), and runs the executor function.</p>
+      <Code code={executorExample} lang="typescript" />
+
+      <Trace label="// step() fires one transition per call" steps={[
+        { icon: "ok", html: `step() finds <strong>test</strong> enabled<br><span class="ok-text">FIRED</span> idle&rarr;tested, context updated` },
+        { icon: "ok", html: `step() finds <strong>stage</strong> enabled<br><span class="ok-text">FIRED</span> tested&rarr;staged` },
+        { icon: "wait", html: `step() finds <strong>deploy</strong> structurally enabled but guard fails<br><span class="blocked-text">IDLE</span> approved == false` },
+      ]} />
+
+      <p>When multiple transitions are enabled and no <code>decisionProvider</code> is configured, the first enabled transition fires. A decision provider can choose between candidates at runtime — useful for LLM-driven workflows.</p>
+    </div>
+
+    <!-- Batch execution -->
+    <div class="doc-section" id="batch-execution">
+      <h2>Batch execution</h2>
+      <p><code>stepBatch()</code> fires multiple independent transitions concurrently. It finds all enabled transitions, selects up to <code>maxConcurrent</code> non-conflicting ones, runs their executors in parallel via <code>Promise.all</code>, and returns the combined result.</p>
+      <Code code={stepBatchExample} lang="typescript" />
+
+      <h3>Conflict resolution</h3>
+      <p>Transitions that compete for the same input tokens cannot both fire. <code>stepBatch</code> selects greedily: it walks enabled transitions in order, consuming tokens from a working marking. If a transition's inputs are no longer available (already consumed by an earlier selection), it's skipped.</p>
+      <Code code={batchConflictExample} lang="typescript" />
+
+      <h3>Context merge</h3>
+      <p>Each executor runs independently against the original context and returns a partial patch. Patches are merged in transition-name order (alphabetical) for deterministic results. Later patches overwrite earlier ones on shared keys.</p>
+      <Code code={batchMergeExample} lang="typescript" />
+
+      <Trace label="// stepBatch fires independent transitions in parallel" steps={[
+        { icon: "ok", html: `Two independent branches: <strong>do_a</strong> (a_ready&rarr;a_done) and <strong>do_b</strong> (b_ready&rarr;b_done)<br><span class="ok-text">BOTH FIRE</span> in parallel via Promise.all` },
+        { icon: "blocked", html: `Two competing transitions: <strong>take_a</strong> and <strong>take_b</strong> both need shared:1<br><span class="blocked-text">CONFLICT</span> only take_a fires (first-enabled wins)` },
+      ]} />
+    </div>
+
+    <!-- Scheduler -->
+    <div class="doc-section" id="scheduler">
+      <h2>Scheduler</h2>
+      <p>The <code>Scheduler</code> drives workflow instances to completion. It manages persistence (SQLite), timeouts, and event callbacks. Call <code>tick()</code> manually or use <code>start()</code> for automatic polling.</p>
+      <Code code={schedulerExample} lang="typescript" />
+      <p>Pass <code>{"{ maxConcurrent }"}</code> to <code>tick()</code> to use batch execution. When set, the scheduler fires up to that many independent transitions per instance per tick. Without the option, behavior is sequential — one transition per tick, same as before.</p>
+    </div>
+
+    <!-- Dynamic expansion -->
+    <div class="doc-section" id="dynamic-expansion">
+      <h2>Dynamic expansion</h2>
+      <p><code>expandWorkflow</code> adds new transitions and places to an existing <code>WorkflowDefinition</code>. It returns a new definition — the original is not mutated. The expanded definition goes through the same validation as <code>defineWorkflow</code>: place references are checked, guards are compiled, and executors are extracted.</p>
+      <Code code={expandExample} lang="typescript" />
+
+      <h3>New places and terminal states</h3>
+      <p>Pass new places as the third argument and new terminal places in the options. Existing transitions and executors are preserved exactly.</p>
+      <Code code={expandNewPlacesExample} lang="typescript" />
+
+      <h3>Updating a running scheduler</h3>
+      <p>Use <code>updateExecutor()</code> to swap the scheduler's executor at runtime. The next <code>tick()</code> picks up the expanded definition. Instance state (marking, context) in the database is untouched.</p>
+      <Code code={updateExecutorExample} lang="typescript" />
+    </div>
+
+    <!-- Injecting tokens -->
+    <div class="doc-section" id="injecting-tokens">
+      <h2>Injecting tokens</h2>
+      <p><code>injectTokens</code> returns a new marking with additional tokens in a given place. This is essential when expanding a net where some prerequisites are already satisfied — new transitions may need tokens that represent completed work.</p>
+      <Code code={injectTokensExample} lang="typescript" />
+      <p>Both the standalone <code>injectTokens()</code> function and the scheduler's <code>injectToken()</code> method are available. The standalone function is pure (returns a new marking). The scheduler method persists the change and reactivates the instance.</p>
+    </div>
+
+    <!-- API reference -->
+    <div class="doc-section" id="api-reference">
+      <h2>API reference</h2>
+
+      <h3><code>defineWorkflow(def, options?)</code></h3>
+      <p>Creates a <code>WorkflowDefinition</code>. Validates place references, compiles guards, extracts executors. Throws on invalid references.</p>
+
+      <h3><code>expandWorkflow(definition, newTransitions, newPlaces?, options?)</code></h3>
+      <p>Returns a new <code>WorkflowDefinition</code> with additional transitions and places. Pure function — does not mutate the original. Same validation as <code>defineWorkflow</code>.</p>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">definition</strong>: the existing <code>WorkflowDefinition</code> to expand</li>
+        <li><strong style="color:var(--text-secondary)">newTransitions</strong>: transitions to add (same format as <code>defineWorkflow</code>)</li>
+        <li><strong style="color:var(--text-secondary)">newPlaces</strong>: optional array of new place names</li>
+        <li><strong style="color:var(--text-secondary)">options.terminalPlaces</strong>: optional new terminal places to add</li>
+        <li><strong style="color:var(--text-secondary)">options.nodes</strong>: optional custom node executor registry</li>
+      </ul>
+
+      <h3><code>injectTokens(marking, place, count?)</code></h3>
+      <p>Returns a new marking with <code>count</code> (default 1) tokens added to <code>place</code>. Pure function.</p>
+
+      <h3><code>createExecutor(definition, options?)</code></h3>
+      <p>Creates a <code>WorkflowExecutor</code> from a definition. Optionally accepts a <code>decisionProvider</code> for choosing between multiple enabled transitions.</p>
+
+      <h3><code>WorkflowExecutor</code></h3>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">step(instanceId, marking, ctx)</strong>: fire one enabled transition. Returns <code>StepResult</code>.</li>
+        <li><strong style="color:var(--text-secondary)">stepBatch(instanceId, marking, ctx, maxConcurrent)</strong>: fire up to <code>maxConcurrent</code> non-conflicting transitions in parallel. Returns <code>BatchStepResult</code>.</li>
+        <li><strong style="color:var(--text-secondary)">getTimeoutCandidates(marking)</strong>: returns transitions with timeouts that are currently enabled.</li>
+      </ul>
+
+      <h3><code>Scheduler</code></h3>
+      <ul>
+        <li><strong style="color:var(--text-secondary)">createInstance(id)</strong>: create a new workflow instance with the initial marking and context.</li>
+        <li><strong style="color:var(--text-secondary)">tick(options?)</strong>: process all active instances. Pass <code>{"{ maxConcurrent }"}</code> for batch execution. Returns total transitions fired.</li>
+        <li><strong style="color:var(--text-secondary)">injectToken(id, place, count?)</strong>: add tokens to a running instance and reactivate it.</li>
+        <li><strong style="color:var(--text-secondary)">updateExecutor(executor)</strong>: swap the executor for an expanded definition. Takes effect on next tick.</li>
+        <li><strong style="color:var(--text-secondary)">start() / stop()</strong>: automatic polling at <code>pollIntervalMs</code> (default 1000ms).</li>
+        <li><strong style="color:var(--text-secondary)">inspect(id)</strong>: read current instance state (marking, context, status).</li>
+        <li><strong style="color:var(--text-secondary)">getHistory(id)</strong>: full transition history with before/after markings.</li>
+      </ul>
+
+      <h3><code>WorkflowDefinition&lt;Place, Ctx&gt;</code></h3>
+      <Code code={workflowDefinitionType} lang="typescript" />
+
+      <h3><code>WorkflowTransition&lt;Place, Ctx&gt;</code></h3>
+      <Code code={workflowTransitionType} lang="typescript" />
+      <ul>
+        <li><strong style="color:var(--text-secondary)">type</strong>: free-form string (e.g. <code>"automatic"</code>, <code>"manual"</code>, <code>"http"</code>, <code>"timer"</code>). Used by the node registry to resolve executors from config.</li>
+        <li><strong style="color:var(--text-secondary)">guard</strong>: expression string or <code>null</code>. Compiled to a function at definition time.</li>
+        <li><strong style="color:var(--text-secondary)">timeout</strong>: optional. When the transition is enabled, a timeout token is placed after <code>ms</code> milliseconds.</li>
+        <li><strong style="color:var(--text-secondary)">config</strong>: optional. Passed to the node executor for type-based execution (e.g. HTTP config).</li>
+      </ul>
+
+      <h3><code>StepResult&lt;Place, Ctx&gt;</code></h3>
+      <Code code={stepResultType} lang="typescript" />
+
+      <h3><code>BatchStepResult&lt;Place, Ctx&gt;</code></h3>
+      <Code code={batchStepResultType} lang="typescript" />
+
+      <h3><code>ExecutionResult&lt;Place, Ctx&gt;</code></h3>
+      <Code code={executionResultType} lang="typescript" />
+
+      <h3>Utility functions</h3>
+      <ul>
+        <li><code>canFireWorkflow(marking, transition, ctx, guards?)</code> — structural + guard check</li>
+        <li><code>enabledWorkflowTransitions(net, marking, ctx, guards?)</code> — all fireable transitions</li>
+        <li><code>fireWorkflow(marking, transition, ctx, guards?, executors?)</code> — fire and execute</li>
+        <li><code>toNet(workflowNet)</code> — strip extensions for petri-ts analysis</li>
+        <li><code>analyse(definition, options?)</code> — reachable states, deadlock detection, invariant checking</li>
+        <li><code>compileGuard(expr)</code> — compile a guard expression string to a function</li>
+        <li><code>sqliteAdapter(db, workflowName)</code> — SQLite persistence adapter</li>
+      </ul>
+    </div>
+    </main>
+  </div>
+
+  <Footer variant="minimal" />
+</Layout>

@@ -34,7 +34,7 @@ export type {
 } from "./types.js";
 
 // Workflow definition helpers
-export { defineWorkflow, toNet } from "./workflow.js";
+export { defineWorkflow, expandWorkflow, injectTokens, toNet } from "./workflow.js";
 
 // Guard compilation
 export { compileGuard } from "./guard.js";
@@ -73,7 +73,7 @@ export type {
 
 // Executor
 export { createExecutor } from "./executor.js";
-export type { WorkflowExecutor, StepResult, TimeoutCandidate } from "./executor.js";
+export type { WorkflowExecutor, StepResult, BatchStepResult, TimeoutCandidate } from "./executor.js";
 
 // Scheduler
 export { Scheduler } from "./scheduler.js";
