@@ -48,6 +48,7 @@ The core product: a framework-agnostic tool gating system with adapter packages 
 | `@petriflow/rules` | Declarative rules DSL. Compiles one-liner safety policies into verified skill nets |
 | `@petriflow/vercel-ai` | [Vercel AI SDK](https://sdk.vercel.ai) adapter. Wraps tool `execute` methods with gating |
 | `@petriflow/pi-extension` | [pi-mono](https://github.com/nicholasgasior/pi-mono) adapter. Intercepts tool calls and enforces net structure |
+| `@petriflow/agent-sdk` | [Claude Agent SDK](https://platform.claude.com/docs/en/agent-sdk/overview) adapter. In-process callback hooks for programmatic agents |
 | `@petriflow/claude-code` | [Claude Code](https://claude.ai/code) hook. Gates bash, file, and MCP tools via the hook system |
 | `@petriflow/openclaw` | [OpenClaw](https://github.com/nicholasgasior/openclaw) adapter. Maps gate concepts to OpenClaw hooks |
 | `@petriflow/pi-assistant` | Four reusable skill nets: safe messaging, staged deploys, research-before-share, backup-before-delete |
